@@ -1,19 +1,28 @@
 
 == Running RDoc programmatically
-    require 'rdoc/rdoc'
-    rdoc = RDoc::RDoc.new
-    begin
-        rdoc.document(%w(like args from commandline))
-    rescue RDoc::RDocError
-        $stderr.puts "Error when running rdoc: " + $!.message
-    end
+require 'rdoc/rdoc'
+rdoc = RDoc::RDoc.new
+begin
+    rdoc.document(%w(like args from commandline))
+rescue RDoc::RDocError
+    $stderr.puts "Error when running rdoc: " + $!.message
+end
 
 == Changing the behaviour of Rant from Rantfiles
-    Perhaps a method named like `behave' would be appropriate to to
-    set options of the Rant application.
+Perhaps a method named like `behave' would be appropriate to to
+set options of the Rant application.
 
 == Subdirectories
-    Allow the use of `#' at the start of a pathname to tell rant that
-    it should be interpreted relative to the project's root directory.
+Allow the use of `#' at the start of a pathname to tell rant that
+it should be interpreted relative to the project's root directory.
 
+== Directory structure of +lib/+
++lib/+ contains only two entries:
+[rant.rb]      Used to require rantlib and include +Rant+ for small
+	       build scripts.
+[rant/]	       All files matching <tt>/^rant\w+\.rb$/</tt> are considered
+	       as Rant core. Others contain utilities, helper classes,
+	       Generators and similar.
+[rant/plugin]  Each file ending in <tt>.rb</tt> in this directory is
+               considered to load support for one Rant plugin.
 # vim:tw=70:

@@ -7,7 +7,7 @@ $testPluginConfigureDir = File.expand_path(File.dirname(__FILE__))
 class TestPluginConfigure < Test::Unit::TestCase
     def setup
 	# Ensure we run in test directory.
-	cd($testPluginConfigureDir) unless Dir.pwd == $testPluginConfigureDir
+	sys.cd($testPluginConfigureDir) unless Dir.pwd == $testPluginConfigureDir
     end
     def teardown
 	assert_equal(Rant.run("clean"), 0)

@@ -61,7 +61,7 @@ module Rant
 		end
 		arg << "-S testrb " << filelist.arglist
 		arg << optlist
-		app.context.instance_eval { ruby arg }
+		app.context.instance_eval { sys.ruby arg }
 	    }
 	end
 	def optlist

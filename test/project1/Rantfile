@@ -1,55 +1,55 @@
 
 file "test_touch" do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 task :clean do
-    rm "test_touch"
+    sys.rm "test_touch"
 end
 
 task :create_target do
-    touch "target"
+    sys.touch "target"
 end
 
 task :create_dep do
-    touch "dep"
+    sys.touch "dep"
 end
 
 file "target" => "dep" do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 file "t2" => ["dep1", "dep2"] do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 file "dep1" do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 file "dep2" do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 file "duplicate" do |t|
-    touch t.name
-    touch t.name + "1"
+    sys.touch t.name
+    sys.touch t.name + "1"
 end
 
 file "duplicate" do |t|
-    touch t.name
-    touch t.name + "2"
+    sys.touch t.name
+    sys.touch t.name + "2"
 end
 
 file "fallback" do
     # doesn't create our target...
     # so the next task with the same
     # name should be run
-    touch "fallback_"
+    sys.touch "fallback_"
 end
 
 file "fallback" do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 gen Directory, "dir/subdir"
@@ -59,16 +59,16 @@ gen Directory, "dir/sub2" do |t|
     # This block should be called after the creation of the directory
     # `sub2' in `dir'.
     t.name == "dir/sub2" or t.fail
-    touch "#{t.name}/postprocess"
+    sys.touch "#{t.name}/postprocess"
 end
 
 file "tbe" => :dep1 do |t|
-    touch t.name
+    sys.touch t.name
     sleep 2
 end
 
 enhance :tbe => "dep2" do |t|
-    touch "tbe2"
+    sys.touch "tbe2"
     sleep 2
 end
 
@@ -77,21 +77,21 @@ end
 enhance :nothing
 
 task :order do |t|
-    touch t.name + "1"
+    sys.touch t.name + "1"
     sleep 2
 end
 
 task :order do |t|
-    touch t.name + "2"
+    sys.touch t.name + "2"
     sleep 2
 end
 
 task :force_clean do
-    rm_f %w(
+    sys.rm_f %w(
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
 	fallback fallback_ order1 order2
 	tbe tbe2
 	)
-    rm_rf %w(dir)
+    sys.rm_rf %w(dir)
 end

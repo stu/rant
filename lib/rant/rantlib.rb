@@ -1,11 +1,11 @@
 
 require 'getoptlong'
-require 'rant/env'
+require 'rant/rantenv'
 require 'rant/rantfile'
-require 'rant/fileutils'
+require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.1'
+    VERSION	= '0.2.2'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -116,21 +116,18 @@ module RantContext
 	rantapp.subdirs(*args)
     end
 
-    def load_rantfile rantfile
+    def source rantfile
 	rantapp.load_rantfile(rantfile)
     end
-    alias source load_rantfile
 
-    # We override the output method of the FileUtils module to
-    # allow the Rant application to control output.
-    def fu_output_message(msg)	#:nodoc:
-	$stderr.puts msg unless rantapp[:quiet]
+    def sys *args
+	rantapp.sys *args
     end
+
 end	# module RantContext
 
 class RantAppContext
     include Rant
-    include Rant::FileUtils
     include RantContext
 
     def initialize(app)
@@ -206,7 +203,7 @@ module Rant
     end
 
     module_function :task, :file, :desc, :subdirs,
-	:gen, :load_rantfile, :source, :enhance
+    	:gen, :source, :enhance, :sys, :plugin
 
 end	# module Rant
 
@@ -249,8 +246,8 @@ class Rant::RantApp
     attr_reader :tasks
     # A list of all registered plugins.
     attr_reader :plugins
-    # The context in which Rantfiles are loaded. FileUtils methods may
-    # be called through an instance_eval on this object (e.g. from
+    # The context in which Rantfiles are loaded. RantContext methods
+    # may be called through an instance_eval on this object (e.g. from
     # plugins).
     attr_reader :context
 
@@ -258,6 +255,7 @@ class Rant::RantApp
 	@args = args.flatten
 	# Rantfiles will be loaded in the context of this object.
 	@context = RantAppContext.new(self)
+	@sys = ::Rant::SysObject.new(self)
 	Rant.rantapp ||= self
 	@rantfiles = []
 	@opts = {
@@ -276,10 +274,6 @@ class Rant::RantApp
 	@task_desc = nil
 
 	@orig_pwd = nil
-
-	@block_task_mkdir = lambda { |t|
-	    ::Rant::FileUtils.mkdir t.name
-	}
 
     end
 
@@ -366,6 +360,7 @@ class Rant::RantApp
 	Rant.rantapp = self.class.new
     end
 
+    ###### methods accessible through RantContext ####################
     def show *args
 	@task_show = *args.join("\n")
     end
@@ -514,6 +509,15 @@ class Rant::RantApp
 	    "in `subdirs' command: " + e.message)
     end
 
+    def sys *args
+	if args.empty?
+	    @sys
+	else
+	    @sys.sh *args
+	end
+    end
+    ##################################################################
+
     def abort *msg
 	err_msg(msg) unless msg.empty?
 	raise Rant::RantAbortException
@@ -607,7 +611,7 @@ class Rant::RantApp
     end
 
     # Print a command message as would be done from a call to a
-    # FileUtils method.
+    # Sys method.
     def cmd_msg cmd
 	$stderr.puts cmd unless quiet?
     end
@@ -986,7 +990,7 @@ module Rant
 	end
 
 	def initialize(app, ch, name, prerequisites = [], &block)
-	    dirs = ::Rant::FileUtils.split_path(name)
+	    dirs = ::Rant::Sys.split_path(name)
 	    if dirs.empty?
 		app.abort(app.pos_text(ch[:file], ch[:ln]),
 		    "Not a valid directory name: `#{name}'")
@@ -995,7 +999,7 @@ module Rant
 	    path = nil
 	    task_block = lambda { |t|
 		app.context.instance_eval {
-		    mkdir t.name unless test(?d, t.name)
+		    sys.mkdir t.name unless test(?d, t.name)
 		}
 	    }
 	    orig_task_block = task_block
@@ -1009,7 +1013,7 @@ module Rant
 			    orig_task_block[t]
 			    block[t]
 			    app.context.instance_eval {
-				touch t.name
+				sys.touch t.name
 			    }
 			}
 		    end

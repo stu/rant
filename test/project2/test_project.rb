@@ -6,7 +6,7 @@ require 'test/unit'
 # to be loaded!
 require 'rant/rantlib'
 include Rant
-include ::Rant::FileUtils
+include ::Rant::Sys
 
 # Ensure we run in testproject directory.
 dir = File.dirname(__FILE__)

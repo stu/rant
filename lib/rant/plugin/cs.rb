@@ -139,7 +139,7 @@ module Rant
 	end
 
 	def compile
-	    ::Rant::FileUtils.sh(self.send("cmd_" + @target))
+	    ::Rant::Sys.sh(self.send("cmd_" + @target))
 	end
 
     end	# class Generators::Assembly
@@ -149,7 +149,7 @@ module Rant
 	    @assembly = assembly
 	    super(app, @assembly.out) { |t|
 		app.context.instance_eval {
-		    sh assembly.send("cmd_" + assembly.target)
+		    sys.sh assembly.send("cmd_" + assembly.target)
 		}
 	    }
 	end

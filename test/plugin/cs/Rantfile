@@ -26,5 +26,5 @@ end
 =end
 
 task :clean do
-    rm_f FileList["*.{exe,dll,obj}"]
+    sys.rm_f FileList["*.{exe,dll,obj}"]
 end

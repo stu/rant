@@ -42,10 +42,6 @@ module Rant::Env
         OS =~ /mswin/i
     end
 
-    def on_linux?
-	OS =~ /linux/i
-    end
-
     # Get an array with all pathes in the PATH
     # environment variable.
     def pathes
@@ -106,18 +102,7 @@ module Rant::Env
 	end
     end
 
-    # Run block in directory dir.
-    # Deprecated. Use FileUtils.cd instead.
-    def indir dir
-        olddir = Dir.pwd
-        Dir.chdir dir
-        yield
-    ensure
-        Dir.chdir olddir
-    end
-
-    module_function :on_windows?, :on_linux?, :pathes, :find_bin,
-    	:indir, :shell_path
+    module_function :on_windows?, :pathes, :find_bin, :shell_path
 end    # module Rant::Env
 
 module Rant::Console

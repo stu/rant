@@ -1,5 +1,5 @@
 
-require 'rant/env'
+require 'rant/rantenv'
 
 class Rant::TaskFail < StandardError
 end

@@ -6,7 +6,7 @@ $:.unshift rd unless $:.include? rd
 require 'rant'
 
 task :hello do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 conf = plugin :Configure do |conf|
@@ -35,11 +35,11 @@ conf = plugin :Configure do |conf|
 end
 
 file conf["a"] do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 task :clean do
-    rm_f %w(config hello value_a value_a_guess)
+    sys.rm_f %w(config hello value_a value_a_guess)
 end
 
 if $0 == __FILE__

@@ -4,7 +4,7 @@ require 'rant'
 
 # Ensure we run in testproject directory.
 dir = File.dirname(__FILE__)
-cd(dir) unless Dir.pwd == dir
+Dir.chdir(dir) unless Dir.pwd == dir
 
 class TestProject1 < Test::Unit::TestCase
     def setup
@@ -29,13 +29,13 @@ class TestProject1 < Test::Unit::TestCase
 	sleep 2
 	assert_equal(Rant.run("create_dep"), 0)
 	assert(File.exist?("dep"))
-	assert(uptodate?("dep", "target"),
+	assert(sys.uptodate?("dep", "target"),
 	    "`create_target' was run before `create_dep'")
 	sleep 2
 	assert_equal(Rant.run("target"), 0)
 	assert(File.exist?("target"))
 	assert(File.exist?("dep"))
-	assert(uptodate?("target", "dep"),
+	assert(sys.uptodate?("target", "dep"),
 	    "`target' should be newer than `dep'")
 	t1 = File.mtime "target"
 	Rant.reset

@@ -1,6 +1,6 @@
 
 require 'fileutils'
-require 'rant/env'
+require 'rant/rantenv'
 
 module Rant
 
@@ -58,7 +58,7 @@ module Rant
 	    end
 	    elems = nil
 	    self.reject! { |entry|
-		elems = FileUtils.split_path(entry)
+		elems = Sys.split_path(entry)
 		i = elems.index(name)
 		if i
 		    path = File.join(*elems[0..i])
@@ -85,7 +85,7 @@ module Rant
 	    @actions << [:no_suffix, suffix]
 	    elems = elem = nil
 	    self.reject! { |entry|
-		elems = FileUtils.split_path(entry)
+		elems = Sys.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /#{suffix}$/
 		}
@@ -99,7 +99,7 @@ module Rant
 	    @actions << [:no_prefix, prefix]
 	    elems = elem = nil
 	    self.reject! { |entry|
-		elems = FileUtils.split_path(entry)
+		elems = Sys.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /^#{prefix}/
 		}
@@ -165,7 +165,7 @@ module Rant
 	end
     end
 
-    module FileUtils
+    module Sys
 	include ::FileUtils::Verbose
 	# We include the verbose version of FileUtils
 	# and override the fu_output_message to control
@@ -182,7 +182,7 @@ module Rant
 	# We override the output method of the FileUtils module to
 	# allow the Rant application to control output.
 	def fu_output_message(msg)	#:nodoc:
-	    $stderr.puts msg unless ::Rant.rantapp[:quiet]
+	    ::Rant.rantapp.cmd_msg msg
 	end
 
 	def sh(*cmd_args, &block)
@@ -233,7 +233,25 @@ module Rant
 	    split_path(base) + [last]
 	end
 
-	module_function :sh, :ruby, :safe_ln,
-		:split_path, :sp, :fu_output_message
-    end	# module FileUtils
+	extend self
+
+    end	# module Sys
+
+    class SysObject
+	include Sys
+
+	# This could be an Rant application. It has to respond to
+	# +:cmd_msg+.
+	attr_reader :controller
+
+	def initialize(controller)
+	    @controller = controller or
+		raise ArgumentError, "controller required"
+	end
+
+	private
+	def fu_output_message(cmd)
+	    @controller.cmd_msg cmd
+	end
+    end
 end	# module Rant

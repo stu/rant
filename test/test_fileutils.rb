@@ -3,7 +3,7 @@ require 'test/unit'
 require 'rant/rantlib'
 
 class TestFileUtils < Test::Unit::TestCase
-    include Rant::FileUtils
+    include Rant::Sys
 
     def setup
     end

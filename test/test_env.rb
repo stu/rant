@@ -7,7 +7,7 @@ $testDir ||= File.expand_path(File.dirname(__FILE__))
 class TestRantEnv < Test::Unit::TestCase
     def setup
 	# Ensure we run in test directory.
-	cd($testDir) unless Dir.pwd == $testDir
+	Dir.chdir($testDir) unless Dir.pwd == $testDir
     end
     def teardown
     end
