@@ -124,6 +124,7 @@ module Rant
 	    @optimize = true
 	    @warnings = true
 	    @csc = nil
+	    @csc_bin = nil
 	end
 
 	# Command to invoke compiler.

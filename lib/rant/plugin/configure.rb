@@ -305,7 +305,8 @@ module Rant::Plugin
 	    yield self if block_given?
 	end
 	def default(val)
-	    @value = val
+	    @default = val
+	    @value = @default if @value.nil?
 	end
 	def guess(&block)
 	    @guess_block = block

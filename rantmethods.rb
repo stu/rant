@@ -22,3 +22,28 @@ task :gem_attrs do
     puts ml
     puts "*** total: #{ml.size} methods ***"
 end
+
+file "bench-rant" do |t|
+    c = 100
+    if ENV["TC"]
+	c = Integer(ENV["TC"])
+    end
+    File.open(t.name, "w") { |f|
+	f.puts "$tc_run = 0"
+	c.times { |i|
+	    f << <<-EOT
+	    	task "#{i}" => "#{i+1}" do
+		    $tc_run += 1
+		end
+	    EOT
+	}
+	f << <<-EOT
+	    task "#{c}" do
+		$tc_run += 1
+	    end
+	    at_exit {
+		puts $tc_run.to_s + " tasks run"
+	    }
+	EOT
+    }
+end

@@ -3,11 +3,11 @@ require 'test/unit'
 require 'rant'
 
 # Ensure we run in testproject directory.
-dir = File.dirname(__FILE__)
-Dir.chdir(dir) unless Dir.pwd == dir
+$testProject1Dir = File.expand_path(File.dirname(__FILE__))
 
 class TestProject1 < Test::Unit::TestCase
     def setup
+	Dir.chdir($testProject1Dir) unless Dir.pwd == $testProject1Dir
 	Rant.reset
     end
     def teardown

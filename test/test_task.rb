@@ -66,4 +66,35 @@ class TestTask < Test::Unit::TestCase
 	t.run
 	assert(run)
     end
+
+    def test_dep_on_self
+	run = false
+	t = Rant.task :t => "t" do |t|
+	    run = true
+	end
+	th = Thread.new { t.run }
+	# shouldn't take half a second...
+	assert_equal(th.join(0.5), th,
+	    "task should remove dependency on itself")
+	assert(run,
+	    "task should get run despite dependency on itself")
+    end
+    def test_dep_on_self_in_deplist
+	rl = []
+	t1 = Rant.task :t1 do |t|
+	    rl << t.name
+	end
+	t2 = Rant.task :t2 do |t|
+	    rl << t.name
+	end
+	t3 = Rant.task :t3 => [:t1, :t3, :t2] do |t|
+	    rl << t.name
+	end
+	th = Thread.new { t3.run }
+	# shouldn't take half a second...
+	assert_equal(th.join(0.5), th,
+	    "task should remove dependency on itself from dependency list")
+	assert_equal(rl, %w(t1 t2 t3),
+	    "t3 was run and depends on [t1, t2] => run order: t1 t2 t3")
+    end
 end

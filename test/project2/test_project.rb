@@ -9,14 +9,14 @@ include Rant
 include ::Rant::Sys
 
 # Ensure we run in testproject directory.
-dir = File.dirname(__FILE__)
-cd(dir) unless Dir.pwd == dir
+$testProject2Dir = File.expand_path(File.dirname(__FILE__))
 
 class TestProject2 < Test::Unit::TestCase
     def app *args
-	@app = ::Rant::RantApp.new *args
+	@app = ::Rant::RantApp.new(*args)
     end
     def setup
+	Dir.chdir($testProject2Dir) unless Dir.pwd == $testProject2Dir
     end
     def teardown
 	assert_equal(app(%w(-f rantfile.rb -f buildfile clean)).run, 0)
