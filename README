@@ -61,8 +61,8 @@ Now the following command:
 will download and install Rant. Depending on the RubyGems
 configuration, you will probably need superuser privileges.
 Then try to run:
-    % rant --help
-which should print a help message for the _rant_ command. If this
+    % rant --version
+which should print name and version of the _rant_ command. If this
 is done, you have successfully installed Rant. Congratulations!
 
 === Conventional installation
@@ -82,7 +82,7 @@ another location than the default, run
 which will show you a bunch of options for the installation.
 
 After performing the steps listed above, try to run
-    % rant --help
+    % rant --version
 to verify Rant was installed correctly.
 
 == Copying

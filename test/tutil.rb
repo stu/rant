@@ -1,6 +1,9 @@
 
 # This file contains methods that aid in testing Rant.
 
+RANT_BIN = File.expand_path(
+    File.join(File.dirname(__FILE__), "..", "run_rant"))
+
 # Everything written to $stdout during +yield+ will be returned. No
 # output to $stdout.
 def capture_stdout
@@ -85,4 +88,8 @@ When testing Rant: `#{Dir.pwd + "/" + errfn}' exists.
 	File.delete outfn if File.exist? outfn
 	File.delete errfn if File.exist? errfn
     end
+end
+
+def run_rant(*args)
+    `#{Rant::Env::RUBY} #{RANT_BIN} #{args.join(' ')}`
 end

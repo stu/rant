@@ -17,10 +17,11 @@ gen RubyPackage, "rant" do |t|
     t.summary = "Rant is a Ruby based build tool."
     t.files = dist_files
     t.bindir = "bin"
-    t.executable = "rant"
-    t.has_rdoc = true
+    t.executable %w(rant rant-import)
     t.author = "Stefan Lang"
     t.email = "langstefan@gmx.at"
+    t.gem_rubyforge_project = "make"
+    t.homepage = "http://make.rubyforge.org"
     desc "Create packages for distribution."
     t.package_task
 end
@@ -75,6 +76,7 @@ end
 
 desc "Run all tests."
 gen RubyTest, :tall do |g|
+    g.libs << "test"
     g.test_files = FileList["test/**/test_*.rb"]
 end
 task :testall => %w(test testp1 testp2 testrb1 testplugins)

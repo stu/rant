@@ -52,6 +52,7 @@ class Rant::RubyPackage
 	"homepage",
 	"platform",
 	"required_ruby_version",
+	"rubyforge_project",
 	"summary",
 	"version",
     ]
@@ -140,7 +141,7 @@ class Rant::RubyPackage
     def method_missing(sym, *args)
 	super unless args.size == 1
 	a = sym.to_s
-	if a =~ /^gem_([^=])=$/
+	if a =~ /^gem_([^=]+)=$/
 	    @data["gem-#$1"] = args.first
 	else
 	    super
@@ -249,6 +250,10 @@ class Rant::RubyPackage
 		# install the rdoc in the wrong directory (at least as
 		# of version 0.8.6 of rubygems)
 		@data["rdoc_options"] = without_rdoc_op_opt(@data["rdoc_options"])
+		# automatically set "has_rdoc" to true unless it was
+		# explicitely set to false (but if someone sets
+		# options for rdoc, he probably wants to run rdoc...)
+		@data["has_rdoc"] = true if @data["has_rdoc"].nil?
 	    end
 	    spec = Gem::Specification.new do |s|
 		map_to_gemspec(s)

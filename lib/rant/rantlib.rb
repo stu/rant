@@ -45,6 +45,16 @@ module Rant
 
 end
 
+# There is one problem with executing Rantfiles in a special context:
+# In the top-level execution environment, there are some methods
+# available which are not available to all objects. One example is the
+# +include+ method.
+#
+# To (at least partially) solve this problem, we capture the `main'
+# object here and delegate methods from RantContext#method_missing to
+# this object.
+Rant::MAIN_OBJECT = self
+
 class Array
     def arglist
 	self.shell_pathes.join(' ')
@@ -175,7 +185,6 @@ module RantContext
     def sys *args
 	rantapp.sys(*args)
     end
-
 end	# module RantContext
 
 class RantAppContext
@@ -188,6 +197,17 @@ class RantAppContext
 
     def rantapp
 	@rantapp
+    end
+
+    def method_missing(sym, *args)
+	# See the documentation for Rant::MAIN_OBJECT why we're doing
+	# this...
+	# Note also that the +send+ method also invokes private
+	# methods, this is very important for our intent.
+	Rant::MAIN_OBJECT.send(sym, *args)
+    rescue NoMethodError
+	raise NameError, "NameError: undefined local " +
+	    "variable or method `#{sym}' for main:Object", caller
     end
 end
 

@@ -8,11 +8,5 @@
 # You can distribute/modify this program under the terms of
 # the GNU LGPL, Lesser General Public License version 2.1.
 
-begin
-  require 'rant/import'
-rescue LoadError
-  require 'rubygems'
-  require_gem 'rant/import'
-end
-
+require 'rant/import'
 exit Rant::RantImport.run

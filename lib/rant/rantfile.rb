@@ -406,7 +406,7 @@ module Rant
 	    self.fail
 	end
 
-	# For each non-task prerequiste, the value returned from yield
+	# For each non-worker prerequiste, the value returned from yield
 	# will replace the original prerequisite (of course only if
 	# @pre_resolved is false).
 	def each_dep
@@ -417,7 +417,6 @@ module Rant
 	    @pre.map! { |t|
 		if Worker === t
 		    # Remove references to self from prerequisites!
-		    t.name == @name ? nil : yield(t)
 		    if t.name == @name
 			nil
 		    else
@@ -618,7 +617,6 @@ module Rant
 	end
 
 	def needed?
-	    return false if done?
 	    invoke(:needed? => true)
 	end
 

@@ -1,0 +1,11 @@
+
+require 'fileutils'
+include Sys
+
+def tf fn
+    touch fn
+end
+
+file :td do
+    tf "td"
+end
