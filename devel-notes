@@ -66,4 +66,8 @@ following:
 == RantContext#rantapp rename
 Rename +rantapp+ to +rac+.
 
+== Circular dependencies
+Before Rant detected circular dependencies, we silently removed a task
+dependency on itself. Should we remove this mechanism now?
+
 # vim:tw=70:

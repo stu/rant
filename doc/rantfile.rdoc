@@ -166,7 +166,7 @@ FileUtils module:
     sys.safe_ln "src", "dest"	 # create a hardlink or fall back to
 				 # copying
 If you're tired of typing <tt>sys.</tt> all the time, you can include
-the +Rant::Sys+ module in your Rantfile (though it is not recommended
+the Rant::Sys module in your Rantfile (though it is not recommended
 to do this):
     include Rant::Sys
     task :clean do

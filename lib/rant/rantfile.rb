@@ -49,6 +49,7 @@ module Rant
 	    @description = nil
 	    @rantfile = nil
 	    @line_number = nil
+	    @run = false
 	end
 
 	# Returns the +name+ attribute.
@@ -77,6 +78,11 @@ module Rant
 	    !done?
 	end
 
+	# True during invoke. Used to encounter circular dependencies.
+	def run?
+	    @run
+	end
+
 	# +opt+ is a Hash and shouldn't be modified.
 	# All objects implementing the Rant::Worker protocol should
 	# know about the following +opt+ values:
@@ -85,10 +91,16 @@ module Rant
 	#	as calling Worker#needed?
 	# <tt>:force</tt>::
 	#	Run task action even if needed? is false.
+	# Returns true if task action was run.
 	def invoke(opt = INVOKE_OPT)
-	    goto_task_home
-	    return needed? if opt[:needed?]
-	    self.run if opt[:force] || self.needed?
+	    return circular_dep if run?
+	    @run = true
+	    begin
+		return needed? if opt[:needed?]
+		self.run if opt[:force] || self.needed?
+	    ensure
+		@run = false
+	    end
 	end
 
 	def fail msg = nil
@@ -102,6 +114,12 @@ module Rant
 	end
 	private :run
 
+	def circular_dep
+	    app.warn_msg "Circular dependency on task `#{full_name}'."
+	    false
+	end
+	private :circular_dep
+
 	def hash
 	    name.hash
 	end
@@ -109,7 +127,7 @@ module Rant
 	def eql? other
 	    Worker === other and full_name.eql? other.full_name
 	end
-    end
+    end	# module Worker
 
     # A list of tasks with an equal name.
     class MetaTask < Array
@@ -242,26 +260,32 @@ module Rant
 	end
 
 	def invoke(opt = INVOKE_OPT)
-	    return needed? if opt[:needed?]
-	    # +run+ already calls +goto_task_home+
-	    #goto_task_home
-	    if opt[:force] && !@done
-		self.run
-		@done = true
-	    else
-		if needed?
-		    run
+	    return circular_dep if @run
+	    @run = true
+	    begin
+		return needed? if opt[:needed?]
+		# +run+ already calls +goto_task_home+
+		#goto_task_home
+		if opt[:force] && !@done
+		    self.run
 		    @done = true
 		else
-		    false
+		    if needed?
+			run
+			@done = true
+		    else
+			false
+		    end
 		end
+	    rescue CommandError => e
+		err_msg e.message if app[:err_commands]
+		self.fail
+	    rescue SystemCallError => e
+		err_msg e.message
+		self.fail
+	    ensure
+		@run = false
 	    end
-	rescue CommandError => e
-	    err_msg e.message if app[:err_commands]
-	    self.fail
-	rescue SystemCallError => e
-	    err_msg e.message
-	    self.fail
 	end
     end	# LightTask
 
@@ -290,7 +314,11 @@ module Rant
 	    @pre_resolved = false
 	    @block = block
 	    @run = false
-	    @fail = false
+	    # success has one of three values:
+	    #	nil	no invoke
+	    #	false	invoked, but fail
+	    #	true	invoked and run successfully
+	    @success = nil
 	end
 
 	# Get a list of the *names* of all prerequisites. The
@@ -312,20 +340,20 @@ module Rant
 	    @pre << pre
 	end
 
-	# Was this task ever run? If this is true, it doesn't
+	# Was this task ever invoked? If this is true, it doesn't
 	# necessarily mean that the run was successfull!
-	def run?
-	    @run
+	def invoked?
+	    !@success.nil?
 	end
 
 	# True if last task run fail.
 	def fail?
-	    @fail
+	    @success == false
 	end
 
 	# Task was run and didn't fail.
 	def done?
-	    run? && !fail?
+	    @success
 	end
 
 	# Enhance this task with the given dependencies and blk.
@@ -354,8 +382,14 @@ module Rant
 	# Returns a true value if task was acutally run.
 	# Raises Rant::TaskFail to signal task (or prerequiste) failure.
 	def invoke(opt = INVOKE_OPT)
-	    return if done?
-	    internal_invoke opt
+	    return circular_dep if @run
+	    @run = true
+	    begin
+		return if done?
+		internal_invoke opt
+	    ensure
+		@run = false
+	    end
 	end
 
 	def internal_invoke opt, ud_init = true
@@ -376,13 +410,12 @@ module Rant
 	    }
 	    # Never run a task block for a "needed?" query.
 	    return update if opt[:needed?]
-	    if update
-		@run = true
-		run
-	    end
-	    @run
+	    run if update
+	    @success = true
+	    # IMPORTANT: return update flag
+	    update
 	rescue StandardError => e
-	    @fail = true
+	    @success = false
 	    case e
 	    when TaskFail: raise
 	    when CommandError
@@ -517,8 +550,14 @@ module Rant
 	# the +ud_init+ flag according to the result of a call to the
 	# +needed+ block.
 	def invoke(opt = INVOKE_OPT)
-	    return if done?
-	    internal_invoke(opt, ud_init_by_needed)
+	    return circular_dep if @run
+	    @run = true
+	    begin
+		return if done?
+		internal_invoke(opt, ud_init_by_needed)
+	    ensure
+		@run = false
+	    end
 	end
 
 	private
@@ -554,14 +593,20 @@ module Rant
 	end
 
 	def invoke(opt = INVOKE_OPT)
-	    return if done?
-	    goto_task_home
-	    if @path.exist?
-		@ts = @path.mtime
-		internal_invoke opt, false
-	    else
-		@ts = T0
-		internal_invoke opt, true
+	    return circular_dep if @run
+	    @run = true
+	    begin
+		return if done?
+		goto_task_home
+		if @path.exist?
+		    @ts = @path.mtime
+		    internal_invoke opt, false
+		else
+		    @ts = T0
+		    internal_invoke opt, true
+		end
+	    ensure
+		@run = false
 	    end
 	end
 
@@ -647,20 +692,26 @@ module Rant
 	    @isdir = nil
 	end
 
-	def needed?
-	    invoke(:needed? => true)
-	end
+	#def needed?
+	#    invoke(:needed? => true)
+	#end
 
 	def invoke(opt = INVOKE_OPT)
-	    return if done?
-	    goto_task_home
-	    @isdir = test(?d, @name)
-	    if @isdir
-		@ts = @block ? test(?M, @name) : Time.now
-		internal_invoke opt, false
-	    else
-		@ts = T0
-		internal_invoke opt, true
+	    return circular_dep if @run
+	    @run = true
+	    begin
+		return if done?
+		goto_task_home
+		@isdir = test(?d, @name)
+		if @isdir
+		    @ts = @block ? test(?M, @name) : Time.now
+		    internal_invoke opt, false
+		else
+		    @ts = T0
+		    internal_invoke opt, true
+		end
+	    ensure
+		@run = false
 	    end
 	end
 

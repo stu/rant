@@ -42,7 +42,7 @@ class TestTask < Test::Unit::TestCase
 	    task.invoke
 	}
 	assert(task.fail?)
-	assert(task.run?, "although task failed, it was ran")
+	assert(task.invoked?, "although task failed, it was invoked")
     end
 
     def test_dependant
@@ -93,6 +93,27 @@ class TestTask < Test::Unit::TestCase
 	    "task should remove dependency on itself")
 	assert(run,
 	    "task should get run despite dependency on itself")
+    end
+    def test_circular_dependency
+	t1r = false
+	t2r = false
+	t1 = Rant.rac.task :t1 => :t2 do |t|
+	    assert(t2r)
+	    t1r = true
+	end
+	t2 = Rant.rac.task :t2 => :t1 do |t|
+	    t2r = true
+	end
+	out, err = capture_std do
+	    th = Thread.new { t1.invoke }
+	    assert_equal(th, th.join(0.5),
+		"task should detect circular dependency")
+	end
+	assert(t1r)
+	assert(t2r)
+	assert_match(/\[WARNING\]/, err,
+	    "Rant should print a warning to stderr about circular" +
+	    "dependency")
     end
     def test_dep_on_self_in_deplist
 	rl = []
