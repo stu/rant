@@ -62,6 +62,10 @@ gen Directory, "dir/sub2" do |t|
     sys.touch "#{t.name}/postprocess"
 end
 
+gen Directory, "dir/sub3" => "dep1" do |t|
+    sys.touch "#{t.name}/postprocess"
+end
+
 file "tbe" => :dep1 do |t|
     sys.touch t.name
     sleep 2

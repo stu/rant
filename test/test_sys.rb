@@ -60,7 +60,7 @@ class TestFileUtils < Test::Unit::TestCase
     end
     # ...
     def test_standalone
-	out = `#{Rant::Env::RUBY} standalone.rf`
+	out = `#{Rant::Env::RUBY} -I#{RANT_DEV_LIB_DIR} standalone.rf`
 	assert(0, $?)
 	assert_match(/^t_standalone/, out)
     end

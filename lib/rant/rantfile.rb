@@ -129,6 +129,7 @@ module Rant
 	def invoke(opt = INVOKE_OPT)
 	    uf = false
 	    each { |t| t.invoke(opt) && uf = true }
+	    uf
 	end
 
 	def description
@@ -641,10 +642,9 @@ module Rant
 	end
 
 	def handle_filetask(dep, opt)
-	    return true if dep.invoke opt
+	    return @block if dep.invoke opt
 	    if dep.path.exist?
-		#puts "***`#{dep.name}' requires update" if dep.path.mtime > @ts
-		dep.path.mtime > @ts
+		@block && dep.path.mtime > @ts
 	    end
 	end
 
@@ -655,7 +655,7 @@ module Rant
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
-	    [dep, dep.mtime > @ts]
+	    [dep, @block && dep.mtime > @ts]
 	end
 
 	def run

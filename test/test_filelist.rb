@@ -13,7 +13,7 @@ class TestFileList < Test::Unit::TestCase
     def touch_temp(*args)
 	files = args.flatten
 	files.each { |f| FileUtils.touch f }
-	yield
+	yield if block_given?
     ensure
 	files.each { |f|
 	    File.delete f if File.exist? f
@@ -56,9 +56,9 @@ class TestFileList < Test::Unit::TestCase
 	touch_temp %w(1.t 2.tt) do
 	    assert(fl("*.t").include?("1.t"),
 		'FileList["*.t"] should include 1.t')
-	    fl = fl("*.t", "*.tt")
-	    assert(fl.include?("1.t"))
-	    assert(fl.include?("2.tt"))
+	    l = fl("*.t", "*.tt")
+	    assert(l.include?("1.t"))
+	    assert(l.include?("2.tt"))
 	end
     end
     def test_initialize_with_yield

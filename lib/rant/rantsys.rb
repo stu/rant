@@ -47,7 +47,7 @@ module Rant
 
 	def each &block
 	    resolve if @pending
-	    @files.each &block
+	    @files.each(&block)
 	end
 
 	def to_ary

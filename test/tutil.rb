@@ -6,6 +6,9 @@ require 'rant/rantenv'
 RANT_BIN = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "run_rant"))
 
+RANT_DEV_LIB_DIR = File.expand_path(
+    File.join(File.dirname(__FILE__), "..", "lib"))
+
 $rant_test_to = Rant::Env.on_windows? ? 3 : 2
 if ENV["TO"]
     begin

@@ -123,6 +123,31 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?f, "dir/sub2/postprocess"),
 	    "dir/sub2/postprocess should have been created by block supplied to directory task")
     end
+    def test_directory_pre_postprocess
+	capture_std do
+	    assert_equal(0, Rant.run("dir/sub3"))
+	end
+	assert(test(?d, "dir/sub3"))
+	assert(test(?e, "dep1"), "dep1 is a prerequisite")
+	assert(test(?e, "dir/sub3/postprocess"))
+	old_mtime = File.mtime "dir/sub3"
+	assert_equal(old_mtime, File.mtime("dep1"))
+	timeout
+	capture_std do
+	    assert_equal(0, Rant.run("dir/sub3"))
+	end
+	assert_equal(old_mtime, File.mtime("dir/sub3"),
+	    "no prerequisite requires update")
+	assert_equal(old_mtime, File.mtime("dir/sub3/postprocess"))
+	capture_std do
+	    assert_equal(0, Rant.run(%w(-a dep1)))
+	    assert(File.mtime("dep1") > old_mtime)
+	    timeout
+	    assert_equal(0, Rant.run("dir/sub3"))
+	    assert(File.mtime("dir/sub3") > old_mtime)
+	    assert(File.mtime("dir/sub3/postprocess") > old_mtime)
+	end
+    end
     def test_order
 	capture_std do
 	    assert_equal(Rant.run("order"), 0)
