@@ -59,9 +59,11 @@ class TestProject2 < Test::Unit::TestCase
 	    "rant should cd to sub1 and run task insub1_s1f1")
     end
     def test_opth_directory
-	app []	# just ensure to clear previous app
-	Rant[:directory] = "sub1"
-	assert_equal(Rant.run("insub1_s1f1"), 0)
+	app %w(insub1_s1f1)
+	#Rant[:directory] = "sub1"
+	@app[:verbose] = 2
+	@app[:directory] = "sub1"
+	assert_equal(@app.run, 0)
 	assert(Dir.pwd !~ /sub1$/,
 	    "rant should cd to original dir before returning from `run'")
 	assert(test(?f, "sub1/s1f1"),

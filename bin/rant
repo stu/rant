@@ -1,6 +1,6 @@
 
 begin
-  require 'rant'
+  require 'rant/rantlib'
 rescue LoadError
   require 'rubygems'
   require_gem 'rant'

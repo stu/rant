@@ -18,24 +18,24 @@ file "doc" => doc_files do
 end
 
 desc "Run basic tests."
-TestTask.new do |t|
+gen TestTask do |t|
     t.pattern = 'test_*.rb'
 end
 
 desc "Run first test-project.",
      "Warning: writes to disc."
-TestTask.new :testp1 do |t|
+gen TestTask, :testp1 do |t|
     t.test_files = ["tests/project1/test_project.rb"]
 end
 
 desc "Run second test project.",
      "Warning: writes to disc"
-TestTask.new :testp2 do |t|
+gen TestTask, :testp2 do |t|
     t.test_files = ["tests/project2/test_project.rb"]
 end
 
 desc "Test plugins."
-TestTask.new :testplugins do |t|
+gen TestTask, :testplugins do |t|
     t.test_files = FileList["tests/plugin/**/test_*"]
 end
 

@@ -33,7 +33,7 @@ GEM_SPEC = Gem::Specification.new do |s|
                             path.include?(".svn")
                         }
     s.require_path	=    "lib"
-    s.autorequire	=    "rant"
+    s.autorequire	=    "rant/rantlib"
     # currently we don't include unit tests
     #s.test_files    =    all_tests.to_a
     s.has_rdoc		=    true

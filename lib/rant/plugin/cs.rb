@@ -4,16 +4,17 @@
 require 'rant/plugin_methods'
 require 'rant/cs_compiler'
 
+module RantContext
+    # Creates a filetask for building an assembly.  Contrary to a
+    # filetask, the block is used to specify attributes for the
+    # assembly task, not to build the target.
+    def assembly(targ, &block)
+	rantapp.assembly(targ, &block)
+    end
+end
+    
 module Rant
 
-    # Creates a filetask for building an assembly.
-    # Contrary to a filetask, the block is used to specify attributes
-    # for the assembly task, not to build the target.
-    def assembly(targ, &block)
-	Rant.rantapp.assembly(targ, &block)
-    end
-    module_function :assembly
-    
     class RantApp
 	def assembly(targ, &block)
 	    prepare_task(targ, nil) { |name,pre,blk|

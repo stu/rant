@@ -4,6 +4,25 @@ require 'rant/env'
 require 'rant/rantfile'
 require 'rant/fileutils'
 
+module Rant
+    VERSION	= '0.1.10'
+
+    # Those are the filenames for rantfiles.
+    # Case doens't matter!
+    RANTFILES	= [	"rantfile",
+			"rantfile.rb",
+			"rant",
+			"rant.rb"
+		  ]
+    
+    class RantAbortException < StandardError
+    end
+
+    class RantDoneException < StandardError
+    end
+
+end
+
 class Array
     def arglist
 	self.shell_pathes.join(' ')
@@ -31,8 +50,6 @@ class Array
     end
 end
 
-module Rant end
-
 module Rant::Lib
     
     # Parses one string (elem) as it occurs in the array
@@ -57,25 +74,74 @@ module Rant::Lib
     module_function :parse_caller_elem
 end
 
+# The methods in this module are the public interface to Rant that can
+# be used in Rantfiles.
+module RantContext
+
+    # Define a basic task.
+    def task targ, &block
+	rantapp.task(targ, &block)
+    end
+
+    # Define a file task.
+    def file targ, &block
+	rantapp.file(targ, &block)
+    end
+
+    # Add code and/or prerequisites to existing task.
+    def enhance targ, &block
+	rantapp.enhance(targ, &block)
+    end
+
+    def show(*args)
+	rantapp.show(*args)
+    end
+
+    def desc(*args)
+	rantapp.desc(*args)
+    end
+
+    def gen(*args, &block)
+	rantapp.gen(*args, &block)
+    end
+
+    # Create a path.
+    def directory targ, &block
+	rantapp.directory(targ, &block)
+    end
+
+    # Look in the subdirectories, given by args,
+    # for rantfiles.
+    def subdirs *args
+	rantapp.subdirs(*args)
+    end
+
+    def load_rantfile rantfile
+	rantapp.load_rantfile(rantfile)
+    end
+    alias source load_rantfile
+
+end	# module RantContext
+
+class RantAppContext
+    include ::Rant
+    include ::RantContext
+    include ::Rant::FileUtils
+
+    def initialize(app)
+	@rantapp = app
+    end
+
+    def rantapp
+	@rantapp
+    end
+end
+
 module Rant
-    VERSION	= '0.1.9'
+    include RantContext
 
-    # Those are the filenames for rantfiles.
-    # Case doens't matter!
-    RANTFILES	= [	"rantfile",
-			"rantfile.rb",
-			"rant",
-			"rant.rb"
-		  ]
-
-    CONFIG_FN	= 'config'
-
-    class RantAbortException < StandardError
-    end
-
-    class RantDoneException < StandardError
-    end
-
+    # In the class definition of Rant::RantApp, this will be set to a
+    # new application object.
     @@rantapp = nil
 
     class << self
@@ -106,99 +172,36 @@ module Rant
 	def run(first_arg=nil, *other_args)
 	    other_args = other_args.flatten
 	    args = first_arg.nil? ? ARGV.dup : ([first_arg] + other_args)
-	    if @@rantapp && !@@rantapp.done?
+	    if @@rantapp && !@@rantapp.ran?
 		@@rantapp.args.replace(args.flatten)
 		@@rantapp.run
 	    else
-		app = Rant::RantApp.new(args)
-		app.run
+		@@rantapp = Rant::RantApp.new(args)
+		@@rantapp.run
 	    end
 	end
 
 	def rantapp
-	    ensure_rantapp
 	    @@rantapp
 	end
+
 	def rantapp=(app)
 	    @@rantapp = app
 	end
-    end
 
-    # "Clear" the current Rant application. After this call,
-    # Rant has the same state as immediately after startup.
-    def reset
-	@@rantapp = nil
-    end
-
-    def ensure_rantapp
-	# the new app registers itself with
-	# Rant.rantapp=
-	Rant::RantApp.new unless @@rantapp
-    end
-    private :ensure_rantapp
-
-    # Define a basic task.
-    def task targ, &block
-	ensure_rantapp
-	@@rantapp.task(targ, &block)
-    end
-
-    # Define a file task.
-    def file targ, &block
-	ensure_rantapp
-	@@rantapp.file(targ, &block)
-    end
-
-    # Add code and/or prerequisites to existing task.
-    def enhance targ, &block
-	Rant.rantapp.enhance(targ, &block)
-    end
-
-    def show(*args)
-	Rant.rantapp.show(*args)
-    end
-
-    def desc(*args)
-	Rant.rantapp.desc(*args)
-    end
-
-    # Create a path.
-    def directory targ, &block
-	ensure_rantapp
-	@@rantapp.directory(targ, &block)
-    end
-
-    # Look in the subdirectories, given by args,
-    # for rantfiles.
-    def subdirs *args
-	ensure_rantapp
-	@@rantapp.subdirs(*args)
-    end
-
-    def load_rantfile rantfile
-	ensure_rantapp
-	@@rantapp.load_rantfile(rantfile)
-    end
-
-    def [](opt)
-	Rant.rantapp[opt]
-    end
-
-    def []=(opt, val)
-	Rant.rantapp[opt] = val
-    end
-
-    def abort_rant
-	if @@rantapp
-	    @@rantapp.abort
-	else
-	    $stderr.puts "rant aborted!"
-	    exit 1
+	# "Clear" the current Rant application. After this call,
+	# Rant has the same state as immediately after startup.
+	def reset
+	    @@rantapp = nil
 	end
     end
 
-    module_function :task, :file, :show, :desc, :subdirs
-    module_function :ensure_rantapp, :abort_rant
+    def rantapp
+	@@rantapp
+    end
+
+    module_function :task, :file, :show, :desc, :subdirs,
+	:gen, :load_rantfile, :source, :enhance, :directory
 
 end	# module Rant
 
@@ -244,8 +247,10 @@ class Rant::RantApp
 
     def initialize *args
 	@args = args.flatten
+	# Rantfiles will be loaded in the context of this object.
+	@context = RantAppContext.new(self)
+	Rant.rantapp ||= self
 	@rantfiles = []
-	Rant.rantapp = self
 	@opts = {
 	    :verbose	=> 0,
 	    :quiet	=> false,
@@ -268,6 +273,11 @@ class Rant::RantApp
 	}
 
     end
+
+    # Just ensure that Rant.rantapp holds an RantApp after loading
+    # this file. The code in initialize will register the new app with
+    # Rant.rantapp= if necessary.
+    self.new
 
     def [](opt)
 	@opts[opt]
@@ -343,7 +353,8 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_plugin_stop }
 	@plugins.each { |plugin| plugin.rant_quit }
 	# restore pwd
-	Dir.pwd != @orig_pwd && ::Rant::FileUtils.cd(@orig_pwd)
+	Dir.pwd != @orig_pwd && Dir.chdir(@orig_pwd)
+	Rant.rantapp = self.class.new
     end
 
     def show *args
@@ -364,6 +375,28 @@ class Rant::RantApp
 	prepare_task(targ, block) { |name,pre,blk|
 	    Rant::FileTask.new(self, name, pre, &blk)
 	}
+    end
+
+    def gen(*args, &block)
+	# FIXME: caller is parsed in this method and probably will be
+	# parsed indirectly or directly in generator.gen_rant_task
+	# again!
+
+	# retrieve caller info
+	clr = caller[1]
+	ch = Rant::Lib::parse_caller_elem(clr)
+	name = nil
+	pre = []
+	ln = ch[:ln] || 0
+	file = ch[:file]
+	# validate args
+	generator = args.shift
+	unless generator.respond_to? :gen_rant_task
+	    abort(pos_text(file, ln),
+		"First argument to `gen' has to be a task-generator.")
+	end
+	# ask generator to produce a task for this application
+	generator.gen_rant_task(self, clr, args, &block)
     end
 
     # Add block and prerequisites to the task specified by the
@@ -387,7 +420,7 @@ class Rant::RantApp
     # last directory element.
     def directory path, &block
 	cinf = Rant::Lib.parse_caller_elem(caller[1])
-	path = normalize_task_arg(path, cinf[:file], cinf[:ln])
+	path = normalize_task_name(path, cinf[:file], cinf[:ln])
 	dirs = ::Rant::FileUtils.split_path(path)
 	if dirs.empty?
 	    # TODO: warning
@@ -704,8 +737,8 @@ class Rant::RantApp
     def load_file rantfile
 	msg 1, "loading #{rantfile.path}"
 	begin
-	    # load with absolute path to avoid require problems
-	    load rantfile.absolute_path
+	    path = rantfile.absolute_path
+	    @context.instance_eval(File.read(path), path)
 	rescue NameError => e
 	    abort("Name error when loading `#{rantfile.path}':",
 	    e.message, e.backtrace)
@@ -746,7 +779,7 @@ class Rant::RantApp
 	# WARNING: we currently have to fool getoptlong,
 	# by temporory changing ARGV!
 	# This could cause problems.
-	old_argv = ARGV
+	old_argv = ARGV.dup
 	ARGV.replace(@args.dup)
 	cmd_opts = GetoptLong.new(*OPTIONS.collect { |lst| lst[0..-2] })
 	cmd_opts.quiet = true
@@ -802,6 +835,28 @@ class Rant::RantApp
 	    }
 	end
 
+	name, pre, file, ln = normalize_task_arg(targ, clr)
+
+	file, is_new = rantfile_for_path(file)
+	nt = yield(name, pre, block)
+	nt.rantfile = file
+	nt.line_number = ln
+	nt.description = @task_desc
+	@task_desc = nil
+	file.tasks << nt
+	nt
+    end
+
+    # Tries to extract task name and prerequisites from the typical
+    # argument to the +task+ command. +targ+ should be one of String,
+    # Symbol or Hash. clr is the caller and is used for error
+    # reporting and debugging.
+    #
+    # Returns four values, the first is a string which is the task name
+    # and the second is an array with the prerequisites.
+    # The third is the file name of +clr+, the fourth is the line number
+    # of +clr+.
+    def normalize_task_arg(targ, clr)
 	ch = Rant::Lib::parse_caller_elem(clr)
 	name = nil
 	pre = []
@@ -821,35 +876,29 @@ class Rant::RantApp
 		    "should only be one.")
 	    end
 	    targ.each_pair { |k,v|
-		name = normalize_task_arg(k, file, ln)
+		name = normalize_task_name(k, file, ln)
 		pre = v
 	    }
 	    if pre.respond_to? :to_ary
 		pre = pre.to_ary.dup
 		pre.map! { |elem|
-		    normalize_task_arg(elem, file, ln)
+		    normalize_task_name(elem, file, ln)
 		}
 	    else
-		pre = [normalize_task_arg(pre, file, ln)]
+		pre = [normalize_task_name(pre, file, ln)]
 	    end
 	else
-	    name = normalize_task_arg(targ, file, ln)
+	    name = normalize_task_name(targ, file, ln)
 	end
 
-	file, is_new = rantfile_for_path(file)
-	nt = yield(name, pre, block)
-	nt.rantfile = file
-	nt.line_number = ln
-	nt.description = @task_desc
-	@task_desc = nil
-	file.tasks << nt
-	nt
+	[name, pre, file, ln]
     end
+    public :normalize_task_arg
 
     # Tries to make a task name out of arg and returns
     # the valid task name. If not possible, calls abort
     # with an appropriate error message using file and ln.
-    def normalize_task_arg(arg, file, ln)
+    def normalize_task_name(arg, file, ln)
 	return arg if arg.is_a? String
 	if arg.respond_to? :to_str
 	    arg = arg.to_str
