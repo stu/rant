@@ -7,6 +7,14 @@ require 'rant/rantfile'
 module Rant
     VERSION	= '0.0.1'
 
+    # Those are the filenames for rantfiles.
+    # Case doens't matter!
+    RANTFILES	= [	"rantfile",
+			"rantfile.rb",
+			"rant",
+			"rant.rb"
+		  ]
+
     CONFIG_FN	= 'config'
 
     class RantAbortException < StandardError
@@ -44,9 +52,14 @@ module Rant
 	# your rantfile, so you can run it directly with ruby.
 	def run(first_arg=nil, *other_args)
 	    other_args = other_args.flatten
-	    app = Rant::RantApp.new(
-		first_arg.nil? ? ARGV.dup : ([first_arg] + other_args))
-	    app.run
+	    args = first_arg.nil? ? ARGV.dup : ([first_arg] + other_args)
+	    if @rantapp && !@rantapp.done?
+		@rantapp.args.replace(args.flatten)
+		@rantapp.run
+	    else
+		app = Rant::RantApp.new(args)
+		app.run
+	    end
 	end
 
 	def rantapp
@@ -73,6 +86,11 @@ module Rant
 	@rantapp.file(targ, &block)
     end
 
+    def subdirs *args
+	ensure_rantapp
+	@rantapp.subdirs(*args)
+    end
+
     def abort_rant
 	if @rantapp
 	    @rantapp.abort
@@ -84,6 +102,25 @@ module Rant
 
     module_function :task, :file, :abort_rant
     module_function :ensure_rantapp
+
+    # Get all rantfiles in dir.
+    # If dir is nil, look in current directory.
+    # Returns always an array with the pathes (not only the filenames)
+    # to the rantfiles.
+    def rantfiles_in_dir dir=nil
+	files = []
+	Dir.entries(dir || Dir.pwd) { |entry|
+	    if test(?f, entry)
+		RANTFILES.each { |rname|
+		    if entry.downcase == rname
+			files << (dir ? File.join(dir, entry) : entry)
+			break
+		    end
+		}
+	    end
+	}
+	files
+    end
 
 end	# module Rant
 
@@ -121,16 +158,33 @@ HELP
 	}
 	@arg_rantfiles = []	# rantfiles given in args
 	@arg_targets = []	# targets given in args
+	@ran = false
+	@done = false
+    end
+
+    def ran?
+	@ran
+    end
+
+    def done?
+	@done
     end
 
     # Returns 0 on success and 1 on failure.
     def run
+	@ran = true
 	process_args
-	
-	return 0
+	load_rantfiles
+	run_tasks
+	raise Rant::RantDoneException
     rescue Rant::RantDoneException
+	@done = true
 	return 0
     rescue Rant::RantAbortException
+	$stderr.puts "rant aborted!"
+	return 1
+    rescue
+	err_msg $!.message
 	$stderr.puts "rant aborted!"
 	return 1
     end
@@ -147,12 +201,120 @@ HELP
 	}
     end
 
+    # Search the given directories for Rantfiles.
+    def subdirs *args
+	args = args.flatten
+	cinf = Rant::Lib::parse_caller_elem(caller[1])
+	ln = cinf[:ln] || 0
+	file = cinf[:file]
+	args.each { |arg|
+	    if arg.is_a? Symbol
+		arg = arg.to_s
+	    elsif arg.respond_to? :to_str
+		arg = arg.to_str
+	    end
+	    unless arg.is_a? String
+		abort(pos_text(file, ln),
+		    "in `subdirs' command: arguments must be strings")
+	    end
+	    @rantfiles.concat(rantfiles_in_dir(arg))
+	}
+    rescue SystemCallError => e
+	abort(pos_text(file, ln),
+	    "in `subdirs' command: " + e.message)
+    end
+
     def abort *msg
 	err_msg(msg) unless msg.empty?
 	raise Rant::RantAbortException
     end
 
     private
+    def run_tasks
+	unless @rantfiles.all? { |f| f.tasks.empty? }
+	    abort("No tasks defined for this rant application!")
+	end
+	# Target selection strategy:
+	# Run tasks specified on commandline, if not given:
+	# run default task, if not given:
+	# run first defined task.
+	target_list = @arg_targets
+	if target_list.empty?
+	    have_default = @rantfiles.any? { |f|
+		f.tasks.any? { |t| t.name == "default" }
+	    }
+	    if have_default
+		target_list << "default"
+	    else
+		first = nil
+		@rantfiles.each { |f|
+		    unless f.tasks.empty?
+			first = f.tasks.first
+		    end
+		}
+		target_list << first
+	    end
+	end
+	# Now, run all specified tasks in all rantfiles,
+	# rantfiles in reverse order.
+	rev_files = @rantfiles.reverse
+	target_list.each { |target|
+	    rev_files.each { |f|
+		(f.tasks.select { |st| st.name == target }).each { |t|
+		    begin
+			t.run if t.needed?
+		    rescue Rant::TaskFail => e
+			# TODO: Report failed dependancy.
+			abort("Task `#{e.message}' fail.")
+		    end
+		}
+	    }
+	}
+    end
+
+    def load_rantfiles
+	# Take care: When rant isn't invoked from commandline,
+	# some "rant code" could already have run!
+	new_rf = []
+	@arg_rantfiles.each { |rf|
+	    if test(?f, rf)
+		new_rf << rf
+	    else
+		abort("No such file: " + rf)
+	    end
+	}
+	if new_rf.empty?
+	    new_rf = rantfiles_in_dir
+	end
+	unless @rantfiles.empty?
+	    new_rf = new_rf.select { |nf|
+		!@rantfiles.any? { |rf|
+		    # TODO: make real path equality check!
+		    rf.path == nf
+		}
+	    }
+	end
+	new_rf.each { |rantfile|
+	    begin
+		load rantfile
+	    rescue ScriptError => e
+		abort("Script error when loading `#{rantfile}:'",
+		    e.message)
+	    end
+	    unless @rantfiles.include?(rantfile)
+		@rantfiles << rantfile
+	    end
+	}
+	if @rantfiles.empty?
+	    abort("No Rakefile in current directory (" + Dir.pwd + ")",
+		"looking for " + RANTFILES.join(", ") +
+		"; case doesn't matter.")
+	end
+    end
+
+    def process_tasks
+    end
+
     def process_args
 	@args.each { |arg|
 	    case arg
