@@ -103,12 +103,21 @@ gen LightTask, :lighttask do |t|
     end
 end
 
+gen Task, :task_one do |t|
+    t.needed do
+	!test ?f, "one_target"
+    end
+    t.act do
+	sys.touch "one_target"
+    end
+end
+
 task :force_clean do
     sys.rm_f %w(
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
 	fallback fallback_ order1 order2
-	tbe tbe2 inc incdep lt_target
+	tbe tbe2 inc incdep lt_target one_target
 	).find_all { |e| test(?e, e) }
     sys.rm_rf %w(dir)
 end

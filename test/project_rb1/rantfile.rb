@@ -1,6 +1,5 @@
 
-require 'rant/rubydoc'
-require 'rant/rubypackage'
+import 'rubydoc', 'rubypackage'
 
 lib_files = FileList["lib/**/*.rb"]
 

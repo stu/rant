@@ -86,6 +86,7 @@ module Rant
 
     # A list of tasks with an equal name.
     class MetaTask < Array
+	include Worker
 
 	class << self
 	    def for_task t
@@ -128,6 +129,26 @@ module Rant
 	
 	def description=(val)
 	    # spit out a warning?
+	end
+
+	def rantfile
+	    nil
+	end
+	
+	def rantfile=(val)
+	    # spit out a warning?
+	end
+
+	def line_number
+	    0
+	end
+
+	def line_number=(val)
+	    # spit out a warning?
+	end
+
+	def app
+	    empty? ? nil : first.app
 	end
     end	# class MetaTask
 
@@ -209,7 +230,7 @@ module Rant
 		end
 	    end
 	rescue CommandError => e
-	    err_msg e.message
+	    err_msg e.message if app[:err_commands]
 	    self.fail
 	rescue SystemCallError => e
 	    err_msg e.message
@@ -222,6 +243,21 @@ module Rant
 	include Console
 
 	T0 = Time.at(0).freeze
+
+	class << self
+	    def rant_generate(app, ch, args, &block)
+		unless args.size == 1
+		    app.abort("LightTask takes only one argument " +
+			"which has to be the taskname (string or symbol)")
+		end
+		if args.size == 1
+		    LightTask.rant_generate(app, ch, args, &block)
+		else
+		    app.abort("Task generator currently takes only one" +
+			" argument. (Generates a LightTask)")
+		end
+	    end
+	end
 
 	def initialize(app, name, prerequisites = [], &block)
 	    super()
@@ -328,7 +364,7 @@ module Rant
 	    case e
 	    when TaskFail: raise
 	    when CommandError
-		err_msg e.message
+		err_msg e.message if app[:err_commands]
 	    when SystemCallError
 		err_msg e.message
 	    else

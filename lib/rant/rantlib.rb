@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.7'
+    VERSION	= '0.2.8'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -139,6 +139,10 @@ module RantContext
 	rantapp.gen(*args, &block)
     end
 
+    def import(*args, &block)
+	rantapp.import(*args, &block)
+    end
+
     def plugin(*args, &block)
 	rantapp.plugin(*args, &block)
     end
@@ -263,6 +267,8 @@ class Rant::RantApp
 	    "Print more messages to stderr."			],
 	[ "--quiet",	"-q",	GetoptLong::NO_ARGUMENT,
 	    "Don't print commands."			],
+	[ "--err-commands",	GetoptLong::NO_ARGUMENT,
+	    "Print failed commands and their exit status."	],
 	[ "--directory","-C",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Run rant in DIRECTORY."				],
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
@@ -297,6 +303,8 @@ class Rant::RantApp
     # A hash with all tasks. For fast task lookup use this hash with
     # the taskname as key.
     attr_reader :tasks
+    # A list with of all imports (code loaded with +import+).
+    attr_reader :imports
 
     def initialize *args
 	@args = args.flatten
@@ -317,6 +325,7 @@ class Rant::RantApp
 	@done = false
 	@plugins = []
 	@var = {}
+	@imports = []
 
 	@task_show = nil
 	@task_desc = nil
@@ -372,8 +381,12 @@ class Rant::RantApp
 	# Process commandline.
 	process_args
 	# Set pwd.
-	if @opts[:directory]
-	    @opts[:directory] != @orig_pwd && Dir.chdir(rootdir)
+	opts_dir = @opts[:directory]
+	if opts_dir
+	    unless test(?d, opts_dir)
+		abort("No such directory - #{opts_dir}")
+	    end
+	    opts_dir != @orig_pwd && Dir.chdir(opts_dir)
 	else
 	    @opts[:directory] = @orig_pwd
 	end
@@ -465,6 +478,27 @@ class Rant::RantApp
 	end
 	# ask generator to produce a task for this application
 	generator.rant_generate(self, ch, args, &block)
+    end
+
+    # Currently ignores block.
+    def import(*args, &block)
+	if block
+	    warn_msg "import: currently ignoring block"
+	end
+	args.flatten.each { |arg|
+	    unless String === arg
+		abort("import: currently " + 
+		    "only strings are allowed as arguments")
+	    end
+	    unless @imports.include? arg
+		begin
+		    require "rant/import/#{arg}"
+		rescue LoadError => e
+		    abort("No such import - #{arg}")
+		end
+		@imports << arg.dup
+	    end
+	}
     end
 
     def plugin(*args, &block)
@@ -591,7 +625,13 @@ class Rant::RantApp
 	puts "rant [-f RANTFILE] [OPTIONS] targets..."
 	puts
 	puts "Options are:"
-	OPTIONS.each { |lopt, sopt, mode, desc|
+	OPTIONS.each { |lopt, *opt_a|
+	    if opt_a.size == 2
+		# no short option
+		mode, desc = opt_a
+	    else
+		sopt, mode, desc = opt_a
+	    end
 	    optstr = ""
 	    arg = nil
 	    if mode == GetoptLong::REQUIRED_ARGUMENT
@@ -780,6 +820,8 @@ class Rant::RantApp
     end
     public :select_tasks
 
+    # Returns an array (might be a MetaTask) with all tasks that have
+    # the given name.
     def select_tasks_by_name name
 	s = @tasks[name]
 	case s
@@ -870,20 +912,6 @@ class Rant::RantApp
 		files << path if test(?f, path)
 	    end
 	}
-=begin
-	# pre 0.2.3 loading Rantfile search mechanism
-	Dir.entries(dir || Dir.pwd).each { |entry|
-	    path = (dir ? File.join(dir, entry) : entry)
-	    if test(?f, path)
-		Rant::RANTFILES.each { |rname|
-		    if entry.downcase == rname
-			files << path
-			break
-		    end
-		}
-	    end
-	}
-=end
 	files
     end
 
@@ -901,6 +929,8 @@ class Rant::RantApp
 	    when "--quiet"
 		@opts[:quiet] = true
 		@opts[:verbose] = -1
+	    when "--err-commands"
+		@opts[:err_commands] = true
 	    when "--version"
 		$stdout.puts "rant #{Rant::VERSION}"
 		raise Rant::RantDoneException

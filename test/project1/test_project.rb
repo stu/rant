@@ -178,4 +178,17 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?e, "lt_target"),
 	    "lt_target should get `touched' by lighttask")
     end
+    def test_task_gen_one_arg
+	capture_std do
+	    assert_equal(Rant.run("task_one"), 0)
+	end
+	assert(test(?e, "one_target"),
+	    "one_target should get `touched' by task_one")
+	old_mtime = test(?M, "one_target")
+	sleep 2
+	capture_std do
+	    assert_equal(Rant.run("task_one"), 0)
+	end
+	assert_equal(test(?M, "one_target"), old_mtime)
+    end
 end
