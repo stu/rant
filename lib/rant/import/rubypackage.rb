@@ -1,23 +1,6 @@
 
 require 'rant/rantlib'
 
-=begin
-class Rant::MethodRecorder
-    ACCEPT_ALL_BLOCK = lambda { true }
-    def intialize(&accept)
-	@ml = []
-	@accept = &accept || ACCEPT_ALL_BLOCK
-    end
-    def method_missing(sym, *args)
-	if @accept.call(sym, args)
-	    @ml << [sym, args]
-	else
-	    super
-	end
-    end
-end
-=end
-
 class Rant::RubyPackage
 
     class << self
@@ -29,14 +12,14 @@ class Rant::RubyPackage
 		when String: args.first
 		when Symbol: args.first.to_s
 		else
-		    app.abort("RubyDoc takes only one additional " +
+		    app.abort("RubyPackage takes only one additional " +
 			"argument, which should be a string or symbol.")
 		end
 		self.new(:app => app, :__caller__ => ch,
 		    :name => pkg_name, &block)
 	    else
 		app.abort(app.pos_text(file, ln),
-		    "RubyDoc takes only one additional argument, " +
+		    "RubyPackage takes only one additional argument, " +
 		    "which should be a string or symbol.")
 	    end
 	end
@@ -105,7 +88,11 @@ class Rant::RubyPackage
 	    end
 	    def #{a}=(val)
 		unless val.nil? || Array === val
-		    val = [val]
+		    if val.respond_to? :to_ary
+			val = val.to_ary
+		    else
+			val = [val]
+		    end
 		end
 		@data["#{a}"] = val
 	    end
@@ -129,6 +116,9 @@ class Rant::RubyPackage
 	name = opts[:name]
 	@ch = opts[:__caller__] || Rant::Lib.parse_caller_elem(caller[0])
 	unless name
+	    # TODO: pos_text
+	    @app.warn_msg(@app.pos_text(@ch[:file], @ch[:ln]),
+		"No package name given, using directory name.")
 	    # use directory name as project name
 	    name = File.split(Dir.pwd)[1]
 	    # reset name if it contains a slash or a backslash
@@ -146,6 +136,35 @@ class Rant::RubyPackage
 	    @data["gem-#$1"] = args.first
 	else
 	    super
+	end
+    end
+
+    def validate_attrs(pkg_type = :general)
+	%w(name files).each { |a|
+	    pkg_requires_attr a
+	}
+	case pkg_type
+	when :gem
+	    %w(version summary).each { |a|
+		gem_requires_attr a
+	    }
+	end
+    end
+    private :validate_attrs
+
+    def gem_requires_attr(attr_name)
+	unless @data[attr_name] || @data["gem-#{attr_name}"]
+	    @app.abort("RubyPackaged defined: " +
+		@app.pos_text(@ch[:file], @ch[:ln]),
+		"gem specification requires `#{attr_name}' attribute")
+	end
+    end
+
+    def pkg_requires_attr(attr_name)
+	unless @data[attr_name]
+	    @app.abort("RubyPackaged defined: " +
+		@app.pos_text(@ch[:file], @ch[:ln]),
+		"`#{attr_name}' attribute required")
 	end
     end
 
@@ -174,6 +193,7 @@ class Rant::RubyPackage
 	    end
 	}
     end
+    private :map_to_gemspec
 
     def pkg_dir_task
 	return if @pkg_dir_task
@@ -224,6 +244,7 @@ class Rant::RubyPackage
     # Create task for gem building. If tname is a true value, a
     # shortcut-task will be created.
     def gem_task(tname = :gem)
+	validate_attrs(:gem)
 	# We first define the task to create the gem, and afterwards
 	# the task to create the pkg directory to ensure that a
 	# pending description is used to describe the gem task.
@@ -273,6 +294,7 @@ class Rant::RubyPackage
     end
 
     def tar_task(tname = :tar)
+	validate_attrs
 	# Create tar task first to ensure that a pending description
 	# is used for the tar task and not for the dist dir task.
 	pkg_name = tar_pkg_path
@@ -292,6 +314,7 @@ class Rant::RubyPackage
     end
 
     def zip_task(tname = :zip)
+	validate_attrs
 	# Create zip task first to ensure that a pending description
 	# is used for the zip task and not for the dist dir task.
 	pkg_name = zip_pkg_path

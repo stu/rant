@@ -16,6 +16,10 @@ module Rant
     class FileList
 	include Enumerable
 
+	ESC_SEPARATOR = Regexp.escape(File::SEPARATOR)
+	ESC_ALT_SEPARATOR = File::ALT_SEPARATOR ?
+	    Regexp.escape(File::ALT_SEPARATOR) : nil
+
 	# Flags for the File::fnmatch method.
 	# Initialized to 0.
 	attr_accessor :glob_flags
@@ -27,12 +31,19 @@ module Rant
 	end
 
 	def initialize(*patterns)
-	    super()
 	    @glob_flags = 0
 	    @files = []
 	    @actions = patterns.map { |pat| [:apply_include, pat] }
 	    @pending = true
+	    yield self if block_given?
 	end
+
+	protected
+	attr_reader :actions, :files
+	attr_accessor :pending
+
+	public
+	### Methods having an equivalent in the Array class. #########
 
 	def each &block
 	    resolve if @pending
@@ -51,10 +62,13 @@ module Rant
 	def +(other)
 	    case other
 	    when Array
-		to_ary + other
+		dup.files.concat(other)
 	    when self.class
-		# TODO: more efficient implementation
-		to_ary + other.to_ary
+		c = other.dup
+		c.actions.concat(@actions)
+		c.files.concat(@files)
+		c.pending = !c.actions.empty?
+		c
 	    else
 		raise "argument has to be an Array or FileList"
 	    end
@@ -62,12 +76,23 @@ module Rant
 
 	def <<(file)
 	    @files << file
+	    self
 	end
 
 	def size
 	    resolve if @pending
 	    @files.size
 	end
+
+	def method_missing(sym, *args, &block)
+	    if @files.respond_to? sym
+		resolve if @pending
+		@files.send(sym, *args, &block)
+	    else
+		super
+	    end
+	end
+	##############################################################
 
 	def resolve
 	    @pending = false
@@ -84,14 +109,20 @@ module Rant
 	    @pending = true
 	    self
 	end
+	alias glob include
 
 	def apply_include(pattern)
 	    @files.concat Dir.glob(pattern, @glob_flags)
 	end
+	private :apply_include
 
 	def exclude(*patterns)
 	    patterns.each { |pat|
-		@actions << [:apply_exclude, pat]
+		if Regexp === pat
+		    @actions << [:apply_exclude_rx, pat]
+		else
+		    @actions << [:apply_exclude, pat]
+		end
 	    }
 	    @pending = true
 	    self
@@ -102,6 +133,40 @@ module Rant
 		File.fnmatch? pattern, elem, @glob_flags
 	    }
 	end
+	private :apply_exclude
+
+	def apply_exclude_rx(rx)
+	    @files.reject! { |elem|
+		elem =~ rx
+	    }
+	end
+	private :apply_exclude_rx
+
+	def exclude_all(*files)
+	    files.each { |file|
+		@actions << [:apply_exclude_rx, mk_all_rx(file)]
+	    }
+	    @pending = true
+	    self
+	end
+	alias shun exclude_all
+
+	if File::ALT_SEPARATOR
+	    # TODO: check for FS case sensitivity?
+	    def mk_all_rx(file)
+
+		/(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)
+		    #{Regexp.escape(file)}
+		    ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x
+	    end
+	else
+	    def mk_all_rx(file)
+		/(^|#{ESC_SEPARATOR}+)
+		    #{Regexp.escape(file)}
+		    (#{ESC_SEPARATOR}+|$)/x
+	    end
+	end
+	private :mk_all_rx
 
 	# Remove all entries which contain a directory with the
 	# given name.
@@ -139,6 +204,7 @@ module Rant
 		end
 	    }
 	end
+	private :apply_no_dir
 
 	# Remove all files which have the given name.
 	def no_file(name)
@@ -152,6 +218,7 @@ module Rant
 		entry == name and test(?f, entry)
 	    }
 	end
+	private :apply_no_file
 
 	# Remove all entries which contain an element
 	# with the given suffix.
@@ -171,6 +238,7 @@ module Rant
 		}
 	    }
 	end
+	private :apply_no_suffix
 
 	# Remove all entries which contain an element
 	# with the given prefix.
@@ -189,6 +257,7 @@ module Rant
 		}
 	    }
 	end
+	private :apply_no_prefix
 
 	# Get a string with all entries. This is very usefull
 	# if you invoke a shell:
@@ -228,14 +297,6 @@ module Rant
 	end
 =end
 
-	def method_missing(sym, *args, &block)
-	    if @files.respond_to? sym
-		resolve if @pending
-		@files.send(sym, *args, &block)
-	    else
-		super
-	    end
-	end
     end	# class FileList
 
     class CommandError < StandardError

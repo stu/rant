@@ -317,7 +317,10 @@ class Rant::RantApp
 	# "private" options intended for debugging, testing and
 	# internal use. A private option is distuingished from others
 	# by having +nil+ as description!
+
 	[ "--stop-after-load",	GetoptLong::NO_ARGUMENT, nil	],
+	# Print caller to $stderr on abort.
+	[ "--trace-abort",	GetoptLong::NO_ARGUMENT, nil	],
     ]
 
     # Arguments, usually those given on commandline.
@@ -668,6 +671,7 @@ class Rant::RantApp
     # Prints msg as error message and throws a RantAbortException.
     def abort *msg
 	err_msg(msg) unless msg.empty?
+	$stderr.puts caller if @opts[:trace_abort]
 	raise Rant::RantAbortException
     end
 
@@ -969,6 +973,8 @@ class Rant::RantApp
 		@opts[:targets] = true
 	    when "--stop-after-load"
 		@opts[:stop_after_load] = true
+	    when "--trace-abort"
+		@opts[:trace_abort] = true
 	    end
 	}
     rescue GetoptLong::Error => e

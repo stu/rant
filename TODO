@@ -1,6 +1,9 @@
 
 = TODO
 
+== Packaging
+Try minitar if tar is not available.
+
 == C# plugin
 Define the method +assembly+ for building a file with the C# compiler?
 Done.
@@ -9,10 +12,6 @@ Done.
 
 Add a 'distclean' task that removes all files and directories
 generatet by any file task.
-
-RDoc task.
-
-Gem task (+ one that interactively creates a gemspec).
 
 == Java plugin
 

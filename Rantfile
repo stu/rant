@@ -10,7 +10,7 @@ task :default => :test
 
 lib_files = FileList["lib/**/*.rb"]
 dist_files = FileList["{bin,lib,test,doc}/**/*"].no_dir("html") +
-	FileList["*"].no_dir.no_file("InstalledFiles").no_file("Session.vim")
+	FileList["*"].no_dir.exclude("InstalledFiles", "Session.vim")
 
 gen RubyPackage, "rant" do |t|
     t.version = `#{Env::RUBY} run_rant --version`.split[1]
