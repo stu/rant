@@ -278,6 +278,11 @@ class Rant::RantApp
 	    "Force TARGET to be run, even if it isn't required.\n"],
 	[ "--targets",	"-T",	GetoptLong::NO_ARGUMENT,
 	    "Show a list of all described targets and exit."	],
+	
+	# "private" options intended for debugging, testing and
+	# internal use. A private option is distuingished from others
+	# by having +nil+ as description!
+	[ "--stop-after-load",	GetoptLong::NO_ARGUMENT, nil	],
     ]
 
     # Arguments, usually those given on commandline.
@@ -393,8 +398,7 @@ class Rant::RantApp
 	# read rantfiles
 	load_rantfiles
 
-	# currently for testing only
-	raise Rant::RantDoneException if ENV["RANT_LOAD"]
+	raise Rant::RantDoneException if @opts[:stop_after_load]
 
 	# Notify plugins before running tasks
 	@plugins.each { |plugin| plugin.rant_start }
@@ -625,37 +629,7 @@ class Rant::RantApp
 	puts "rant [-f RANTFILE] [OPTIONS] targets..."
 	puts
 	puts "Options are:"
-	OPTIONS.each { |lopt, *opt_a|
-	    if opt_a.size == 2
-		# no short option
-		mode, desc = opt_a
-	    else
-		sopt, mode, desc = opt_a
-	    end
-	    optstr = ""
-	    arg = nil
-	    if mode == GetoptLong::REQUIRED_ARGUMENT
-		if desc =~ /(\b[A-Z_]{2,}\b)/
-		    arg = $1
-		end
-	    end
-	    if lopt
-		optstr << lopt
-		if arg
-		    optstr << " " << arg
-		end
-		optstr = optstr.ljust(30)
-	    end
-	    if sopt
-		optstr << "   " unless optstr.empty?
-		optstr << sopt
-		if arg
-		    optstr << " " << arg
-		end
-	    end
-	    puts "  " + optstr
-	    puts "      " + desc.split("\n").join("\n      ")
-	}
+	print option_listing(OPTIONS)
 	raise Rant::RantDoneException
     end
 
@@ -944,6 +918,8 @@ class Rant::RantApp
 		@force_targets << value
 	    when "--targets"
 		@opts[:targets] = true
+	    when "--stop-after-load"
+		@opts[:stop_after_load] = true
 	    end
 	}
     rescue GetoptLong::Error => e

@@ -1,0 +1,10 @@
+#! /usr/local/bin/ruby
+
+begin
+  require 'rant/import'
+rescue LoadError
+  require 'rubygems'
+  require_gem 'rant/import'
+end
+
+exit Rant::RantImport.run

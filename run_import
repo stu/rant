@@ -1,0 +1,7 @@
+#!/usr/local/bin/ruby
+# Run rant-import from current development directory.
+
+$:.unshift File.expand_path(File.join(File.dirname(__FILE__), "lib"))
+require 'rant/import'
+
+exit Rant::RantImport.run

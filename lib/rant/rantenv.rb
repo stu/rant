@@ -165,7 +165,44 @@ module Rant::Console
         input = $stdin.readline
 	input ? input.chomp : input
     end
-    module_function :msg, :err_msg, :warn_msg, :ask_yes_no, :prompt
+    def option_listing opts
+	rs = ""
+	opts.each { |lopt, *opt_a|
+	    if opt_a.size == 2
+		# no short option
+		mode, desc = opt_a
+	    else
+		sopt, mode, desc = opt_a
+	    end
+	    next unless desc	# "private" option
+	    optstr = ""
+	    arg = nil
+	    if mode == GetoptLong::REQUIRED_ARGUMENT
+		if desc =~ /(\b[A-Z_]{2,}\b)/
+		    arg = $1
+		end
+	    end
+	    if lopt
+		optstr << lopt
+		if arg
+		    optstr << " " << arg
+		end
+		optstr = optstr.ljust(30)
+	    end
+	    if sopt
+		optstr << "   " unless optstr.empty?
+		optstr << sopt
+		if arg
+		    optstr << " " << arg
+		end
+	    end
+	    rs << "  #{optstr}\n"
+	    rs << "      #{desc.split("\n").join("\n      ")}\n"
+	}
+	rs
+    end
+
+    extend self
 end
 
 class Rant::CustomConsole
