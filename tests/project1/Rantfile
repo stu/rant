@@ -55,11 +55,21 @@ end
 directory "dir/subdir"
 task :path => "dir/subdir"
 
+task :order do |t|
+    touch t.name + "1"
+    sleep 1
+end
+
+task :order do |t|
+    touch t.name + "2"
+    sleep 1
+end
+
 task :force_clean do
     rm_f %w(
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
-	fallback fallback_
+	fallback fallback_ order1 order2
 	)
     rm_rf %w(dir)
 end

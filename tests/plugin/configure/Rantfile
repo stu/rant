@@ -6,16 +6,39 @@ $:.unshift rd unless $:.include? rd
 require 'rant'
 require 'rant/plugin/configure'
 
-Plugin::Configure.new do |conf|
-    conf.task
+task :hello do |t|
+    touch t.name
+end
+
+conf = Plugin::Configure.new do |conf|
+    conf.task		# define a task named :configure
     conf.check "a" do |c|
-	c.default = "value_a"
+	c.default "value_a"
 	c.guess { "value_a_guess" }
+	c.react { |val|
+	    p val
+	}
+    end
+    conf.check "b" do |c|
+	c.default "value_b"
+    end
+    conf.check "c" do |c|
+    end
+    conf.check "d" do |c|
+	c.react {
+	}
+    end
+    conf.check "e" do |c|
+	c.guess { false }
     end
 end
 
+file conf["a"] do |t|
+    touch t.name
+end
+
 task :clean do
-    rm_f "config"
+    rm_f %w(config hello value_a value_a_guess)
 end
 
 if $0 == __FILE__

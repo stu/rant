@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.4'
+    VERSION	= '0.1.5'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -177,6 +177,8 @@ class Rant::RantApp
 	    "Print more messages to stderr."			],
 	[ "--quiet",	"-q",	GetoptLong::NO_ARGUMENT,
 	    "Don't print commands."			],
+	[ "--directory","-C",	GetoptLong::REQUIRED_ARGUMENT,
+	    "Run rant in DIRECTORY."				],
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Process RANTFILE instead of standard rantfiles.\n" +
 	    "Multiple files may be specified with this option"	],
@@ -214,12 +216,13 @@ class Rant::RantApp
 	@force_targets = []
 	@ran = false
 	@done = false
-	@rootdir = nil		# root directory for this app
 	@tasks = []
 	@plugins = []
 
 	@task_show = nil
 	@task_desc = nil
+
+	@orig_pwd = nil
 
 	@block_task_mkdir = lambda { |task|
 	    ::Rant::FileUtils.mkdir task.name
@@ -232,11 +235,16 @@ class Rant::RantApp
     end
 
     def []=(opt, val)
-	@opts[opt] = val
+	case opt
+	when :directory
+	    rootdir = val
+	else
+	    @opts[opt] = val
+	end
     end
 
     def rootdir
-	@rootdir.dup
+	@opts[:directory].dup
     end
 
     def rootdir=(newdir)
@@ -244,7 +252,7 @@ class Rant::RantApp
 	    raise "rootdir of rant application can't " +
 		"be changed after calling `run'"
 	end
-	@rootdir = newdir
+	@opts[:directory] = newdir.dup
 	rootdir	# return a dup of the new rootdir
     end
 
@@ -259,18 +267,24 @@ class Rant::RantApp
     # Returns 0 on success and 1 on failure.
     def run
 	@ran = true
-	if @rootdir
-	    ::RantFileUtils.cd(@rootdir) unless @rootdir == Dir.pwd
-	else
-	    @rootdir = Dir.pwd
-	end
-	# Notify plugins
-	@plugins.each { |plugin| plugin.rant_start }
+	# remind pwd
+	@orig_pwd = Dir.pwd
+	# Process commandline.
 	process_args
+	# Set pwd.
+	if @opts[:directory]
+	    @opts[:directory] != @orig_pwd && ::Rant::FileUtils.cd(rootdir)
+	else
+	    @opts[:directory] = @orig_pwd
+	end
+	# read rantfiles
 	load_rantfiles
+	# Notify plugins before running tasks
+	@plugins.each { |plugin| plugin.rant_start }
 	if @opts[:targets]
 	    show_descriptions
 	end
+	# run tasks
 	run_tasks
 	raise Rant::RantDoneException
     rescue Rant::RantDoneException
@@ -289,6 +303,8 @@ class Rant::RantApp
 	# TODO: exception handling!
 	@plugins.each { |plugin| plugin.rant_plugin_stop }
 	@plugins.each { |plugin| plugin.rant_quit }
+	# restore pwd
+	Dir.pwd != @orig_pwd && ::Rant::FileUtils.cd(@orig_pwd)
     end
 
     def show *args
@@ -410,7 +426,7 @@ class Rant::RantApp
     end
 
     def show_descriptions
-	tlist = (select_tasks { |t| t.description }).reverse
+	tlist = select_tasks { |t| t.description }
 	if tlist.empty?
 	    msg "No described targets."
 	    raise Rant::RantDoneException
@@ -465,6 +481,9 @@ class Rant::RantApp
     end
 
     ###### public methods regarding plugins ##########################
+    # Every plugin instance has to register itself with this method.
+    # The first argument has to be the plugin object. Currently, no
+    # other arguments are used.
     def plugin_register(*args)
 	plugin = args[0]
 	unless plugin.respond_to? :rant_plugin?
@@ -474,7 +493,21 @@ class Rant::RantApp
 	msg 2, "Plugin `#{plugin.rant_plugin_name}' registered."
 	plugin.rant_plugin_init
     end
+    # The preferred way for a plugin to report a warning.
+    def plugin_warn(*args)
+	warn_msg(*args)
+    end
+    # The preferred way for a plugin to report an error.
+    def plugin_err(*args)
+	err_msg(*args)
+    end
     ##################################################################
+
+    # All targets given on commandline, including those given
+    # with the -a option. The list will be in processing order.
+    def cmd_targets
+	@force_targets + @arg_targets
+    end
 
     private
     def have_any_task?
@@ -536,7 +569,7 @@ class Rant::RantApp
     end
 
     # Returns a list with all tasks for which yield
-    # returns true. The list will be in reverse definition order.
+    # returns true.
     def select_tasks
 	selection = []
 	@rantfiles.reverse.each { |rf|
@@ -640,6 +673,8 @@ class Rant::RantApp
 		raise Rant::RantDoneException
 	    when "--help"
 		help
+	    when "--directory"
+		@opts[:directory] = value
 	    when "--rantfile"
 		@arg_rantfiles << value
 	    when "--force-run"

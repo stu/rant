@@ -34,8 +34,13 @@ TestTask.new :testp2 do |t|
     t.test_files = ["tests/project2/test_project.rb"]
 end
 
+desc "Test plugins."
+TestTask.new :testplugins do |t|
+    t.test_files = FileList["tests/plugin/**/test_*"]
+end
+
 desc "Run all tests."
-task :testall => %w(test testp1 testp2)
+task :testall => %w(test testp1 testp2 testplugins)
 
 if $0 == __FILE__
     Rant.run

@@ -75,4 +75,11 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?d, "dir/subdir"),
 	    "dir/subdir should have been created as prerequisite of path")
     end
+    def test_order
+	assert_equal(Rant.run("order"), 0)
+	assert(File.exist?("order1"))
+	assert(File.exist?("order2"))
+	assert(File.mtime("order1") < File.mtime("order2"),
+	    "tasks from same file should be run in definition order")
+    end
 end

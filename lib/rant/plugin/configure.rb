@@ -5,6 +5,42 @@ require 'yaml'
 # Configure plugin for Rant
 
 module Rant::Plugin
+
+    # === Startup of configure plugin
+    # ==== Config file exists
+    # The configuration file will be read and the data hash
+    # set up accordingly.
+    # ==== Config file doesn't exist
+    # The configuration process is run with +startup_mode+ which
+    # has to be one of CHECK_MODES. +startup_mode+ defaults to
+    # :default, which means if the configfile doesn't exist,
+    # all values will be set to their defaults on startup.
+    # === Access to configuration in Rantfile
+    # You can access all configuration values through the <tt>[]</tt>
+    # and <tt>[]=</tt> operators of the configure plugin.
+    #
+    # Example of configure in Rantfile:
+    #
+    #	conf = Plugin::Configure.new doc |conf|
+    #	    conf.task	# define a task named :configure
+    #	    conf.check "profile" do |c|
+    #		c.default "full"
+    #		c.guess { ENV["PROFILE"] }
+    #		c.interact {
+    #		    conf.prompt "What build-profile should be used?"
+    #		}
+    #	    end
+    #	    conf.check "optimize" do |c|
+    #           c.default true
+    #           c.guess { ENV["OPTIMIZE"] }
+    #           c.interact {
+    #               conf.ask_yes_no "Optimize build?"
+    #           }
+    #       end
+    #   end
+    #
+    #   # Set default target depending on profile:
+    #   task :default => conf["profile"]
     class Configure
 	include ::Rant::PluginMethods
 	include ::Rant::Console
@@ -16,6 +52,8 @@ module Rant::Plugin
 		:guess_interact,
 	    ]
 	
+	# Name for this module instance. Defaults to "configure".
+	attr_reader :name
 	# Name of configuration file.
 	attr_accessor :file
 	# A hash with all configuration data.
@@ -25,14 +63,33 @@ module Rant::Plugin
 	attr_accessor :modified
 	# An array with all checks to perform.
 	attr_reader :checklist
+	# Decide what the configure plugin does on startup.
+	attr_accessor :startup_mode
+	# Don't write to file, config values will be lost when
+	# rant exits!
+	attr_accessor :no_write
+	# Don't do anything if *first* target given on commandline
+	# is in this list. This is usefull for targets that remove
+	# the configuration file.
+	# Defaults are "distclean", "clobber" and "clean".
+	attr_reader :no_action_list
 
-	def initialize(app = ::Rant.rantapp)
+	def initialize(name = nil, app = ::Rant.rantapp)
+	    @name = name || rant_plugin_name
 	    @app = app or raise ArgumentError, "no application given"
 	    @file = "config"
 	    @data = {}
 	    @checklist = []
+	    @startup_mode = :defaults
+	    @no_write = false
+	    @modified = false
+	    @no_action_list = ["distclean", "clobber", "clean"]
+	    @no_action = false
 
 	    yield self if block_given?
+	    run_checklist(:defaults)
+	    # we don't need to save our defaults
+	    @modified = false
 
 	    @app.plugin_register(self)
 	end
@@ -45,7 +102,10 @@ module Rant::Plugin
 	    @data[key] = val
 	end
 
-	def task(name = :configure, check_mode = :guess_interact)
+	# Define a task with +name+ that will run the configuration
+	# process in the given +check_mode+.
+	def task(name = nil, check_mode = :guess_interact)
+	    name ||= @name
 	    cinf = ::Rant::Lib.parse_caller_elem(caller[0])
 	    file = cinf[:file]
 	    ln = cinf[:ln] || 0
@@ -64,11 +124,57 @@ module Rant::Plugin
 	   checklist << ConfigureCheck.new(key, hsh, &block) 
 	end
 
+	# Run the configure process in the given mode.
 	def run_checklist(mode = :guess_interact)
 	    @checklist.each { |c|
 		@data[c.key] = c.run_check(mode)
 	    }
 	    @modified = true
+	end
+
+	# Write configuration if modified.
+	def save
+	    return if @no_write
+	    write_yaml if @modified
+	    @modified = false
+	    true
+	end
+
+	# Immediately write configuration to +file+.
+	def write
+	    write_yaml
+	end
+
+	###### overriden plugin methods ##############################
+	def rant_plugin_name
+	    "configure"
+	end
+
+	def rant_plugin_init
+	    @no_action = @no_action_list.include? @app.cmd_targets.first
+	    @no_action || init_config
+	end
+
+	def rant_plugin_stop
+	    @no_action || save
+	end
+	##############################################################
+
+	private
+
+	# Returns true on success, nil on failure.
+	def init_config
+	    unless File.exist? @file
+		return if @startup_mode == :defaults
+		if CHECK_MODES.include?(@startup_mode)
+		    return run_checklist(@startup_mode)
+		else
+		    @app.plugin_warn("Unknown startup mode " + 
+			"`#{@startup_mode.to_s}' for #{@name} module.")
+		    return run_checklist(:defaults)
+		end
+	    end
+	    read_yaml
 	end
 
 	def write_yaml
@@ -99,45 +205,15 @@ module Rant::Plugin
 	    @app.abort("When attempting to read config: " + $!.message)
 	end
 
-	def save
-	    write_yaml if @modified
-	    @modified = false
-	    true
-	end
-
-	# Returns true on success, nil on failure.
-	def init_config
-	    # TODO
-	    unless File.exist? @file
-		run_checklist(:defaults)
-		return save
-	    end
-	    read_yaml
-	end
-
-	###### overriden plugin methods ##############################
-	def rant_plugin_name
-	    "configure"
-	end
-
-	def rant_plugin_init
-	    init_config
-	end
-
-	def rant_plugin_stop
-	    save
-	end
-	##############################################################
-
     end	# class Configure
     class ConfigureCheck
 	include ::Rant::Console
 
 	attr_reader :key
-	attr_accessor :default
 	attr_accessor :value
 	attr_accessor :guess_block
 	attr_accessor :interact_block
+	attr_accessor :react_block
 	def initialize(key, hsh)
 	    @key = key or raise ArgumentError, "no key given"
 	    @value = hsh[:value]
@@ -146,11 +222,17 @@ module Rant::Plugin
 	    @interact_block = hsh[:interact]
 	    yield self if block_given?
 	end
+	def default(val)
+	    @value = val
+	end
 	def guess(&block)
 	    @guess_block = block
 	end
 	def interact(&block)
 	    @interact_block = block
+	end
+	def react(&block)
+	    @react_block = block
 	end
 
 	# Four possible modes:
@@ -178,7 +260,9 @@ module Rant::Plugin
 	    else
 		raise "unknown configure mode"
 	    end
-	    @value = val.nil? ? @default : val
+	    val.nil? || @value = val
+	    @react_block && @react_block[@value]
+	    @value
 	end
     end	# class ConfigureCheck
 end	# module Rant::Plugin

@@ -4,7 +4,7 @@ require 'rant/env'
 
 module Rant
 
-    class FileList
+    class FileList < Array
 
 	attr_reader :pattern
 
@@ -15,38 +15,20 @@ module Rant
 	end
 
 	def initialize(pattern, flags = 0)
-	    #@a = Dir[pattern]
-	    @a = Dir.glob(pattern, flags)
+	    super(Dir.glob(pattern, flags))
 	    @actions = []
-	end
-
-	# Direct access to the underlying list. You can apply
-	# any array methods (even those that modify the receiver)
-	# to this attribute.
-	def ary
-	    @a
-	end
-
-	# Like #ary.
-	def to_ary
-	    @a
-	end
-
-	# A copy of the underlying list.
-	def to_a
-	    @a.dup
 	end
 
 	def +(other)
 	    fl = self.dup
-	    fl.ary.concat(other.to_ary)
+	    fl.concat(other.to_ary)
 	    fl
 	end
 
 	# Reevaluate pattern. Replay all modifications
 	# if replay is given.
 	def update(replay = true)
-	    @a = Dir[pattern]
+	    self.replace(Dir[pattern])
 	    if replay
 		@actions.each { |action|
 		    self.send(*action)
@@ -69,13 +51,13 @@ module Rant
 	    @actions << [:no_dir, name]
 	    entry = nil
 	    unless name
-		@a.reject! { |entry|
+		self.reject! { |entry|
 		    test(?d, entry)
 		}
 		return self
 	    end
 	    elems = nil
-	    @a.reject! { |entry|
+	    self.reject! { |entry|
 		elems = FileUtils.split_path(entry)
 		i = elems.index(name)
 		if i
@@ -91,7 +73,7 @@ module Rant
 	# Remove all files which have the given name.
 	def no_file(name)
 	    @actions << [:no_file, name]
-	    @a.reject! { |entry|
+	    self.reject! { |entry|
 		entry == name and test(?f, entry)
 	    }
 	    self
@@ -102,7 +84,7 @@ module Rant
 	def no_suffix(suffix)
 	    @actions << [:no_suffix, suffix]
 	    elems = elem = nil
-	    @a.reject! { |entry|
+	    self.reject! { |entry|
 		elems = FileUtils.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /#{suffix}$/
@@ -116,7 +98,7 @@ module Rant
 	def no_prefix(prefix)
 	    @actions << [:no_prefix, prefix]
 	    elems = elem = nil
-	    @a.reject! { |entry|
+	    self.reject! { |entry|
 		elems = FileUtils.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /^#{prefix}/
@@ -139,7 +121,7 @@ module Rant
 
 	def list
 	    if ::Rant::Env.on_windows?
-		@a.collect { |entry|
+		self.collect { |entry|
 		    entry = entry.tr("/", "\\")
 		    if entry.include? ' '
 			'"' + entry + '"'
@@ -148,7 +130,7 @@ module Rant
 		    end
 		}
 	    else
-		@a.collect { |entry|
+		self.collect { |entry|
 		    if entry.include? ' '
 			"'" + entry + "'"
 		    else
