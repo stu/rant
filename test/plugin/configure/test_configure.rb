@@ -1,6 +1,6 @@
 
 require 'test/unit'
-require 'rant'
+require 'rant/rantlib'
 require 'tutil'
 
 $testPluginConfigureDir = File.expand_path(File.dirname(__FILE__))

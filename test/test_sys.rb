@@ -58,4 +58,10 @@ class TestFileUtils < Test::Unit::TestCase
     ensure
 	File.delete "name_error.rf" if File.exist? "name_error.rf"
     end
+    # ...
+    def test_standalone
+	out = `#{Rant::Env::RUBY} standalone.rf`
+	assert(0, $?)
+	assert_match(/^t_standalone/, out)
+    end
 end

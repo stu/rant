@@ -1,14 +1,14 @@
 
 file "b_f1" => ["r_f4", "b_f2"] do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 file "b_f2" do |t|
-    touch t.name
+    sys.touch t.name
 end
 
 task :clean do |t|
-    rm_f Dir["b_f*"]
+    sys.rm_f Dir["b_f*"]
 end
 
 subdirs %w(sub1 sub2)

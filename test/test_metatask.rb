@@ -12,7 +12,7 @@ class TestMetaTask < Test::Unit::TestCase
     def test_with_single_task
 	run = false
 	t = @app.task :t do run = true end
-	mt = MetaTask.for_task t
+	mt = Rant::MetaTask.for_task t
 	assert_equal(t.name, mt.name,
 	    "MetaTask should have name of contained task(s).")
 	if t.needed?

@@ -112,4 +112,29 @@ class TestTask < Test::Unit::TestCase
 	assert_equal(rl, %w(t1 t2 t3),
 	    "t3 was run and depends on [t1, t2] => run order: t1 t2 t3")
     end
+    def test_enhance_gen_task
+	app = Rant::RantApp.new
+	enhance_run = false
+	t_run = false
+	t2_run = false
+	app.gen Rant::Task, :t do |t|
+	    t.needed { true }
+	    t.act {
+		assert(t2_run,
+		    "enhance added `t2' as prerequisite")
+		t_run = true
+	    }
+	end
+	app.gen Rant::Task, :t2 do |t|
+	    t.needed { true }
+	    t.act { t2_run = true }
+	end
+	assert_nothing_raised("generated Task should be enhanceable") {
+	    app.enhance :t => :t2 do
+		enhance_run = true
+	    end
+	}
+	assert_equal(0, app.run)
+	assert(t_run)
+    end
 end

@@ -3,8 +3,6 @@
 rd = File.expand_path("../../../lib")
 $:.unshift rd unless $:.include? rd
 
-require 'rant'
-
 task :hello do |t|
     sys.touch t.name
 end
@@ -40,8 +38,4 @@ end
 
 task :clean do
     sys.rm_f %w(config hello value_a value_a_guess)
-end
-
-if $0 == __FILE__
-    Rant.run
 end

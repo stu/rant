@@ -1,0 +1,10 @@
+
+require 'rant'
+
+task :t_standalone do |t|
+    puts t.name
+end
+
+if $0 == __FILE__
+    exit Rant.run
+end

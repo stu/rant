@@ -597,8 +597,14 @@ class Rant::RantApp
     # and a new file task.
     def enhance targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
-	    t = select_task { |t| t.name == name }
+	    t = @tasks[name]
+	    if Rant::MetaTask === t
+		t = t.last
+	    end
 	    if t
+		unless t.respond_to? :enhance
+		    abort("Can't enhance task `#{name}'")
+		end
 		t.enhance(pre, &blk)
 		return t
 	    end

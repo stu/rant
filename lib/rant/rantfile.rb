@@ -25,6 +25,8 @@ module Rant
 	end
     end	# class Rantfile
 
+    # Any +object+ is considered a _task_ if
+    # <tt>Rant::Worker === object</tt> is true.
     module Worker
 
 	INVOKE_OPT = {}.freeze
@@ -60,8 +62,14 @@ module Rant
 	    !done?
 	end
 
-	# +opt+ shouldn't be modified
+	# +opt+ is a Hash and shouldn't be modified.
+	# All objects implementing the Rant::Worker protocol should
+	# know about the following +opt+ values:
+	# :needed?::	Just check if this task is needed. Should do
+	# 		the same as calling Worker#needed?
+	# :force::	Run task action even if needed? is false.
 	def invoke(opt = INVOKE_OPT)
+	    return needed? if opt[:needed?]
 	    self.run if opt[:force] || self.needed?
 	end
 
@@ -166,8 +174,7 @@ module Rant
 			block) { |name,pre,blk|
 		    # TODO: ensure pre is empty
 		    # TODO: earlier setting of app?
-		    t = self.new(app, name, &blk)
-		    t
+		    self.new(app, name, &blk)
 		}
 	    end
 	end
@@ -218,6 +225,7 @@ module Rant
 	end
 
 	def invoke(opt = INVOKE_OPT)
+	    return needed? if opt[:needed?]
 	    if opt[:force] && !@done
 		self.run
 		@done = true
@@ -247,14 +255,10 @@ module Rant
 	class << self
 	    def rant_generate(app, ch, args, &block)
 		if args.size == 1
-		    if Hash === args.first
-			UserTask.rant_generate(app, ch, args, &block)
-		    else
-			LightTask.rant_generate(app, ch, args, &block)
-		    end
+		    UserTask.rant_generate(app, ch, args, &block)
 		else
 		    app.abort("Task generator currently takes only one" +
-			" argument. (Generates a LightTask or UserTask)")
+			" argument. (generates a UserTask)")
 		end
 	    end
 	end
@@ -306,17 +310,21 @@ module Rant
 	end
 
 	# Enhance this task with the given dependencies and blk.
-	def enhance(deps = [], &blk)
+	def enhance(deps = nil, &blk)
 	    if deps
 		@pre_resolved = false
 		@pre.concat deps
 	    end
-	    if blk
-		first_block = @block
-		@block = lambda { |t|
-		    first_block[t]
-		    blk[t]
-		}
+	    if @block
+		if blk
+		    first_block = @block
+		    @block = lambda { |t|
+			first_block[t]
+			blk[t]
+		    }
+		end
+	    else
+		@block = blk
 	    end
 	end
 
@@ -657,7 +665,7 @@ module Rant
 		@app.sys.touch @name
 	    end
 	end
-    end
+    end	# class DirTask
     module Generators
 	Directory = ::Rant::DirTask
     end

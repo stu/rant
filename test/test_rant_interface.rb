@@ -1,6 +1,6 @@
 
 require 'test/unit'
-require 'rant'
+require 'rant/rantlib'
 require 'tutil'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
@@ -13,7 +13,7 @@ class TestRantInterface < Test::Unit::TestCase
     def teardown
     end
     def test_cmd_targets
-	@app = RantApp.new("-f non_existent", "target", "-aforced_target")
+	@app = Rant::RantApp.new("-f non_existent", "target", "-aforced_target")
 	op = capture_stderr {
 	    assert_equal(@app.run, 1,
 		"Rant should fail because there is no such Rantfile.")
@@ -28,19 +28,19 @@ class TestRantInterface < Test::Unit::TestCase
 	    "forced_target should run first")
     end
     def test_envvar_on_cmdline
-	@app = RantApp.new("VAR=VAL")
+	@app = Rant::RantApp.new("VAR=VAL")
 	assert_equal(@app.run, 0)
 	assert_equal(ENV["VAR"], "VAL",
 	    "rant should set arguments of form VAR=VAL in ENV")
     end
     def test_envvar_on_cmdline_lc
-	@app = RantApp.new("var2=val2")
+	@app = Rant::RantApp.new("var2=val2")
 	assert_equal(@app.run, 0)
 	assert_equal(ENV["var2"], "val2",
 	    "rant should set arguments of form var2=val2 in ENV")
     end
     def test_opt_targets
-	@app = RantApp.new("--tasks")
+	@app = Rant::RantApp.new("--tasks")
 	@app.desc 'This is a "public" target.'
 	@app.task :public_task
 	@app.task :private_task

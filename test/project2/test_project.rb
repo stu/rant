@@ -6,13 +6,14 @@ require 'tutil'
 # which would cause the rant.rb (which is ment as a Rantfile)
 # to be loaded!
 require 'rant/rantlib'
-include Rant
-include ::Rant::Sys
 
 # Ensure we run in testproject directory.
 $testProject2Dir = File.expand_path(File.dirname(__FILE__))
 
 class TestProject2 < Test::Unit::TestCase
+    include Rant
+    include ::Rant::Sys
+
     def app *args
 	@app = ::Rant::RantApp.new(*args)
     end

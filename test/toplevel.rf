@@ -1,5 +1,4 @@
 
-require 'fileutils'
 include Sys
 
 def tf fn

@@ -46,4 +46,25 @@ class TestLightTask < Test::Unit::TestCase
 	assert(!t.needed?,
 	    "task shouldn't be needed? after first run")
     end
+    def test_task_with_lighttask_pre
+	lt_run = false
+	lt_nr = false
+	t_run = false
+	@app.args.replace %w(t)
+	t1 = @app.gen Rant::LightTask, :t1 do |t|
+	    t.needed { lt_nr = true }
+	    t.act { lt_run = true }
+	end
+	t = @app.task :t => :t1 do
+	    assert(lt_run,
+		"LightTask prerequisite should run first.")
+	    t_run = true
+	end
+	assert(t.needed?)
+	assert(lt_nr)
+	assert(!lt_run,
+	    "LightTask#needed? shouldn't run 'act' block")
+	assert_equal(0, @app.run)
+	assert(t_run)
+    end
 end

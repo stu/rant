@@ -1,12 +1,12 @@
 
 task :create_s1f1 do
-    touch "sub1/s1f1"
+    sys.touch "sub1/s1f1"
 end
 
 task :insub1_s1f1 do
-    touch "s1f1"
+    sys.touch "s1f1"
 end
 
 task :clean do
-    rm_f %w(sub1/s1f1 s1f1)
+    sys.rm_f %w(sub1/s1f1 s1f1)
 end

@@ -1,6 +1,6 @@
 
 require 'test/unit'
-require 'rant'
+require 'rant/rantlib'
 require 'rant/plugin/csharp'
 require 'tutil'
 
@@ -8,6 +8,8 @@ $testPluginCsDir = File.expand_path(File.dirname(__FILE__))
 $have_csc ||= Env.find_bin("csc") || Env.find_bin("cscc") || Env.find_bin("mcs")
 
 class TestPluginCsharp < Test::Unit::TestCase
+    include Rant
+
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir($testPluginCsDir) unless Dir.pwd == $testPluginCsDir

@@ -1,6 +1,6 @@
 
 require 'test/unit'
-require 'rant'
+require 'rant/rantlib'
 require 'tutil'
 
 # Ensure we run in testproject directory.
@@ -42,7 +42,7 @@ class TestProject1 < Test::Unit::TestCase
 	    assert_equal(Rant.run("create_dep"), 0)
 	end
 	assert(File.exist?("dep"))
-	assert(sys.uptodate?("dep", "target"),
+	assert(Rant::Sys.uptodate?("dep", "target"),
 	    "`create_target' was run before `create_dep'")
 	timeout
 	capture_std do
@@ -50,7 +50,7 @@ class TestProject1 < Test::Unit::TestCase
 	end
 	assert(File.exist?("target"))
 	assert(File.exist?("dep"))
-	assert(sys.uptodate?("target", "dep"),
+	assert(Rant::Sys.uptodate?("target", "dep"),
 	    "`target' should be newer than `dep'")
 	t1 = File.mtime "target"
 	Rant.reset
