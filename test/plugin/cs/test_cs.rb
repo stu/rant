@@ -21,12 +21,10 @@ if $have_csc
     # Try to compile the "hello world" program. Requires cscc, csc
     # or mcs to be on your PATH.
     def test_hello
-	puts "Making hello.exe"
 	capture_std do
 	    assert_equal(Rant.run([]), 0,
 		"first target, `hello.exe', should be compiled")
 	end
-	puts "made hello.exe"
 	assert(File.exist?("hello.exe"),
 	    "hello.exe is the first target in Rantfile")
 	if Env.on_windows?

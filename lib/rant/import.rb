@@ -26,6 +26,10 @@ module Rant
 		"Include IMPORTS (coma separated list)."	],
 	    [ "--force",	"-f",	GetoptLong::NO_ARGUMENT,
 		"Force overwriting of output file."		],
+	    [ "--with-comments",	GetoptLong::NO_ARGUMENT,
+		"Include comments from Rant sources."		],
+	    [ "--reduce-whitespace", "-r",GetoptLong::NO_ARGUMENT,
+		"Remove as much whitespace from Rant sources as possible." ],
 	]
 
 	class << self
@@ -44,6 +48,10 @@ module Rant
 	attr :imports
 	# Filename where the monolithic rant script goes to.
 	attr :mono_fn
+	# Skip comments? Defaults to true.
+	attr_accessor :skip_comments
+	# Remove whitespace from Rant sources? Defaults to false.
+	attr_accessor :reduce_whitespace
 
 	def initialize(*args)
 	    @args = args.flatten
@@ -53,15 +61,57 @@ module Rant
 	    @mono_fn = nil
 	    @force = false
 	    @rantapp = nil
+	    @core_imports = []
+	    @included_plugins = []
+	    @included_imports = []
+	    @skip_comments = true
+	    @reduce_whitespace = false
 	end
 
 	def run
 	    process_args
+	    
+	    if File.exist?(@mono_fn) && !@force
+		abort("#{@mono_fn} exists. Rant won't overwrite this file.",
+		    "Add --force to override this restriction.")
+	    end
+	    File.open(@mono_fn, "w") { |mf|
+		mf.puts "#!/usr/bin/env ruby"
+		mf << mono_rant_core
+		mf << mono_imports
+		mf << mono_plugins
+		mf << <<EOF
 
+Rant::CODE_IMPORTS.concat %w(#{@included_imports.join(' ')}
+    #{(@included_plugins.map do |i| "plugin/" + i end).join(' ')})
+
+# Catch a `require "rant"', sad...
+alias require_backup_by_rant require
+def require libf
+    if libf == "rant"
+	self.class.instance_eval { include Rant }
+    else
+	begin
+	    require_backup_by_rant libf
+	rescue
+	    raise $!, caller
+	end
+    end
+end
+
+Rant.run
+EOF
+	    }
+	    msg "Done.",
+		"Included imports: " + @included_imports.join(', '),
+		"Included plugins: " + @included_plugins.join(', '),
+		"Your monolithic rant was written to `#@mono_fn'!"
+	    
 	    done
 	rescue RantImportDoneException
 	    0
 	rescue RantImportAbortException
+	    $stderr.puts "rant-import aborted!"
 	    1
 	end
 
@@ -80,6 +130,12 @@ module Rant
 		    done
 		when "--help": help
 		when "--force": @force = true
+		when "--with-comments": @skip_comments = false
+		when "--reduce-whitespace": @reduce_whitespace = true
+		when "--imports"
+		    @imports.concat(value.split(/\s*,\s*/))
+		when "--plugins"
+		    @plugins.concat(value.split(/\s*,\s*/))
 		end
 	    }
 	    rem_args = ARGV.dup
@@ -109,8 +165,79 @@ module Rant
 	end
 
 	def abort(*text)
-	    err_msg *text unless text.empty?
+	    err_msg(*text) unless text.empty?
 	    raise RantImportAbortException
+	end
+
+	# Get a monolithic rant script (as string) containing only the
+	# Rant core.
+	def mono_rant_core
+	    # Starting point is rant/rantlib.rb.
+	    rantlib_f = File.join(LIB_DIR, "rantlib.rb")
+	    begin
+		rantlib = File.read rantlib_f
+	    rescue
+		abort("When trying to read `#{rantlib_f}': #$!",
+		    "This file should contains the core of rant, so import is impossible.",
+		    "Please check your rant installation!")
+	    end
+	    @core_imports << "rantlib"
+	    resolve_requires rantlib
+	end
+
+	def mono_imports
+	    rs = ""
+	    @imports.each { |name|
+		next if @included_imports.include? name
+		path = File.join(LIB_DIR, "import", "#{name}.rb")
+		unless File.exist? path
+		    abort("No such import - #{name}")
+		end
+		msg "Including import `#{name}'", path
+		@included_imports << name.dup
+		rs << resolve_requires(File.read(path))
+	    }
+	    rs
+	end
+
+	def mono_plugins
+	    rs = ""
+	    @plugins.each { |name|
+		lc_name = name.downcase
+		next if @included_plugins.include? lc_name
+		path = File.join(LIB_DIR, "plugin", "#{lc_name}.rb")
+		unless File.exist? path
+		    abort("No such plugin - #{name}")
+		end
+		msg "Including plugin `#{lc_name}'", path
+		@included_plugins << lc_name
+		rs << resolve_requires(File.read(path))
+	    }
+	    rs
+	end
+
+	# +script+ is a string. This method resolves requires of rant/
+	# code by directly inserting the code.
+	def resolve_requires script
+	    rs = ""
+	    script.each { |line|
+		# skip shebang line
+		next if line =~ /^#! ?(\/|\\)?\w/
+		# skip pure comment lines
+		next if line =~ /^\s*#/ if @skip_comments
+		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
+		    name = $3
+		    next if @core_imports.include? name
+		    path = File.join(LIB_DIR, "#{name}.rb")
+		    msg "Including `#{name}'", path
+		    @core_imports << name
+		    rs << resolve_requires(File.read(path))
+		else
+		    line.sub!(/^\s+/, '') if @reduce_whitespace
+		    rs << line
+		end
+	    }
+	    rs
 	end
 
     end	# class RantImport

@@ -95,6 +95,9 @@ task :please_fail do |t|
     sys "mix_nix_gibts"
 end
 
+# for quich rant testing
+#plugin :Configure
+
 if $0 == __FILE__
     Rant.run
 end

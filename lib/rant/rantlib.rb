@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.8'
+    VERSION	= '0.2.9'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -14,6 +14,9 @@ module Rant
 			"Rantfile.rb",
 			"rantfile.rb",
 		  ]
+    
+    # Names of plugins and imports for which code was loaded.
+    CODE_IMPORTS = []
     
     class RantAbortException < StandardError
     end
@@ -495,10 +498,13 @@ class Rant::RantApp
 		    "only strings are allowed as arguments")
 	    end
 	    unless @imports.include? arg
-		begin
-		    require "rant/import/#{arg}"
-		rescue LoadError => e
-		    abort("No such import - #{arg}")
+		unless Rant::CODE_IMPORTS.include? arg
+		    begin
+			require "rant/import/#{arg}"
+		    rescue LoadError => e
+			abort("No such import - #{arg}")
+		    end
+		    Rant::CODE_IMPORTS << arg.dup
 		end
 		@imports << arg.dup
 	    end
@@ -522,11 +528,15 @@ class Rant::RantApp
 		"Plugin name has to be a string or symbol.")
 	end
 	lc_pl_name = pl_name.downcase
-	begin
-	    require "rant/plugin/#{lc_pl_name}"
-	rescue LoadError
-	    abort(pos_text(file, ln),
-		"`#{lc_pl_name}': no such plugin library")
+	import_name = "plugin/#{lc_pl_name}"
+	unless Rant::CODE_IMPORTS.include? import_name
+	    begin
+		require "rant/plugin/#{lc_pl_name}"
+		Rant::CODE_IMPORTS << import_name
+	    rescue LoadError
+		abort(pos_text(file, ln),
+		    "no such plugin library - `#{lc_pl_name}'")
+	    end
 	end
 	pl_class = nil
 	begin
