@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.5'
+    VERSION	= '0.2.6'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -243,6 +243,10 @@ end	# module Rant
 class Rant::RantApp
     include Rant::Console
 
+    # Important: We try to synchronize all tasks referenced indirectly
+    # by @rantfiles with the task hash @tasks. The task hash is
+    # intended for fast task lookup per task name.
+
     # The RantApp class has no own state.
 
     OPTIONS	= [
@@ -275,8 +279,6 @@ class Rant::RantApp
     #
     # Forced targets will be run before other targets.
     attr_reader :force_targets
-    # A list with all tasks.
-    attr_reader :tasks
     # A list of all registered plugins.
     attr_reader :plugins
     # The context in which Rantfiles are loaded. RantContext methods
@@ -287,6 +289,9 @@ class Rant::RantApp
     # object (like a hash). It is intended to let the different
     # modules, plugins and tasks to communicate to each other.
     attr_reader :var
+    # A hash with all tasks. For fast task lookup use this hash with
+    # the taskname as key.
+    attr_reader :tasks
 
     def initialize *args
 	@args = args.flatten
@@ -295,6 +300,7 @@ class Rant::RantApp
 	@sys = ::Rant::SysObject.new(self)
 	Rant.rantapp ||= self
 	@rantfiles = []
+	@tasks = {}
 	@opts = {
 	    :verbose	=> 0,
 	    :quiet	=> false,
@@ -304,7 +310,6 @@ class Rant::RantApp
 	@force_targets = []
 	@ran = false
 	@done = false
-	@tasks = []
 	@plugins = []
 	@var = {}
 
@@ -773,6 +778,17 @@ class Rant::RantApp
     end
     public :select_tasks
 
+    def select_tasks_by_name name
+	s = @tasks[name]
+	case s
+	when nil: []
+	when Rant::Worker: [s]
+	else # assuming MetaTask
+	    s
+	end
+    end
+    public :select_tasks_by_name
+
     # Get the first task for which yield returns true. Returns nil if
     # yield never returned true.
     def select_task
@@ -940,9 +956,25 @@ class Rant::RantApp
 	nt.description = @task_desc
 	@task_desc = nil
 	file.tasks << nt
+	hash_task nt
 	nt
     end
     public :prepare_task
+
+    def hash_task task
+	n = task.name
+	et = @tasks[n]
+	case et
+	when nil
+	    @tasks[n] = task
+	when Rant::Worker
+	    mt = Rant::MetaTask.new n
+	    mt << et << task
+	    @tasks[n] = mt
+	else # assuming  Rant::MetaTask
+	    et << task
+	end
+    end
 
     # Tries to extract task name and prerequisites from the typical
     # argument to the +task+ command. +targ+ should be one of String,

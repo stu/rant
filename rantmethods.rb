@@ -47,3 +47,34 @@ file "bench-rant" do |t|
 	EOT
     }
 end
+
+file "bench-depsearch" do |t|
+    c = 500
+    if ENV["TC"]
+	c = Integer ENV["TC"]
+    end
+    File.open(t.name, "w") { |f|
+	f.puts "$tc_run = 0"
+	all = []
+	c.times { |i|
+	    all << i.to_s
+	    f << <<-EOT
+		task "#{i}" => "#{c}" do
+		    print "*"
+		    $tc_run += 1
+		end
+	    EOT
+	}
+	f << <<-EOT
+	    task :all => %w(#{all.join(" ")})
+	    task "#{c}" do
+		print "+"
+		$tc_run += 1
+	    end
+	    at_exit {
+		puts
+		puts $tc_run.to_s + " tasks run"
+	    }
+	EOT
+    }
+end

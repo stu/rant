@@ -25,4 +25,11 @@ it should be interpreted relative to the project's root directory.
 	       Generators and similar.
 [rant/plugin]  Each file ending in <tt>.rb</tt> in this directory is
                considered to load support for one Rant plugin.
+
+== Performance
+With version 0.2.6, the big performance problem with task lookup
+(caused very slow dependency resolving) is fixed.
+The next performance improvement should target Rantfile reading,
+especially task creation.
+
 # vim:tw=70:

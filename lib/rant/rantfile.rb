@@ -358,8 +358,12 @@ module Rant
 		    if t == @name
 			nil
 		    else
+			# Pre 0.2.6 task selection scheme ###########
 			# Take care: selection is an array of tasks
-			selection = @app.select_tasks { |st| st.name == t }
+			#selection = @app.select_tasks { |st| st.name == t }
+			#############################################
+
+			selection = @app.select_tasks_by_name t
 			if selection.empty?
 			    # use return value of yield
 			    yield(t)
