@@ -74,6 +74,14 @@ module Rant
 	    @block.arity == 0 ? @block.call : @block[self]
 	end
 	private :run
+
+	def hash
+	    name.hash
+	end
+
+	def eql? other
+	    Worker === other and name.eql? other.name
+	end
     end
 
     # A list of tasks with an equal name.
@@ -127,8 +135,25 @@ module Rant
     class LightTask
 	include Worker
 
-	def initialize(name)
+	class << self
+	    def rant_generate(app, ch, args, &block)
+		unless args.size == 1
+		    app.abort("LightTask takes only one argument " +
+			"which has to be the taskname (string or symbol)")
+		end
+		app.prepare_task({args.first => [], :__caller__ => ch},
+			block) { |name,pre,blk|
+		    # TODO: ensure pre is empty
+		    # TODO: earlier setting of app?
+		    t = self.new(app, name, &blk)
+		    t
+		}
+	    end
+	end
+
+	def initialize(app, name)
 	    super()
+	    @app = app or raise ArgumentError, "no app given"
 	    @name = case name
 	    when String: name
 	    when Symbol: name.to_s
@@ -138,7 +163,6 @@ module Rant
 	    end
 	    @needed = nil
 	    @block = nil
-	    @app = nil
 	    @done = false
 
 	    yield self if block_given?
@@ -178,7 +202,7 @@ module Rant
 		@done = true
 	    else
 		if needed?
-		    self.run
+		    run
 		    @done = true
 		else
 		    false
@@ -378,14 +402,6 @@ module Rant
 	    @pre.compact!
 	    @pre_resolved = true
 	end
-
-	def hash
-	    @name.hash
-	end
-
-	def eql? other
-	    Task === other and @name.eql? other.name
-	end
     end	# class Task
 
     class FileTask < Task
@@ -443,7 +459,7 @@ module Rant
 
     # An instance of this class is a task to create a _single_
     # directory.
-    class Directory < Task
+    class DirTask < Task
 
 	class << self
 
@@ -547,6 +563,6 @@ module Rant
 	end
     end
     module Generators
-	Directory = ::Rant::Directory
+	Directory = ::Rant::DirTask
     end
 end # module Rant

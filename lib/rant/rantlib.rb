@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.6'
+    VERSION	= '0.2.7'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -235,8 +235,13 @@ module Rant
 	@@rantapp
     end
 
-    module_function :task, :file, :desc, :subdirs,
-    	:gen, :source, :enhance, :sys, :plugin
+    # Pre 0.2.7: Manually making necessary methods module
+    # functions. Note that it caused problems with caller
+    # parsing when the Rantfile did a `require "rant"' (irb!).
+    #module_function :task, :file, :desc, :subdirs,
+    #	:gen, :source, :enhance, :sys, :plugin
+
+    extend self
 
 end	# module Rant
 
@@ -437,10 +442,6 @@ class Rant::RantApp
     end
 
     def gen(*args, &block)
-	# FIXME: caller is parsed in this method and probably will be
-	# parsed indirectly or directly in generator.rant_generate
-	# again!
-
 	# retrieve caller info
 	clr = caller[1]
 	ch = Rant::Lib::parse_caller_elem(clr)
@@ -580,6 +581,7 @@ class Rant::RantApp
 	td
     end
 
+    # Prints msg as error message and throws a RantAbortException.
     def abort *msg
 	err_msg(msg) unless msg.empty?
 	raise Rant::RantAbortException

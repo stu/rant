@@ -94,12 +94,21 @@ file "inc" => "incdep" do |t|
     sys.touch t.name
 end
 
+gen LightTask, :lighttask do |t|
+    t.needed do
+	!test ?f, "lt_target"
+    end
+    t.act do
+	sys.touch "lt_target"
+    end
+end
+
 task :force_clean do
     sys.rm_f %w(
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
 	fallback fallback_ order1 order2
-	tbe tbe2 inc incdep
+	tbe tbe2 inc incdep lt_target
 	).find_all { |e| test(?e, e) }
     sys.rm_rf %w(dir)
 end

@@ -128,4 +128,9 @@ class TestProject1 < Test::Unit::TestCase
 	assert(old_mtime < test(?M, "inc"),
 	    "dependency `incdep' is newer, so `inc' should get rebuilt")
     end
+    def test_lighttask
+	assert_equal(Rant.run("lighttask"), 0)
+	assert(test(?e, "lt_target"),
+	    "lt_target should get `touched' by lighttask")
+    end
 end
