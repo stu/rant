@@ -41,6 +41,7 @@ end
 
 desc "Run basic tests."
 gen RubyTest do |g|
+    g.libs << "test"
     g.pattern = 'test_*.rb'
 end
 

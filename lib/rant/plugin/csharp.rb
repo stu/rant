@@ -120,7 +120,7 @@ module Rant
 	# interface.
 	def init
 	    # setup compiler interface
-	    comp = Plugin::Cs.csc_for_assembly(self) || self.class.csc
+	    comp = Plugin::Csharp.csc_for_assembly(self) || self.class.csc
 	    take_common_attrs comp if comp
 
 	    # call initialization block
@@ -174,7 +174,7 @@ module Rant::Plugin
 
     # This plugin class is currently designed to be instantiated only
     # once with +rant_plugin_new+.
-    class Cs
+    class Csharp
 	include ::Rant::PluginMethods
 
 	@plugin_object = nil
@@ -183,7 +183,7 @@ module Rant::Plugin
 	    def rant_plugin_new(app, cinf, *args, &block)
 		if args.size > 1
 		    app.abort(app.pos_text(cinf[:file], cinf[:ln]),
-			"Cs plugin takes only one argument.")
+			"Csharp plugin takes only one argument.")
 		end
 		self.new(app, args.first, &block)
 	    end
@@ -265,11 +265,11 @@ module Rant::Plugin
 
 	###### methods override from PluginMethods ###################
 	def rant_plugin_type
-	    "cs"
+	    "csharp"
 	end
 	def rant_plugin_name
 	    @name
 	end
 	##############################################################
-    end
-end
+    end # class Csharp
+end	# module Rant::Plugin

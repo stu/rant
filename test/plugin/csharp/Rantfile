@@ -1,5 +1,5 @@
 
-plugin :Cs
+plugin :Csharp
 
 src_files = FileList["src/*.cs"]
 
