@@ -1,7 +1,7 @@
 
 
 require 'test/unit'
-require 'rant'
+require 'rant/rantlib'
 
 class TestFileTask < Test::Unit::TestCase
     def setup

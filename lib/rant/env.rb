@@ -30,6 +30,7 @@ end
 # (let's hope) environment information.
 module Rant::Env
     OS		= ::Config::CONFIG['target']
+    RUBY	= ::Config::CONFIG['ruby_install_name']
 
     def on_windows?
         OS =~ /win/

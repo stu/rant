@@ -3,15 +3,6 @@ class Rant::TaskFail < StandardError
 end
 
 class Rant::Rantfile
-    class << self
-	@current = nil
-	def current
-	    @current
-	end
-	def current=(file)
-	    @current = file
-	end
-    end
     attr_reader :path
     attr_reader :tasks
     
@@ -24,6 +15,7 @@ end	# class Rant::Rantfile
 class Rant::Task
     include Rant::Console
     
+    # This is the only state held by this class.
     @@all = {}
 
     class << self
@@ -46,7 +38,7 @@ class Rant::Task
 	@block = block
 	@ran = false
 	@fail = false
-	@rantfile = Rant::Rantfile.current
+	@rantfile = nil
 	@line_number = 0
 
 	@@all[@name] = self
@@ -70,7 +62,7 @@ class Rant::Task
 
     def needed?
 	resolve_tasks
-	each_task { |t| return true if needed? }
+	each_task { |t| return true if t.needed? }
 	!done?
     end
 
