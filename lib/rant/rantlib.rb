@@ -14,7 +14,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.11'
+    VERSION	= '0.3.0'
 
     # Those are the filenames for rantfiles.
     # Case matters!
