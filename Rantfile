@@ -52,7 +52,7 @@ end
 
 desc "Test small Ruby project."
 gen RubyTest, :testrb1 do |g|
-    g.libs << "test"
+    g.libs << File.expand_path("test")
     g.test_files = %w(test/project_rb1/test_project_rb1.rb)
 end
 
@@ -99,3 +99,5 @@ end
 
 # mainly for rant testing
 #source 'rantmethods.rb'
+
+# vim:ft=ruby:

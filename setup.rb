@@ -7,6 +7,9 @@
 # You can distribute/modify this program under the terms of
 # the GNU LGPL, Lesser General Public License version 2.1.
 #
+# Modifications made by Stefan Lang are marked with a line
+### stefan ###
+#
 
 unless Enumerable.method_defined?(:map)   # Ruby 1.4.6
   module Enumerable
@@ -1124,9 +1127,14 @@ class Installer
   end
 
   def setup_dir_bin(rel)
-    all_files_in(curr_srcdir()).each do |fname|
-      adjust_shebang "#{curr_srcdir()}/#{fname}"
-    end
+    ### stefan ###
+    # Do not adjust shebang on Windows as it is useless and setup.rb
+    # is failing for me (Note: already fixed in adjust_shebang).
+    #unless PLATFORM =~ /mswin/i
+	all_files_in(curr_srcdir()).each do |fname|
+	  adjust_shebang "#{curr_srcdir()}/#{fname}"
+	end
+    #end
   end
 
   def adjust_shebang(path)
@@ -1136,14 +1144,20 @@ class Installer
       File.open(path, 'rb') {|r|
         first = r.gets
         return unless File.basename(config('rubypath')) == 'ruby'
+	### stefan ###
+	# Add <tt>|| ""</tt> which avoids an ArgumentError if first
+	# line doesn't match the regexp.
         return unless File.basename(first.sub(/\A\#!/, '').split[0] || "") == 'ruby'
         $stderr.puts "adjusting shebang: #{File.basename(path)}" if verbose?
         File.open(tmpfile, 'wb') {|w|
           w.print first.sub(/\A\#!\s*\S+/, '#! ' + config('rubypath'))
           w.write r.read
         }
-        move_file tmpfile, File.basename(path)
       }
+      ### stefan ###
+      # Move +move_file+ out of File.open block to close tmpfile
+      # before unlinking (which didn't work on Windows).
+      move_file tmpfile, File.basename(path)
     ensure
       File.unlink tmpfile if File.exist?(tmpfile)
     end

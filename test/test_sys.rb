@@ -5,7 +5,7 @@ require 'tutil'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
-class TestFileUtils < Test::Unit::TestCase
+class TestSys < Test::Unit::TestCase
     include Rant::Sys
 
     def setup
@@ -60,7 +60,7 @@ class TestFileUtils < Test::Unit::TestCase
     end
     # ...
     def test_standalone
-	out = `#{Rant::Env::RUBY} -I#{RANT_DEV_LIB_DIR} standalone.rf`
+	out = `#{Rant::Sys.sp(Rant::Env::RUBY)} -I#{Rant::Sys.sp(RANT_DEV_LIB_DIR)} standalone.rf`
 	assert(0, $?)
 	assert_match(/^t_standalone/, out)
     end

@@ -65,9 +65,11 @@ module Rant
 	# +opt+ is a Hash and shouldn't be modified.
 	# All objects implementing the Rant::Worker protocol should
 	# know about the following +opt+ values:
-	# :needed?::	Just check if this task is needed. Should do
-	# 		the same as calling Worker#needed?
-	# :force::	Run task action even if needed? is false.
+	# <tt>:needed?</tt>::
+	#	Just check if this task is needed.  Should do the same
+	#	as calling Worker#needed?
+	# <tt>:force</tt>::
+	#	Run task action even if needed? is false.
 	def invoke(opt = INVOKE_OPT)
 	    return needed? if opt[:needed?]
 	    self.run if opt[:force] || self.needed?

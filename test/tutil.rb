@@ -2,6 +2,7 @@
 # This file contains methods that aid in testing Rant.
 
 require 'rant/rantenv'
+require 'rant/rantsys'
 
 RANT_BIN = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "run_rant"))
@@ -108,5 +109,5 @@ When testing Rant: `#{Dir.pwd + "/" + errfn}' exists.
 end
 
 def run_rant(*args)
-    `#{Rant::Env::RUBY} #{RANT_BIN} #{args.join(' ')}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.arglist}`
 end

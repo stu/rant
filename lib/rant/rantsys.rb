@@ -345,6 +345,7 @@ module Rant
 	    cmd_args.flatten!
 	    cmd = cmd_args.join(" ")
 	    unless block_given?
+		# TODO: Don't create new block for each +sh+ call.
 		block = lambda { |succ, status|
 		    succ or raise CommandError.new(cmd, status)
 		}
@@ -355,9 +356,9 @@ module Rant
 
 	def ruby(*args, &block)
 	    if args.size > 1
-		sh(*([Env::RUBY] + args), &block)
+		sh([Env::RUBY] + args, &block)
 	    else
-		sh(Env::RUBY + ' ' + args.join(' '), &block)
+		sh("#{Env::RUBY} #{args.first}", &block)
 	    end
 	end
 

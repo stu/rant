@@ -46,12 +46,12 @@ class TestProjectRb1 < Test::Unit::TestCase
     end
     def test_test
 	capture_std do
-	    assert_equal(Rant.run(%w(test)), 0)
+	    assert_equal(0, Rant.run(%w(test)))
 	end
     end
     def test_package
 	capture_std do
-	    assert_equal(Rant.run(%w(pkg)), 0)
+	    assert_equal(0, Rant.run(%w(pkg)))
 	end
 	assert(test(?d, "packages"),
 	    "task `pkg' should create dir `packages'")
