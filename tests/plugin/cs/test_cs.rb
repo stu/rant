@@ -49,4 +49,26 @@ class TestPluginCs < Test::Unit::TestCase
 	test_opts
 	AssemblyTask.csc = old_csc
     end
+    def test_mcs
+	old_csc = AssemblyTask.csc
+	mcs = Env.find_bin("mcs")
+	unless mcs
+	    $stderr.puts "mcs not on path, will not test mcs"
+	    return
+	end
+	AssemblyTask.csc = mcs
+	test_opts
+	AssemblyTask.csc = old_csc
+    end
+    def test_csc
+	old_csc = AssemblyTask.csc
+	csc = Env.find_bin("csc")
+	unless csc
+	    $stderr.puts "csc not on path, will not test csc"
+	    return
+	end
+	AssemblyTask.csc = csc
+	test_opts
+	AssemblyTask.csc = old_csc
+    end
 end

@@ -13,11 +13,11 @@ class Rant::CsCompiler
 	# Get the short name for the compiler referenced by this path.
 	def cs_compiler_name(path)
 	    case path
-	    when /csc(\.exe)$/i
+	    when /csc(\.exe)?$/i
 		"csc"
-	    when /cscc(\.exe)$/i
+	    when /cscc(\.exe)?$/i
 		"cscc"
-	    when /mcs(\.exe)$/i
+	    when /mcs(\.exe)?$/i
 		"mcs"
 	    else
 		nil
@@ -36,6 +36,7 @@ class Rant::CsCompiler
 		end
 	    end
 	    csc_bin = "cscc" if !csc_bin && Env.find_bin("cscc") 
+	    csc_bin = "mcs" if !csc_bin && Env.find_bin("mcs")
 	    csc_bin
 	end
 
@@ -91,8 +92,6 @@ class Rant::CsCompiler
     attr_accessor :sources
     # Resources to embedd in assembly.
     attr_accessor :resources
-    # Library include pathes.
-    attr_reader :lib_include_pathes
     # Library link pathes.
     attr_reader :lib_link_pathes
     # Entry point for executable.
@@ -117,7 +116,6 @@ class Rant::CsCompiler
         @resources = []
         @debug = false
         @out = "a.out"
-        @lib_include_pathes = []
         @lib_link_pathes = []
         @entry = nil
         @optimize = true
@@ -131,7 +129,7 @@ class Rant::CsCompiler
 
     def name= new_name
 	unless ["cscc", "csc", "mcs"].include?(new_name)
-	    throw "Unsupported C# compiler `#{new_name}'"
+	    raise "Unsupported C# compiler `#{new_name}'"
 	end
 	@name = new_name
 	@long_name = case @name
@@ -168,6 +166,12 @@ class Rant::CsCompiler
     end
 
     def mcs_cmd_exe
+	# Generate compilation command for mcs.
+	cc_cmd = cc.dup
+	cc_cmd << " -target:exe"
+	cc_cmd << " -main:#{entry}" if entry
+	cc_cmd << cc_cmd_args
+	cc_cmd
     end
 
     # Generate command for DLL.
@@ -190,6 +194,10 @@ class Rant::CsCompiler
     end
 
     def mcs_cmd_dll
+	cc_cmd = cc.dup
+	cc_cmd << " -target:library"
+	cc_cmd << cc_cmd_args
+	cc_cmd
     end
 
     # Generate command for object file.
@@ -212,6 +220,10 @@ class Rant::CsCompiler
     end
 
     def mcs_cmd_object
+	cc_cmd = cc.dup
+	cc_cmd << " -target:module"
+	cc_cmd << cc_cmd_args
+	cc_cmd
     end
 
     def to_s
@@ -224,20 +236,14 @@ class Rant::CsCompiler
     end
 
     def cscc_cmd_args
-        # TODO: Argument quoting (OS dependent!).
         cc_args = ""
         cc_args << " -o #{out}" if out
         cc_args << " -g -DDEBUG" if debug
 	defines.each { |p|
 	    cc_args << " -D#{p}"
 	}
-        # cscc --help states that -Wall enables all warnings,
-        # but when -Wall is supplied it shouts "unrecongized option -Wall"
-        #cc_args << " -Wall" if warnings
+        cc_args << " -Wall" if warnings
         cc_args << " -O2" if optimize
-        lib_include_pathes.each { |p|
-            cc_args << " -I #{p}"
-        }
         lib_link_pathes.each { |p|
             cc_args << " -L #{p}"
         }
@@ -255,7 +261,6 @@ class Rant::CsCompiler
     end
 
     def csc_cmd_args
-        # TODO: Argument quoting (OS dependent!).
         cc_args = ""
         cc_args << " /out:#{out}" if out
         cc_args << " /debug /d:DEBUG" if debug
@@ -264,9 +269,6 @@ class Rant::CsCompiler
 	}
 	cc_args << " /optimize" if optimize
         # TODO: cc_args << " -Wall" if warnings
-        lib_include_pathes.each { |p|
-            #TODO:    cc_args << " -I #{p}"
-        }
         lib_link_pathes.each { |p|
             #TODO:    cc_args << " -L #{p}"
         }
@@ -284,6 +286,29 @@ class Rant::CsCompiler
     end
 
     def mcs_cmd_args
+        cc_args = ""
+        cc_args << " -o #{out}" if out
+        cc_args << " -g -d:DEBUG" if debug
+	defines.each { |p|
+	    cc_args << " -d:#{p}"
+	}
+	cc_args << " -optimize" if optimize
+	# Warning level for mcs: highest 4, default 2
+        cc_args << " -warn:4" if warnings
+	lib_link_pathes.each { |p|
+	    cc_args << " -L #{p}"
+	}
+	if libs && !libs.empty?
+	    cc_args << " -r:" + libs.join(',')
+	end
+        cc_args << " " << misc_args.join(' ') if misc_args
+	sargs = specific_args["mcs"]
+	cc_args << " " << sargs.join(' ') if sargs
+        resources.each { |p|
+            cc_args << " -resource:#{p}"
+        }
+        cc_args << " " << sources.join(' ') if sources
+        cc_args
     end
 
 end    # class Rant::CsCompiler
