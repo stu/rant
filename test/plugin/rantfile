@@ -1,6 +1,6 @@
 
 conf = plugin :Configure do |conf|
-    conf.init_modes = [:guess, :interact]
+    conf.init_modes = [:explicit]
     conf.override_modes = [:env]
     conf.task           # define a task named :configure
     conf.check "target" do |c|
@@ -12,11 +12,13 @@ conf = plugin :Configure do |conf|
     # define more checks
 end
 
-task :default => ["conf_csharp.cs", conf["target"]]
-
 plugin :Csharp do |cs|
     cs.config = conf
 end
+
+conf.init
+
+task :default => ["conf_csharp.cs", conf["target"]]
 
 # from our example above
 gen Assembly, conf["target"] do |t|

@@ -31,6 +31,9 @@ class Rant::Path
     def absolute_path
 	@abs_path ||= File.expand_path(@path)
     end
+    def dirname
+	File.dirname absolute_path
+    end
 end
 
 # This module provides some platform indenpendant

@@ -11,8 +11,8 @@ module Rant::Plugin
     # The configuration file will be read and the data hash
     # set up accordingly.
     # ==== Config file doesn't exist
-    # The configuration process is run with +startup_modes+ which
-    # has to be one of CHECK_MODES. +startup_modes+ defaults to
+    # The configuration process is run with +init_modes+ which
+    # has to be one of CHECK_MODES. +init_modes+ defaults to
     # :default, which means if the configfile doesn't exist,
     # all values will be set to their defaults on startup.
     # === Access to configuration in Rantfile
@@ -78,6 +78,10 @@ module Rant::Plugin
 	# Decide what the configure plugin does on startup if the
 	# configuration file doesn't exist. Initialized to
 	# <tt>[:guess]</tt>.
+	#
+	# If you want to control when the plugin should initialize the
+	# configuration values, set this to +[:explicit]+ and call the
+	# +init+ method with the init_modes you like as argument.
 	attr_accessor :init_modes
 
 	# Decide what the configure plugin does *after* reading the
@@ -199,6 +203,17 @@ module Rant::Plugin
 	   checklist << ConfigureCheck.new(key, val, &block) 
 	end
 
+	def init modes = @init_modes
+	    if modes == [:explicit]
+		modes = [:guess]
+	    end
+	    @no_action = @no_action_list.include? @app.cmd_targets.first
+	    unless @no_action
+		init_config modes
+		@configured = true
+	    end
+	end
+
 	# Run the configure process in the given modes.
 	def run_checklist(modes = [:guess, :interact])
 	    @checklist.each { |c|
@@ -230,8 +245,7 @@ module Rant::Plugin
 	end
 
 	def rant_plugin_init
-	    @no_action = @no_action_list.include? @app.cmd_targets.first
-	    @no_action || init_config
+	    init unless @init_modes == [:explicit]
 	end
 
 	def rant_plugin_stop
@@ -242,12 +256,12 @@ module Rant::Plugin
 	private
 
 	# Returns true on success, nil on failure.
-	def init_config
+	def init_config modes
 	    if File.exist? @file
 		read_yaml
 		@configured = true
-	    elsif !@init_modes == [:default]
-		run_checklist @init_modes
+	    elsif modes != [:default]
+		run_checklist modes
 	    end
 	    if @override_modes && !@override_modes.empty?
 		run_checklist @override_modes

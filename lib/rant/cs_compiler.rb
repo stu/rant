@@ -6,7 +6,7 @@ module Rant
     # interface to a C# Compiler.
     class CsCompiler
 
-	LIB_SYSTEM_XML	= "System.Xml.dll"
+	LIB_SYSTEM_XML		= "System.Xml.dll"
 	LIB_SYSTEM_DRAWING	= "System.Drawing.dll"
 	LIB_SYSTEM_FORMS	= "System.Windows.Forms.dll"
 
@@ -123,12 +123,12 @@ module Rant
 	    @entry = nil
 	    @optimize = true
 	    @warnings = true
-	    @csc = nil
 	    @csc_bin = nil
 	end
 
 	# Command to invoke compiler.
 	def csc
+	    #puts "#@csc_bin, #@csc_name"
 	    @csc_bin || @csc_name
 	end
 
@@ -136,9 +136,10 @@ module Rant
 	# +cc_bin+, this also tries to determine which interface to
 	# use for this compiler. Finally it sets +cc_bin+.
 	def csc=(cmd)
-	    name = self.class.cs_compiler_name(cmd)
+	    @csc_bin = cmd.dup
+	    name = self.class.cs_compiler_name(@csc_bin)
 	    @csc_name = name if name
-	    @csc_bin = cmd
+	    #puts "csc=() setting csc_bin to " + @csc_bin
 	end
 
 	def csc_name= new_name
@@ -167,6 +168,7 @@ module Rant
 	    # This generates the compilation command
 	    # for cscc.
 	    cc_cmd = csc.dup
+	    #puts "creating exe command for #{cc_cmd}"
 	    cc_cmd << " -e#{entry}" if entry
 	    cc_cmd << cc_cmd_args
 	    cc_cmd

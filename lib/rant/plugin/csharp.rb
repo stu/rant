@@ -87,7 +87,7 @@ module Rant
 	def take_common_attrs comp
 	    @csc_name = comp.csc_name
 	    @long_name = comp.long_name
-	    @csc = comp.csc
+	    @csc_bin = comp.csc_bin
 	    @debug = comp.debug
 	    comp.defines.each { |e|
 		@defines << e unless @defines.include? e
@@ -148,25 +148,23 @@ module Rant
 	def initialize(app, assembly)
 	    @assembly = assembly
 	    super(app, @assembly.out) { |t|
-		app.context.instance_eval {
-		    sys.sh assembly.send("cmd_" + assembly.target)
-		}
+		app.context.sys assembly.send("cmd_" + assembly.target)
 	    }
 	end
+=begin
 	def resolve_prerequisites
 	    @assembly.init
 	    @pre.concat(@assembly.sources)
 	    @pre.concat(@assembly.resources) if @assembly.resources
 	    super
 	end
-	### experimental ###
+=end
 	def invoke(force = false)
 	    @assembly.init
 	    @pre.concat(@assembly.sources)
 	    @pre.concat(@assembly.resources) if @assembly.resources
 	    super
 	end
-	####################
     end
 end	# module Rant
 
@@ -234,9 +232,9 @@ module Rant::Plugin
 		c.interact {
 		    c.prompt "Command to invoke your C# Compiler: "
 		}
-		c.react {
-		    c.msg "Using `#{c.value}' as C# compiler."
-		}
+		#c.react {
+		#    c.msg "Using `#{c.value}' as C# compiler."
+		#}
 	    end
 	    @config.check "csc-optimize" do |c|
 		c.default true
@@ -256,6 +254,7 @@ module Rant::Plugin
 	    return nil unless @config
 	    return nil unless @config.configured?
 	    csc_bin = @config["csc"]
+	    #puts "using csc from config: " + csc_bin
 	    csc = Rant::CsCompiler.new
 	    csc.csc = csc_bin
 	    csc.optimize = @config["csc-optimize"]
