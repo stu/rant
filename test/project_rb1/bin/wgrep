@@ -1,0 +1,5 @@
+#!/usr/local/bin/ruby
+
+require 'wgrep'
+
+exit WGrep::WGrep.new.run

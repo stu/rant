@@ -378,7 +378,11 @@ class Rant::RantApp
     end
 
     def desc *args
-	@task_desc = args.join("\n")
+	if args.empty? || (args.size == 1 && args.first.nil?)
+	    @task_desc = nil
+	else
+	    @task_desc = args.join("\n")
+	end
     end
 
     def task targ, &block
@@ -809,7 +813,12 @@ class Rant::RantApp
 	files = []
 	::Rant::RANTFILES.each { |rfn|
 	    path = dir ? File.join(dir, rfn) : rfn
-	    files << path if test(?f, path)
+	    # We load don't accept rantfiles with pathes that differ
+	    # only in case. This protects from loading the same file
+	    # twice on case insensitive file systems.
+	    unless files.find { |f| f.downcase == path.downcase }
+		files << path if test(?f, path)
+	    end
 	}
 =begin
 	# pre 0.2.3 loading Rantfile search mechanism

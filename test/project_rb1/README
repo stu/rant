@@ -1,0 +1,14 @@
+
+= wgrep
+
+wgrep is a simple grep utility written in Ruby. It searches for
+one word in one or more files or in standard input and prints each
+line which contains the word.
+
+== Usage
+
+wgrep WORD [FILE(s)]
+
+== Running the tests
+
+Type `rant test' to run the unit tests.
