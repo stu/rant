@@ -50,4 +50,21 @@ class TestProject2 < Test::Unit::TestCase
 	assert_equal(app(%w(-f buildfile create_s1f1)).run, 0)
 	assert(File.exist?("sub1/s1f1"))
     end
+    def test_opt_directory
+	app %w(insub1_s1f1 -C sub1)
+	assert_equal(@app.run, 0)
+	assert(Dir.pwd !~ /sub1$/,
+	    "rant should cd to original dir before returning from `run'")
+	assert(test(?f, "sub1/s1f1"),
+	    "rant should cd to sub1 and run task insub1_s1f1")
+    end
+    def test_opth_directory
+	app []	# just ensure to clear previous app
+	Rant[:directory] = "sub1"
+	assert_equal(Rant.run("insub1_s1f1"), 0)
+	assert(Dir.pwd !~ /sub1$/,
+	    "rant should cd to original dir before returning from `run'")
+	assert(test(?f, "sub1/s1f1"),
+	    "rant should cd to sub1 and run task insub1_s1f1")
+    end
 end

@@ -198,7 +198,7 @@ module Rant::Plugin
 		    Rant::CsCompiler.look_for_cs_compiler
 		}
 		c.interact {
-		    c.prompt "Command to invoke your C# Compiler:"
+		    c.prompt "Command to invoke your C# Compiler: "
 		}
 		c.react {
 		    c.msg "Using `#{c.value}' as C# compiler."

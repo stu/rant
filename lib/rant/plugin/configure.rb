@@ -236,6 +236,10 @@ module Rant::Plugin
 	    @guess_block = hsh[:guess]
 	    @interact_block = hsh[:interact]
 	    yield self if block_given?
+
+	    # let ENV override value
+	    ev = ENV[@key]
+	    @value = ev unless ev.nil?
 	end
 	def default(val)
 	    @value = val
@@ -250,6 +254,8 @@ module Rant::Plugin
 	    @react_block = block
 	end
 
+	# Before doing anything else, this looks in ENV if it has a
+	# value that is not +nil+ and uses that as default.
 	# Four possible modes:
 	# [:interact]
 	#	Run interact block if given.
@@ -262,6 +268,9 @@ module Rant::Plugin
 	#	run the interact block.
 	def run_check(mode = :guess)
 	    val = nil
+	    # look in ENV first
+	    ev = ENV[@key]
+	    @value = ev unless ev.nil?
 	    case mode
 	    when :interact
 		val = @interact_block[self] if @interact_block

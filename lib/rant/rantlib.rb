@@ -180,6 +180,14 @@ module Rant
 	@@rantapp.load_rantfile(rantfile)
     end
 
+    def [](opt)
+	Rant.rantapp[opt]
+    end
+
+    def []=(opt, val)
+	Rant.rantapp[opt] = val
+    end
+
     def abort_rant
 	if @@rantapp
 	    @@rantapp.abort
@@ -268,7 +276,7 @@ class Rant::RantApp
     def []=(opt, val)
 	case opt
 	when :directory
-	    rootdir = val
+	    self.rootdir = val
 	else
 	    @opts[opt] = val
 	end
