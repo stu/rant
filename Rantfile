@@ -33,18 +33,18 @@ end
 desc "Run first test-project.",
      "Warning: writes to disc."
 gen RubyTest, :testp1 do |g|
-    g.test_files = ["tests/project1/test_project.rb"]
+    g.test_files = ["test/project1/test_project.rb"]
 end
 
 desc "Run second test project.",
      "Warning: writes to disc"
 gen RubyTest, :testp2 do |g|
-    g.test_files = ["tests/project2/test_project.rb"]
+    g.test_files = ["test/project2/test_project.rb"]
 end
 
 desc "Test plugins."
 gen RubyTest, :testplugins do |g|
-    g.test_files = FileList["tests/plugin/**/test_*"]
+    g.test_files = FileList["test/plugin/**/test_*"]
 end
 
 desc "Run all tests."
