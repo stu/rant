@@ -341,6 +341,7 @@ class Rant::RantApp
 
 	@orig_pwd = nil
 	@current_subdir = ""
+	@resolve_hooks = []
     end
 
     def [](opt)
@@ -707,6 +708,12 @@ class Rant::RantApp
 	raise Rant::RantAbortException
     end
 
+    def abort_at(ch, *msg)
+	err_msg(pos_text(ch[:file], ch[:ln]), msg)
+	$stderr.puts caller if @opts[:trace_abort]
+	raise Rant::RantAbortException
+    end
+
     def help
 	puts "rant [-f RANTFILE] [OPTIONS] tasks..."
 	puts
@@ -722,7 +729,7 @@ class Rant::RantApp
 	def_target = target_list.first
 	if tlist.empty?
 	    puts "rant         # => " + list_task_names(
-		select_tasks_by_name(def_target)).join(', ')
+		resolve(def_target)).join(', ')
 	    msg "No described tasks."
 	    return
 	end
@@ -739,7 +746,7 @@ class Rant::RantApp
 	# TODO: show what's done if rant is invoked without argument
 	unless tlist.first.full_name == def_target
 	    defaults = list_task_names(
-		select_tasks_by_name(def_target)).join(', ')
+		resolve(def_target)).join(', ')
 	    puts "#{prefix}#{' ' * name_length}#{infix}=> #{defaults}"
 	end
 	tlist.each { |t|
@@ -842,7 +849,7 @@ class Rant::RantApp
     end
 
     def target_list
-	unless have_any_task?
+	if !have_any_task? && @resolve_hooks.empty?
 	    abort("No tasks defined for this rant application!")
 	end
 
@@ -853,7 +860,7 @@ class Rant::RantApp
 	target_list = @force_targets + @arg_targets
 	# The target list is a list of strings, not Task objects!
 	if target_list.empty?
-	    def_tasks = select_tasks_by_name "default"
+	    def_tasks = resolve "default"
 	    #have_default = @rantfiles.any? { |f|
 	    #	f.tasks.any? { |t| t.name == "default" }
 	    #}
@@ -884,7 +891,7 @@ class Rant::RantApp
 		opt[:force] = true
 		@force_targets.delete(target)
 	    end
-	    select_tasks_by_name(target).each { |t|
+	    resolve(target).each { |t|
 		matching_tasks += 1
 		begin
 		    t.invoke(opt)
@@ -898,6 +905,31 @@ class Rant::RantApp
 	    end
 	end
     end
+
+    def resolve task_name, rel_project_dir = @current_subdir
+	#select_tasks_by_name task_name, rel_project_dir
+	# Note: first lines copied from +select_tasks_by_name+
+	# for efficiency reasons
+	s = @tasks[expand_path(rel_project_dir, task_name)]
+	case s
+	when nil
+	    @resolve_hooks.each { |s|
+		# Note: will probably change to get more params
+		s = s[task_name]
+		return s if s
+	    }
+	    []
+	when Rant::Worker: [s]
+	else # assuming MetaTask
+	    s
+	end
+    end
+    public :resolve
+
+    def at_resolve &block
+	@resolve_hooks << block if block
+    end
+    public :at_resolve
 
     # Returns a list with all tasks for which yield
     # returns true.

@@ -1,0 +1,3 @@
+gen Rule, '.o' => '.c' do |t|
+    sys "cc -c -o #{t.name} #{t.source}"
+end

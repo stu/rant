@@ -104,8 +104,10 @@ task "to-win" => :package do
     win_dir = "/mnt/data_fat/stefan/Ruby"
     Dir["pkg/*"].each { |f|
 	target = File.join(win_dir, File.basename(f))
-	sys.rm_rf target if test(?e, target)
-	sys.cp_r f, target
+	(file target => f do |t|
+	    sys.rm_rf target if test(?e, target)
+	    sys.cp_r f, t.name
+	end).invoke
     }
 end
 

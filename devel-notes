@@ -65,6 +65,7 @@ following:
 
 == RantContext#rantapp rename
 Rename +rantapp+ to +rac+.
+Done.
 
 == Circular dependencies
 Before Rant detected circular dependencies, we silently removed a task
@@ -74,5 +75,8 @@ dependency on itself. Should we remove this mechanism now?
 Files/directories created during tests match the glob *.t*
 so don't give names matching this pattern to regular files, as they
 would soon be deleted!
+
+== Compiling C
+make uses the env. variables CC and CFLAGS.
 
 # vim:tw=70:

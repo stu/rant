@@ -328,6 +328,11 @@ module Rant
 	    @pre.collect { |pre| pre.to_s }
 	end
 
+	# First prerequisite.
+	def source
+	    @pre.first.to_s
+	end
+
 	# True if this task has at least one action (block to be
 	# executed) associated.
 	def has_actions?
@@ -492,7 +497,7 @@ module Rant
 			nil
 		    else
 			#STDERR.puts "selecting `#{t}'"
-			selection = @app.select_tasks_by_name t,
+			selection = @app.resolve t,
 					my_project_subdir
 			#STDERR.puts selection.size
 			if selection.empty?
@@ -744,5 +749,55 @@ module Rant
 	Task = ::Rant::Task
 	LightTask = ::Rant::LightTask
 	Directory = ::Rant::DirTask
-    end
+
+	class Rule
+	    # TODO
+	    def self.rant_generate(rac, ch, args, &block)
+		unless args.size == 1
+		    rac.abort_at(ch, "Rule takes only one argument.")
+		end
+		arg = args.first
+		unless Hash === arg && arg.size == 1
+		    rac.abort_at(ch, "Rule argument " +
+			"has to be a hash with one argument.")
+		end
+		target = nil
+		src_arg = nil
+		arg.each_pair { |target, src_arg| }
+		src_arg = src_arg.to_str if src_arg.respond_to? :to_str
+		target = target.to_str if target.respond_to? :to_str
+		esc_target = nil
+		target_rx = case target
+		when String
+		    esc_target = Regexp.escape(target)
+		    /#{esc_target}$/
+		when Regexp
+		    target
+		else
+		    rac.abort_at(ch, "rule target has " +
+			"to be a string or regular expression")
+		end
+		src_proc = case src_arg
+		when String
+		    unless String === target
+			rac.abort(ch, "rule target has to be a string " +
+			    "if source is a string")
+		    end
+		    lambda { |name| name.sub(/#{esc_target}$/, src_arg) }
+		when Proc: src_arg
+		else
+		    rac.abort_at(ch, "rule source has to be " +
+			"String or Proc")
+		end
+		rac.at_resolve { |task_name|
+		    if target_rx =~ task_name
+			[rac.file(:__caller__ => ch,
+			    task_name => src_proc[task_name], &block)]
+		    else
+			nil
+		    end
+		}
+	    end
+	end	# class Rule
+    end	# module Generators
 end # module Rant
