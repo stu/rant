@@ -56,6 +56,9 @@ end
 Rant::MAIN_OBJECT = self
 
 class Array
+
+    # Concatenates all elements like #join(' ') but also puts quotes
+    # around strings that contain a space.
     def arglist
 	self.shell_pathes.join(' ')
     end
@@ -89,51 +92,13 @@ module Rant::Lib
     # E.g.:
     #	p parse_caller_elem "/usr/local/lib/ruby/1.8/irb/workspace.rb:52:in `irb_binding'"
     # prints:
-    #   {:method=>"irb_binding", :ln=>52, :file=>"/usr/local/lib/ruby/1.8/irb/workspace.rb"} 
+    #   {:ln=>52, :file=>"/usr/local/lib/ruby/1.8/irb/workspace.rb"} 
     def parse_caller_elem elem
 	parts = elem.split(":")
-	rh = {	:file => parts[0],
-		:ln => parts[1].to_i
-	     }
-=begin
-	# commented for better performance
-	meth = parts[2]
-	if meth && meth =~ /\`(\w+)'/
-	    meth = $1
-	end
-	rh[:method] = meth
-=end
-	rh
+	{ :file => parts[0], :ln => parts[1].to_i }
     end
-
     module_function :parse_caller_elem
 
-    # currently unused
-    class Caller
-	def self.[](i)
-	    new(caller[i+1])
-	end
-	def initialize(clr)
-	    @clr = clr
-	    @file = @ln = nil
-	end
-	def file
-	    unless @file
-		ca = Lib.parse_caller_elem(clr)
-		@file = ca[:file]
-		@ln = ca[:ln]
-	    end
-	    @file
-	end
-	def ln
-	    unless @ln
-		ca = Lib.parse_caller_elem(clr)
-		@file = ca[:file]
-		@ln = ca[:ln]
-	    end
-	    @ln
-	end
-    end
 end
 
 # The methods in this module are the public interface to Rant that can
@@ -280,6 +245,9 @@ class Rant::RantApp
     # Important: We try to synchronize all tasks referenced indirectly
     # by @rantfiles with the task hash @tasks. The task hash is
     # intended for fast task lookup per task name.
+    #
+    # All tasks are registered to the system by the +prepare_task+
+    # method.
 
     # The RantApp class has no own state.
 
@@ -313,6 +281,8 @@ class Rant::RantApp
 	[ "--trace-abort",	GetoptLong::NO_ARGUMENT, nil	],
     ]
 
+    # Reference project's root directory in task names by preceding
+    # them with this character.
     ROOT_DIR_ID = "#"
     ESCAPE_ID = "\\"
 
@@ -334,14 +304,15 @@ class Rant::RantApp
     attr_reader :context
     # The [] and []= operators may be used to set/get values from this
     # object (like a hash). It is intended to let the different
-    # modules, plugins and tasks to communicate to each other.
+    # modules, plugins and tasks to communicate with each other.
     attr_reader :var
     # A hash with all tasks. For fast task lookup use this hash with
     # the taskname as key.
     attr_reader :tasks
-    # A list with of all imports (code loaded with +import+).
+    # A list of all imports (code loaded with +import+).
     attr_reader :imports
-
+    # Current subdirectory relative to project's root directory
+    # (#rootdir).
     attr_reader :current_subdir
 
     def initialize *args
@@ -370,7 +341,6 @@ class Rant::RantApp
 
 	@orig_pwd = nil
 	@current_subdir = ""
-
     end
 
     def [](opt)
@@ -402,22 +372,6 @@ class Rant::RantApp
     ### experimental support for subdirectories ######################
     def expand_project_path(path)
 	expand_path(@current_subdir, path)
-=begin
-	case path
-	when nil:	@current_subdir.dup
-	when "":	@current_subdir.dup
-	when /^#/:	path.sub(/^#/, '')
-	when /^\\#/:	path.sub(/^\\/, '')
-	else
-	    #puts "epp: current_subdir: #@current_subdir"
-	    if @current_subdir.empty?
-		# we are in project's root directory
-		path
-	    else
-		File.join(@current_subdir, path)
-	    end
-	end
-=end
     end
     def expand_path(subdir, path)
 	case path
@@ -446,7 +400,8 @@ class Rant::RantApp
     def goto(dir)
 	# TODO: optimize
 	p_dir = expand_project_path(dir)
-	abs_path = project_to_fs_path(dir)
+	base = rootdir.empty? ? Dir.pwd : rootdir
+	abs_path = p_dir.empty? ? base : File.join(base, p_dir)
 	@current_subdir = p_dir
 	unless Dir.pwd == abs_path
 	    #puts "pwd: #{Dir.pwd}; abs_path: #{abs_path}"
@@ -456,6 +411,7 @@ class Rant::RantApp
 	    #STDERR.puts "rant: in #{p_dir}"
 	end
     end
+    # +dir+ is a path relative to +rootdir+
     def goto_project_dir(dir)
 	# TODO: optimize
 	goto "##{dir}"
@@ -761,27 +717,56 @@ class Rant::RantApp
 
     def show_descriptions
 	tlist = select_tasks { |t| t.description }
+	# +target_list+ aborts if no task defined, so we can be sure
+	# that +default+ is not nil
+	def_target = target_list.first
 	if tlist.empty?
-	    msg "No described targets."
+	    puts "rant         # => " + list_task_names(
+		select_tasks_by_name(def_target)).join(', ')
+	    msg "No described tasks."
 	    return
 	end
 	prefix = "rant "
 	infix = "  # "
 	name_length = 0
 	tlist.each { |t|
-	    if t.name.length > name_length
-		name_length = t.name.length
+	    if t.full_name.length > name_length
+		name_length = t.full_name.length
 	    end
 	}
 	name_length < 7 && name_length = 7
 	cmd_length = prefix.length + name_length
+	# TODO: show what's done if rant is invoked without argument
+	unless tlist.first.full_name == def_target
+	    defaults = list_task_names(
+		select_tasks_by_name(def_target)).join(', ')
+	    puts "#{prefix}#{' ' * name_length}#{infix}=> #{defaults}"
+	end
 	tlist.each { |t|
-	    print(prefix + t.name.ljust(name_length) + infix)
+	    print(prefix + t.full_name.ljust(name_length) + infix)
 	    dt = t.description.sub(/\s+$/, "")
 	    puts dt.sub("\n", "\n" + ' ' * cmd_length + infix + "  ")
 	}
 	true
     end
+    def list_task_names(*tasks)
+	rsl = []
+	tasks.flatten.each { |t|
+	    if t.respond_to?(:has_actions?) && t.has_actions?
+		rsl << t
+	    elsif t.respond_to? :prerequisites
+		if t.prerequisites.empty?
+		    rsl << t
+		else
+		    rsl.concat(list_task_names(t.prerequisites))
+		end
+	    else
+		rsl << t
+	    end
+	}
+	rsl
+    end
+    private :list_task_names
 		
     # Increase verbosity.
     def more_verbose
@@ -856,7 +841,7 @@ class Rant::RantApp
 	not @rantfiles.all? { |f| f.tasks.empty? }
     end
 
-    def run_tasks
+    def target_list
 	unless have_any_task?
 	    abort("No tasks defined for this rant application!")
 	end
@@ -868,22 +853,27 @@ class Rant::RantApp
 	target_list = @force_targets + @arg_targets
 	# The target list is a list of strings, not Task objects!
 	if target_list.empty?
-	    have_default = @rantfiles.any? { |f|
-		f.tasks.any? { |t| t.name == "default" }
-	    }
-	    if have_default
+	    def_tasks = select_tasks_by_name "default"
+	    #have_default = @rantfiles.any? { |f|
+	    #	f.tasks.any? { |t| t.name == "default" }
+	    #}
+	    unless def_tasks.empty?
 		target_list << "default"
 	    else
 		first = nil
 		@rantfiles.each { |f|
 		    unless f.tasks.empty?
-			first = f.tasks.first.name
+			first = f.tasks.first.full_name
 			break
 		    end
 		}
 		target_list << first
 	    end
 	end
+	target_list
+    end
+
+    def run_tasks
 	# Now, run all specified tasks in all rantfiles,
 	# rantfiles in reverse order.
 	opt = {}
@@ -894,8 +884,6 @@ class Rant::RantApp
 		opt[:force] = true
 		@force_targets.delete(target)
 	    end
-	    ### pre 0.3.1 ###
-	    #(select_tasks { |t| t.name == target }).each { |t|
 	    select_tasks_by_name(target).each { |t|
 		matching_tasks += 1
 		begin

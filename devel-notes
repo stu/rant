@@ -70,4 +70,9 @@ Rename +rantapp+ to +rac+.
 Before Rant detected circular dependencies, we silently removed a task
 dependency on itself. Should we remove this mechanism now?
 
+== Testing
+Files/directories created during tests match the glob *.t*
+so don't give names matching this pattern to regular files, as they
+would soon be deleted!
+
 # vim:tw=70:
