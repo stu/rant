@@ -344,14 +344,12 @@ module Rant
 	def sh(*cmd_args, &block)
 	    cmd_args.flatten!
 	    cmd = cmd_args.join(" ")
-	    unless block_given?
-		# TODO: Don't create new block for each +sh+ call.
-		block = lambda { |succ, status|
-		    succ or raise CommandError.new(cmd, status)
-		}
-	    end
 	    fu_output_message cmd
-	    block.call(system(*cmd_args), $?)
+	    if block_given?
+		block[system(*cmd_args), $?]
+	    else
+		system(*cmd_args) or raise CommandError.new(cmd, $?)
+	    end
 	end
 
 	def ruby(*args, &block)

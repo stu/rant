@@ -55,4 +55,12 @@ it recognizes that it is an Array and copies the elements directly.
 So there is *no* way to resolve the glob pattern and there will never
 any Ruby file be selected!
 
+== Subdirectories
+Rant would have to check and eventually +cd+ before doing one of the
+following:
+* Loading an Rantfile (even through +source+).
+* Worker#invoke
+* Worker#needed?
+* RantApp#run before returning.
+
 # vim:tw=70:

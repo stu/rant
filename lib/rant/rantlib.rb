@@ -658,7 +658,7 @@ class Rant::RantApp
 	    "in `subdirs' command: " + e.message)
     end
 
-    def sys *args
+    def sys(*args)
 	if args.empty?
 	    @sys
 	else
@@ -674,7 +674,7 @@ class Rant::RantApp
 	td
     end
 
-    # Prints msg as error message and throws a RantAbortException.
+    # Prints msg as error message and raises a RantAbortException.
     def abort *msg
 	err_msg(msg) unless msg.empty?
 	$stderr.puts caller if @opts[:trace_abort]
@@ -719,6 +719,8 @@ class Rant::RantApp
 	@opts[:quiet] = false
     end
     
+    # This is actually an integer indicating the verbosity level.
+    # Usual values range from 0 to 3.
     def verbose
 	@opts[:verbose]
     end
