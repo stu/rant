@@ -1,0 +1,23 @@
+#!/usr/bin/env ruby
+
+rd = File.expand_path("../../../lib")
+$:.unshift rd unless $:.include? rd
+
+require 'rant'
+require 'rant/plugin/configure'
+
+Plugin::Configure.new do |conf|
+    conf.task
+    conf.check "a" do |c|
+	c.default = "value_a"
+	c.guess { "value_a_guess" }
+    end
+end
+
+task :clean do
+    rm_f "config"
+end
+
+if $0 == __FILE__
+    Rant.run
+end

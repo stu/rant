@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.1'
+    VERSION	= '0.1.2'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -90,6 +90,7 @@ module Rant
 	end
 
 	def rantapp
+	    ensure_rantapp
 	    @@rantapp
 	end
 	def rantapp=(app)
@@ -194,6 +195,9 @@ class Rant::RantApp
     # A list with all tasks.
     attr_reader :tasks
 
+    # A list of all registered plugins.
+    attr_reader :plugins
+
     @@block_task_mkpath = lambda { |task|
 	::Rant::FileUtils.mkpath task.name
     }
@@ -203,8 +207,7 @@ class Rant::RantApp
 	@rantfiles = []
 	Rant.rantapp = self
 	@opts = {
-	    # this will be a number, if given
-	    :verbose	=> false,
+	    :verbose	=> 0,
 	    :quiet	=> false,
 	}
 	@arg_rantfiles = []	# rantfiles given in args
@@ -214,7 +217,7 @@ class Rant::RantApp
 	@done = false
 	@rootdir = nil		# root directory for this app
 	@tasks = []
-
+	@plugins = []
     end
 
     def rootdir
@@ -246,12 +249,16 @@ class Rant::RantApp
 	else
 	    @rootdir = Dir.pwd
 	end
+	# Notify plugins
+	@plugins.each { |plugin| plugin.rant_start }
 	process_args
 	load_rantfiles
 	run_tasks
 	raise Rant::RantDoneException
     rescue Rant::RantDoneException
 	@done = true
+	# Notify plugins
+	@plugins.each { |plugin| plugin.rant_done }
 	return 0
     rescue Rant::RantAbortException
 	$stderr.puts "rant aborted!"
@@ -260,6 +267,10 @@ class Rant::RantApp
 	err_msg $!.message, $!.backtrace
 	$stderr.puts "rant aborted!"
 	return 1
+    ensure
+	# TODO: exception handling!
+	@plugins.each { |plugin| plugin.rant_plugin_stop }
+	@plugins.each { |plugin| plugin.rant_quit }
     end
 
     def task targ, &block
@@ -357,6 +368,47 @@ class Rant::RantApp
 	load_file rf
 	true
     end
+
+    # Increase verbosity.
+    def more_verbose
+	verbose ? (@opts[:verbose] += 1) : (@opts[:verbose] = 1)
+	@opts[:quiet] = false
+    end
+    def verbose
+	@opts[:verbose]
+    end
+    def quiet?
+	@opts[:quiet]
+    end
+
+    def pos_text file, ln
+	t = "in file `#{file}'"
+	if ln && ln > 0
+	    t << ", line #{ln}"
+	end
+	t + ": "
+    end
+
+    def msg *args
+	verbose_level = args[0]
+	if verbose_level.is_a? Integer
+	    super(args[1..-1]) if verbose_level <= verbose
+	else
+	    super
+	end
+    end
+
+    ###### public methods regarding plugins ##########################
+    def plugin_register(*args)
+	plugin = args[0]
+	unless plugin.respond_to? :rant_plugin?
+	    abort("Invalid plugin register:", plugin.inspect, caller)
+	end
+	@plugins << plugin
+	msg 2, "Plugin `#{plugin.rant_plugin_name}' registered."
+	plugin.rant_plugin_init
+    end
+    ##################################################################
 
     private
     def have_any_task?
@@ -510,7 +562,7 @@ class Rant::RantApp
 	    when "--verbose": more_verbose
 	    when "--quiet"
 		@opts[:quiet] = true
-		@opts[:verbose] = false
+		@opts[:verbose] = -1
 	    when "--version"
 		$stdout.puts "rant #{Rant::VERSION}"
 		raise Rant::RantDoneException
@@ -536,8 +588,9 @@ class Rant::RantApp
 	}
     end
 
+    # Increase verbosity.
     def more_verbose
-	verbose ? (@opts[:verbose] += 1) : (@opts[:verbose] = 1)
+	@opts[:verbose] += 1
 	@opts[:quiet] = false
     end
     def verbose
@@ -639,79 +692,5 @@ class Rant::RantApp
 	    [file, true]
 	end
     end
-
-####### TODO #########################################################
-    # Returns true on success, nil on failure.
-    def init_config
-        unless File.exist? CONFIG_FN
-            return nil unless autoconf(true)
-        end
-        ret_attrs = read_config
-        unless ret_attrs
-            if ask_yes_no "Configuration invalid, reconfigure now?"
-                begin
-                    File.unlink CONFIG_FN
-                rescue
-                    warn_msg $!.message
-                end
-                if File.exist? CONFIG_FN
-                    err_msg "Can't remove invalid config file `#{CONFIG_FN}'.",
-                        "Please remove by hand!"
-                    return nil
-                end
-                return init_config
-            else
-                return nil
-            end
-        end
-        @attrs.merge! ret_attrs
-        @config_success = true
-    end
-
-    # Returns nil on failure.
-    def read_yaml_config(fn = CONFIG_FN)
-        File.open(fn) { |file|
-            YAML.load_documents(file) { |doc|
-                if doc.is_a? Hash
-                    return doc.dup
-                else
-                    err_msg "Invalid config file `#{config}'.",
-                        "Please remove this file or reconfigure."
-                    return nil
-                end
-            }
-        }
-    rescue
-        err_msg "When attempting to read config: " + $!.message
-        nil
-    end
-
-    # Write configuration (attrs) to fn.
-    # Returns nil on failure.
-    def write_config(fn, attrs)
-        File.open(fn, "w") { |file|
-            file << attrs.to_yaml
-            file << "\n"
-        }
-        return true
-    rescue
-        err_msg "When writing configuration: " + $!.message,
-            "Ensure writing to file (doesn't need to exist) `#{fn}'",
-            "is possible and try to reconfigure!"
-        nil
-    end
-
-    # Write current settings.
-    # Return nil on failure, true otherwise.
-    def save
-        if write_config CONFIG_FN, @attrs
-            msg "Configuration written to `#{CONFIG_FN}'."
-            true
-        else
-            err_msg "Fail to write configuration."
-            nil
-        end
-    end
-######################################################################
 
 end	# class Rant::RantApp
