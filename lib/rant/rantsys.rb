@@ -186,6 +186,7 @@ module Rant
 	end
 
 	def sh(*cmd_args, &block)
+	    cmd_args.flatten!
 	    cmd = cmd_args.join(" ")
 	    unless block_given?
 		block = lambda { |succ, status|
@@ -210,16 +211,16 @@ module Rant
 	    Env.shell_path path
 	end
 
-	# If supported, make a symbolic link, otherwise
+	# If supported, make a hardlink, otherwise
 	# fall back to copying.
 	def safe_ln(*args)
-	    unless self.class.symlink_supported
+	    unless Sys.symlink_supported
 		cp(*args)
 	    else
 		begin
 		    ln(*args)
 		rescue Errno::EOPNOTSUPP
-		    self.class.symlink_supported = false
+		    Sys.symlink_supported = false
 		    cp(*args)
 		end
 	    end

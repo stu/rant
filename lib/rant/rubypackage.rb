@@ -117,7 +117,12 @@ class Rant::RubyPackage
     def initialize(opts = {})
 	@app = opts[:app] || Rant.rantapp
 	@pkg_dir = "pkg"
-	@pkg_dir_task_defined = false
+	@pkg_dir_task = nil
+	@dist_dir_task = nil
+	@gem_task = nil
+	@tar_task = nil
+	@zip_task = nil
+	@package_task = nil
 	name = opts[:name]
 	@ch = opts[:__caller__] || Rant::Lib.parse_caller_elem(caller[0])
 	unless name
@@ -168,19 +173,61 @@ class Rant::RubyPackage
     end
 
     def pkg_dir_task
-	return if @pkg_dir_task_defined
-	@app.gen(Rant::Generators::Directory, @pkg_dir)
-	@pkg_dir_task_defined = true
+	return if @pkg_dir_task
+	if @dist_dir_task
+	    # not ideal but should work: If only the gem task will
+	    # be run, dist dir creation wouldn't be necessary
+	    return @pkg_dir_task = @dist_dir_task
+	end
+	@pkg_dir_task = @app.gen(Rant::Generators::Directory, @pkg_dir)
+    end
+
+    def dist_dir_task
+	return if @dist_dir_task
+	pkg_name = pkg_dist_dir
+	dist_dir = pkg_dist_dir
+	@dist_dir_task = @app.gen(Rant::Generators::Directory,
+		dist_dir => files) { |t|
+	    # ensure to create new and empty destination directory
+	    if Dir.entries(dist_dir).size > 2	# "." and ".."
+		@app.sys.rm_rf(dist_dir)
+		@app.sys.mkdir(dist_dir)
+	    end
+	    # evaluate directory structure first
+	    dirs = []
+	    fl = []
+	    files.each { |e|
+		if test(?d, e)
+		    dirs << e unless dirs.include? e
+		else	# assuming e is a file
+		    fl << e
+		    dir = File.dirname(e)
+		    dirs << dir unless dir == "." || dirs.include?(dir)
+		end
+	    }
+	    # create directory structure
+	    dirs.each { |dir|
+		dest = File.join(dist_dir, dir)
+		@app.sys.mkpath(dest) unless test(?d, dest)
+	    }
+	    # link or copy files
+	    fl.each { |f|
+		dest = File.join(dist_dir, f)
+		@app.sys.safe_ln(f, dest)
+	    }
+	}
     end
 
     # Create task for gem building.
     def gem_task(tname = :gem)
-	pkg_dir_task
-	pkg_name = gem_pkg_name
+	# We first define the task to create the gem, and afterwards
+	# the task to create the pkg directory to ensure that a
+	# pending description is used to describe the gem task.
+	pkg_name = gem_pkg_path
 	# shortcut task
 	@app.task({:__caller__ => @ch, tname => pkg_name})
 	# actual gem-creating task
-	@app.file({:__caller__ => @ch,
+	@gem_task = @app.file({:__caller__ => @ch,
 		pkg_name => [@pkg_dir] + files}) { |t|
 	    # We require rubygems as late as possible to save some
 	    # execution cycles if possible ;)
@@ -203,16 +250,81 @@ class Rant::RubyPackage
 	    end
 	    @app.sys.mv(fn, @pkg_dir) if @pkg_dir
 	}
+	pkg_dir_task
     end
 
-    def gem_pkg_name
+    def tar_task(tname = :tar)
+	# Create tar task first to ensure that a pending description
+	# is used for the tar task and not for the dist dir task.
+	pkg_name = tar_pkg_path
+	pkg_files = files
+	# shortcut task
+	@app.task({:__caller__ => @ch, tname => pkg_name})
+	# actual tar-creating task
+	@tar_task = @app.file(:__caller__ => @ch,
+		pkg_name => [pkg_dist_dir] + pkg_files) { |t|
+	    @app.sys.cd(@pkg_dir) {
+		@app.sys %W(tar zcf #{tar_pkg_name} #{pkg_base_name})
+	    }
+	}
+	dist_dir_task
+    end
+
+    def zip_task(tname = :zip)
+	# Create zip task first to ensure that a pending description
+	# is used for the zip task and not for the dist dir task.
+	pkg_name = zip_pkg_path
+	pkg_files = files
+	# shortcut task
+	@app.task({:__caller__ => @ch, tname => pkg_name})
+	# actual zip-creating task
+	@zip_task = @app.file(:__caller__ => @ch,
+		pkg_name => [pkg_dist_dir] + pkg_files) { |t|
+	    @app.sys.cd(@pkg_dir) {
+		# zip options:
+		#   y: store symlinks instead of referenced files
+		#   r: recurse into directories
+		#   q: quiet operation
+		@app.sys %W(zip -yqr #{zip_pkg_name} #{pkg_base_name})
+	    }
+	}
+	dist_dir_task
+    end
+
+    def pkg_base_name
 	unless name
 	    @app.abort(@app.pos_text(@ch[:file], @ch[:ln]),
 		"`name' required for packaging")
 	end
-	pkg_name = @pkg_dir ? File.join(@pkg_dir, name) : name
-	pkg_name << "-#{version}" if version
-	pkg_name + ".gem"
+	version ? "#{name}-#{version}" : name
+    end
+
+    def gem_pkg_path
+	pkg_dist_dir + ".gem"
+    end
+
+    #--
+    # Arghhh... tar makes me feel angry
+    #++
+
+    def tar_pkg_name
+	pkg_base_name + ".tar.gz"
+    end
+
+    def tar_pkg_path
+	pkg_dist_dir + ".tar.gz"
+    end
+
+    def zip_pkg_name
+	pkg_base_name + ".zip"
+    end
+
+    def zip_pkg_path
+	pkg_dist_dir + ".zip"
+    end
+
+    def pkg_dist_dir
+	@pkg_dir ? File.join(@pkg_dir, pkg_base_name) : pkg_base_name
     end
 
 end	# class Rant::RubyPackage
