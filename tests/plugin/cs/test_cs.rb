@@ -16,9 +16,12 @@ class TestPluginCs < Test::Unit::TestCase
     # Try to compile the "hello world" program. Requires cscc, csc
     # or mcs to be on your PATH.
     def test_hello
+	puts "Making hello.exe"
 	assert_equal(Rant.run([]), 0,
 	    "first target, `hello.exe', should be compiled")
-	assert(File.exist?("hello.exe"))
+	puts "made hello.exe"
+	assert(File.exist?("hello.exe"),
+	    "hello.exe is the first target in Rantfile")
 	if Env.on_windows?
 	    assert_equal(`hello.exe`.chomp, "Hello, world!",
 		"hello.exe should print `Hello, world!'")
@@ -39,36 +42,36 @@ class TestPluginCs < Test::Unit::TestCase
 	assert(File.exist?("AB.dll"))
     end
     def test_cscc
-	old_csc = AssemblyTask.csc
+	old_csc = Assembly.csc
 	cscc = Env.find_bin("cscc")
 	unless cscc
 	    $stderr.puts "cscc not on path, will not test cscc"
 	    return
 	end
-	AssemblyTask.csc = cscc
+	Assembly.csc = cscc
 	test_opts
-	AssemblyTask.csc = old_csc
+	Assembly.csc = old_csc
     end
     def test_mcs
-	old_csc = AssemblyTask.csc
+	old_csc = Assembly.csc
 	mcs = Env.find_bin("mcs")
 	unless mcs
 	    $stderr.puts "mcs not on path, will not test mcs"
 	    return
 	end
-	AssemblyTask.csc = mcs
+	Assembly.csc = mcs
 	test_opts
-	AssemblyTask.csc = old_csc
+	Assembly.csc = old_csc
     end
     def test_csc
-	old_csc = AssemblyTask.csc
+	old_csc = Assembly.csc
 	csc = Env.find_bin("csc")
 	unless csc
 	    $stderr.puts "csc not on path, will not test csc"
 	    return
 	end
-	AssemblyTask.csc = csc
+	Assembly.csc = csc
 	test_opts
-	AssemblyTask.csc = old_csc
+	Assembly.csc = old_csc
     end
 end

@@ -3,7 +3,7 @@
 # Rantfile for Rant :)
 
 require 'rant'
-require 'rant/testtask'
+require 'rant/rubytest'
 
 task :default => :test
 
@@ -18,24 +18,24 @@ file "doc" => doc_files do
 end
 
 desc "Run basic tests."
-gen TestTask do |t|
+gen RubyTest do |t|
     t.pattern = 'test_*.rb'
 end
 
 desc "Run first test-project.",
      "Warning: writes to disc."
-gen TestTask, :testp1 do |t|
+gen RubyTest, :testp1 do |t|
     t.test_files = ["tests/project1/test_project.rb"]
 end
 
 desc "Run second test project.",
      "Warning: writes to disc"
-gen TestTask, :testp2 do |t|
+gen RubyTest, :testp2 do |t|
     t.test_files = ["tests/project2/test_project.rb"]
 end
 
 desc "Test plugins."
-gen TestTask, :testplugins do |t|
+gen RubyTest, :testplugins do |t|
     t.test_files = FileList["tests/plugin/**/test_*"]
 end
 

@@ -4,28 +4,37 @@
 require 'rant/plugin_methods'
 require 'rant/cs_compiler'
 
-module RantContext
-    # Creates a filetask for building an assembly.  Contrary to a
-    # filetask, the block is used to specify attributes for the
-    # assembly task, not to build the target.
-    def assembly(targ, &block)
-	rantapp.assembly(targ, &block)
-    end
-end
-    
 module Rant
 
-    class RantApp
-	def assembly(targ, &block)
-	    prepare_task(targ, nil) { |name,pre,blk|
-		AssemblyTask.new(self, name, pre, &block)
-	    }
-	end
-    end # class RantApp
-
-    class AssemblyTask < FileTask
-
+    class Generators::Assembly < CsCompiler
 	class << self
+
+	    def rant_generate(app, clr, args, &block)
+		assembly = self.new(&block)
+		if args.size == 1
+		    targ = args.first
+		    # embed caller information for correct resolving
+		    # of source Rantfile
+		    if targ.is_a? Hash
+			targ[:__caller__] = clr
+		    else
+			targ = { :__caller__ => clr, targ => [] }
+		    end
+		    app.prepare_task(targ, nil) { |name,pre,blk|
+			assembly.out = name
+			t = AssemblyTask.new(app, assembly, &block)
+			# TODO: optimize
+			pre.each { |e| t << e }
+			t
+		    }
+		else
+		    cinf = ::Rant::Lib.parse_caller_elem(clr)
+		    app.abort(app.pos_text(cinf[:file], cinf[:ln]),
+			"Assembly takes one argument, " +
+			"which should be like one given to the `task' command.")
+		end
+	    end
+
 	    def csc
 		@csc
 	    end
@@ -35,8 +44,8 @@ module Rant
 		    @csc = new_csc
 		when String
 		    @csc = CsCompiler.new(
-			Rant::CsCompiler.cs_compiler_name(new_csc))
-		    @csc.cc = new_csc
+			CsCompiler.cs_compiler_name(new_csc))
+		    @csc.csc_bin = new_csc
 		when nil
 		    @csc = nil
 		else
@@ -47,19 +56,6 @@ module Rant
 	end
 	@csc = nil
 
-	# Compiler to use. Can be one of "csc", "mcs" or "cscc". Note
-	# that this doesn't decide what compiler *program* will be
-	# called, it decides what interface to use for the compiler.
-	attr_accessor :cc
-
-	# Compiler program. Usually a program on your path, or you can
-	# give an absolute path. Defaults to +cc+.
-	attr_accessor :cc_bin
-
-	# This object has to respond to at least the same methods as
-	# defined in the Rant::CsCompiler module.
-	attr_accessor :compiler
-
 	# Maybe:
 	# ["object"]
 	#	Compile to object code. Not *that* usual for .NET.
@@ -69,96 +65,126 @@ module Rant
 	#	Create an executable.
 	attr_accessor :target
 
-	def initialize(*args, &init_block)
-	    super
+	def initialize(comp = nil, &init_block)
+	    super()
+	    @target = nil
 	    @init_block = init_block
+	    take_common_attrs comp if comp
 	end
 
-	#--
-	# We delay the call of the initialization block until the
-	# target will actually be run. This allows variables to be
-	# overridden after task definition and probably saves some
-	# instructions (if the task won't be run).
-	#++
+	# Synonym for +out+.
+	def name
+	    out
+	end
 
-	def run
+	# Synonym for +out=+.
+	def name=(new_name)
+	    out = new_name
+	end
+
+	# Take common attributes like +optimize+, +csc+ and similar
+	# from the compiler object +comp+.
+	def take_common_attrs comp
+	    @csc_name = comp.csc_name
+	    @long_name = comp.long_name
+	    @csc = comp.csc
+	    @debug = comp.debug
+	    comp.defines.each { |e|
+		@defines << e unless @defines.include? e
+	    }
+	    comp.lib_link_pathes.each { |e|
+		@lib_link_pathes << e unless @lib_link_pathes.include?  e
+	    }
+	    @optimize = comp.optimize
+	    @warnings = comp.warnings
+	    # TODO: we currently take unconditionally all misc- and
+	    # compiler specific args
+	    comp.misc_args.each { |e|
+		@misc_args << e unless @misc_args.include? e
+	    }
+	    comp.specific_args.each_pair { |k,v|
+		# k is a compiler name, v is a list of arguments
+		# specific to this compiler type.
+		cst = @specific_args[k]
+		unless cst
+		    @specific_args[k] = v
+		    next
+		end
+		v.each { |e|
+		    cst << e unless cst.include? e
+		}
+	    }
+	end
+
+	# Call the initialization block and intialize compiler
+	# interface.
+	def init
 	    # setup compiler interface
-	    @compiler = Plugin::Cs.csc_for_task(self)
-	    @compiler ||= (self.class.csc.nil? ? nil : self.class.csc.dup)
-	    if @compiler
-		@cc = @compiler.name
-	    else
-		@cc_bin = nil
-		csc = (ENV["CSC"] || ENV["CC"])
-		case csc
-		when /csc(\.exe)$/i
-		    @cc = "csc"
-		when /cscc(\.exe)$/i
-		    @cc = "cscc"
-		when /mcs(\.exe)$/i
-		    @cc = "mcs"
-		else
-		    @cc = nil
-		end
-		if Env.on_windows?
-		    @cc ||= "csc"
-		else
-		    @cc ||= "cscc"
-		end
-		@compiler = CsCompiler.new(@cc)
-	    end
-	    # set target type
-	    @target = case @name
-	    when /\.exe$/i: "exe"
-	    when /\.dll$/i: "dll"
-	    when /\.obj$/i: "object"
-	    else "exe"
-	    end
+	    comp = Plugin::Cs.csc_for_assembly(self) || self.class.csc
+	    take_common_attrs comp if comp
+
 	    # call initialization block
 	    @init_block[self] if @init_block
-	    # allow easy override of compiler path
-	    @compiler.cc = @cc_bin if @cc_bin
-	    @compiler.out = @name
-	    # Use prerequisites as sources if no explicit sources
-	    # given.
-	    @compiler.sources ||= prerequisites
 
-	    @block = lambda { |t|
-		::Rant::FileUtils.sh(@compiler.send("cmd_" + @target))
+	    # set target type
+	    unless @target
+		@target = case @out
+		when /\.exe$/i: "exe"
+		when /\.dll$/i: "dll"
+		when /\.obj$/i: "object"
+		else "exe"
+		end
+	    end
+	    # TODO: verify some attributes like @target
+	end
+
+	def compile
+	    ::Rant::FileUtils.sh(self.send("cmd_" + @target))
+	end
+
+    end	# class Generators::Assembly
+
+    class AssemblyTask < FileTask
+	def initialize(app, assembly)
+	    @assembly = assembly
+	    super(app, @assembly.out) { |t|
+		app.context.instance_eval {
+		    sh assembly.send("cmd_" + assembly.target)
+		}
 	    }
-
-	    # actually run task
+	end
+	def resolve_prerequisites
+	    @assembly.init
+	    @pre.concat(@assembly.sources)
+	    @pre.concat(@assembly.resources) if @assembly.resources
 	    super
 	end
-
-	# Redirect messages to compiler interface if possible.
-	def method_missing(symbol, *args)
-	    if symbol.to_s =~ /^cc_(.+)$/ &&
-		    compiler.respond_to?($1.to_sym)
-		compiler.send($1, *args)
-	    elsif compiler.respond_to?(symbol)
-		compiler.send(symbol, *args)
-	    else
-		super
-	    end
-	end
-    end	# class AssemblyTask
-
+    end
 end	# module Rant
 
 module Rant::Plugin
 
+    # This plugin class is currently designed to be instantiated only
+    # once with +rant_plugin_new+.
     class Cs
 	include ::Rant::PluginMethods
 
 	@plugin_object = nil
 	class << self
 
+	    def rant_plugin_new(app, cinf, *args, &block)
+		if args.size > 1
+		    app.abort(app.pos_text(cinf[:file], cinf[:ln]),
+			"Cs plugin takes only one argument.")
+		end
+		self.new(app, args.first, &block)
+	    end
+
 	    attr_accessor :plugin_object
 
-	    def csc_for_task(task)
+	    def csc_for_assembly(task)
 		if @plugin_object
-		    @plugin_object.csc_for_task(task)
+		    @plugin_object.csc_for_assembly(task)
 		else
 		    nil
 		end
@@ -172,21 +198,20 @@ module Rant::Plugin
 	# A compiler interface with settings resulting from config.
 	attr_reader :config_csc
 
-	def initialize(name = nil, app = ::Rant.rantapp)
+	def initialize(app, name = nil)
 	    @name = name || rant_plugin_type
 	    @app = app or raise ArgumentError, "no application given"
 	    @config_csc = nil
 	    @config = nil
 
 	    self.class.plugin_object = self
-	    @app.plugin_register self
 
 	    yield self if block_given?
 
 	    define_config_checks
 	end
 
-	def csc_for_task(task)
+	def csc_for_assembly(assembly)
 	    @config_csc ||= csc_from_config
 	    @config_csc.nil? ? nil : @config_csc.dup
 	end
@@ -223,9 +248,8 @@ module Rant::Plugin
 	    return nil unless @config
 	    return nil unless @config.configured?
 	    csc_bin = @config["csc"]
-	    csc = Rant::CsCompiler.new(
-		Rant::CsCompiler.cs_compiler_name(csc_bin))
-	    csc.cc = csc_bin if csc_bin
+	    csc = Rant::CsCompiler.new
+	    csc.csc = csc_bin
 	    csc.optimize = @config["csc-optimize"]
 	    csc.debug = @config["csc-debug"]
 	    csc

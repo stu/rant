@@ -39,11 +39,11 @@ module Rant::Env
     RUBY	= ::Config::CONFIG['ruby_install_name']
 
     def on_windows?
-        OS =~ /win/
+        OS =~ /^win/i
     end
 
     def on_linux?
-	OS =~ /linux/
+	OS =~ /linux/i
     end
 
     # Get an array with all pathes in the PATH

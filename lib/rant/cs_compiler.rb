@@ -71,11 +71,13 @@ module Rant
 	end
 
 	# Short name for compiler, such as "csc", "cscc" or "mcs".
-	attr_reader :name
+	attr_reader :csc_name
 	# Descriptive name for compiler.
 	attr_reader :long_name
 	# Compiler path, or cmd on PATH
-	attr_writer :cc
+	# Look also at the #csc and #csc= methods. Most times they do
+	# what you need.
+	attr_accessor :csc_bin
 	# Debug flag.
 	attr_accessor :debug
 	# Target filename.
@@ -103,7 +105,7 @@ module Rant
 	attr_accessor :warnings
 
 	def initialize(compiler_name=nil)
-	    self.name = (compiler_name || "cscc")
+	    self.csc_name = (compiler_name || "cscc")
 	    @long_name = "C# Compiler"
 	    @defines = []
 	    @libs = []
@@ -121,34 +123,49 @@ module Rant
 	    @entry = nil
 	    @optimize = true
 	    @warnings = true
-	    @cc = nil
+	    @csc = nil
 	end
 
-	def cc
-	    @cc || @name
+	# Command to invoke compiler.
+	def csc
+	    @csc_bin || @csc_name
 	end
 
-	def name= new_name
+	# Set this to command to invoke your compiler. Contrary to
+	# +cc_bin+, this also tries to determine which interface to
+	# use for this compiler. Finally it sets +cc_bin+.
+	def csc=(cmd)
+	    name = self.class.cs_compiler_name(cmd)
+	    @csc_name = name if name
+	    @csc_bin = cmd
+	end
+
+	def csc_name= new_name
 	    unless ["cscc", "csc", "mcs"].include?(new_name)
 		raise "Unsupported C# compiler `#{new_name}'"
 	    end
-	    @name = new_name
-	    @long_name = case @name
+	    @csc_name = new_name
+	    @long_name = case @csc_name
 	    when "cscc":	"DotGNU C# compiler"
 	    when "csc":	"MS Visual.NET C# compiler"
 	    when "mcs":	"Mono C# compiler"
 	    end
 	end
 
+	# Shortcut for +specific_args+.
+	def sargs
+	    @specific_args
+	end
+
 	# Generate compilation command for executable.
 	def cmd_exe
-	    send @name + "_cmd_exe"
+	    send @csc_name + "_cmd_exe"
 	end
 
 	def cscc_cmd_exe
 	    # This generates the compilation command
 	    # for cscc.
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " -e#{entry}" if entry
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
@@ -157,7 +174,7 @@ module Rant
 	def csc_cmd_exe
 	    # This generates the compilation command
 	    # for csc.
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    # Use target:winexe only if not debugging,
 	    # because this will suppress a background console window.
 	    cc_cmd << " /target:winexe" unless debug
@@ -168,7 +185,7 @@ module Rant
 
 	def mcs_cmd_exe
 	    # Generate compilation command for mcs.
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " -target:exe"
 	    cc_cmd << " -main:#{entry}" if entry
 	    cc_cmd << cc_cmd_args
@@ -177,25 +194,25 @@ module Rant
 
 	# Generate command for DLL.
 	def cmd_dll
-	    send @name + "_cmd_dll"
+	    send @csc_name + "_cmd_dll"
 	end
 
 	def cscc_cmd_dll
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " -shared"
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
 	end
 
 	def csc_cmd_dll
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " /target:library"
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
 	end
 
 	def mcs_cmd_dll
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " -target:library"
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
@@ -203,37 +220,37 @@ module Rant
 
 	# Generate command for object file.
 	def cmd_object
-	    send @name + "_cmd_object"
+	    send @csc_name + "_cmd_object"
 	end
 
 	def cscc_cmd_object
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " -c"
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
 	end
 
 	def csc_cmd_object
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " /target:module"
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
 	end
 
 	def mcs_cmd_object
-	    cc_cmd = cc.dup
+	    cc_cmd = csc.dup
 	    cc_cmd << " -target:module"
 	    cc_cmd << cc_cmd_args
 	    cc_cmd
 	end
 
 	def to_s
-	    cc + "\n" + "Interface: " + name
+	    csc + "\n" + "Interface: " + csc_name
 	end
 
 	private
 	def cc_cmd_args
-	    send @name + "_cmd_args"
+	    send @csc_name + "_cmd_args"
 	end
 
 	def cscc_cmd_args

@@ -179,15 +179,10 @@ module Rant
 	    attr_accessor :symlink_supported
 	end
 
-	# Override this method to control messages.
-	# This methods prints each argument on its
-	# own line to $stderr.
-	def rant_fu_msg *args
-	    $stderr.puts(args) unless ::Rant.rantapp[:quiet]
-	end
-
+	# We override the output method of the FileUtils module to
+	# allow the Rant application to control output.
 	def fu_output_message(msg)	#:nodoc:
-	    rant_fu_msg(msg)
+	    $stderr.puts msg unless ::Rant.rantapp[:quiet]
 	end
 
 	def sh(*cmd_args, &block)
@@ -197,7 +192,7 @@ module Rant
 		    succ or raise CommandError.new(cmd, status)
 		}
 	    end
-	    rant_fu_msg cmd
+	    fu_output_message cmd
 	    block.call(system(*cmd_args), $?)
 	end
 
@@ -238,7 +233,7 @@ module Rant
 	    split_path(base) + [last]
 	end
 
-	module_function :rant_fu_msg, :sh, :ruby, :safe_ln,
-		:split_path, :sp
+	module_function :sh, :ruby, :safe_ln,
+		:split_path, :sp, :fu_output_message
     end	# module FileUtils
 end	# module Rant

@@ -4,13 +4,12 @@ rd = File.expand_path("../../../lib")
 $:.unshift rd unless $:.include? rd
 
 require 'rant'
-require 'rant/plugin/configure'
 
 task :hello do |t|
     touch t.name
 end
 
-conf = Plugin::Configure.new do |conf|
+conf = plugin :Configure do |conf|
     conf.task		# define a task named :configure
     conf.check "a" do |c|
 	c.default "value_a"

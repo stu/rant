@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/fileutils'
 
 module Rant
-    VERSION	= '0.1.10'
+    VERSION	= '0.2.0'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -19,6 +19,10 @@ module Rant
     end
 
     class RantDoneException < StandardError
+    end
+
+    # This module is a namespace for generator classes.
+    module Generators
     end
 
 end
@@ -77,6 +81,7 @@ end
 # The methods in this module are the public interface to Rant that can
 # be used in Rantfiles.
 module RantContext
+    include Rant::Generators
 
     # Define a basic task.
     def task targ, &block
@@ -93,16 +98,16 @@ module RantContext
 	rantapp.enhance(targ, &block)
     end
 
-    def show(*args)
-	rantapp.show(*args)
-    end
-
     def desc(*args)
 	rantapp.desc(*args)
     end
 
     def gen(*args, &block)
 	rantapp.gen(*args, &block)
+    end
+
+    def plugin(*args, &block)
+	rantapp.plugin(*args, &block)
     end
 
     # Create a path.
@@ -121,12 +126,17 @@ module RantContext
     end
     alias source load_rantfile
 
+    # We override the output method of the FileUtils module to
+    # allow the Rant application to control output.
+    def fu_output_message(msg)	#:nodoc:
+	$stderr.puts msg unless rantapp[:quiet]
+    end
 end	# module RantContext
 
 class RantAppContext
-    include ::Rant
-    include ::RantContext
-    include ::Rant::FileUtils
+    include Rant
+    include Rant::FileUtils
+    include RantContext
 
     def initialize(app)
 	@rantapp = app
@@ -200,7 +210,7 @@ module Rant
 	@@rantapp
     end
 
-    module_function :task, :file, :show, :desc, :subdirs,
+    module_function :task, :file, :desc, :subdirs,
 	:gen, :load_rantfile, :source, :enhance, :directory
 
 end	# module Rant
@@ -244,6 +254,10 @@ class Rant::RantApp
     attr_reader :tasks
     # A list of all registered plugins.
     attr_reader :plugins
+    # The context in which Rantfiles are loaded. FileUtils methods may
+    # be called through an instance_eval on this object (e.g. from
+    # plugins).
+    attr_reader :context
 
     def initialize *args
 	@args = args.flatten
@@ -322,7 +336,7 @@ class Rant::RantApp
 	process_args
 	# Set pwd.
 	if @opts[:directory]
-	    @opts[:directory] != @orig_pwd && ::Rant::FileUtils.cd(rootdir)
+	    @opts[:directory] != @orig_pwd && Dir.chdir(rootdir)
 	else
 	    @opts[:directory] = @orig_pwd
 	end
@@ -379,7 +393,7 @@ class Rant::RantApp
 
     def gen(*args, &block)
 	# FIXME: caller is parsed in this method and probably will be
-	# parsed indirectly or directly in generator.gen_rant_task
+	# parsed indirectly or directly in generator.rant_generate
 	# again!
 
 	# retrieve caller info
@@ -391,12 +405,60 @@ class Rant::RantApp
 	file = ch[:file]
 	# validate args
 	generator = args.shift
-	unless generator.respond_to? :gen_rant_task
+	# Let modules/classes from the Generator namespace override
+	# other generators.
+	begin
+	    if generator.is_a? Module
+		generator = ::Rant::Generators.const_get(generator.to_s)
+	    end
+	rescue NameError, ArgumentError
+	end
+	unless generator.respond_to? :rant_generate
 	    abort(pos_text(file, ln),
 		"First argument to `gen' has to be a task-generator.")
 	end
 	# ask generator to produce a task for this application
-	generator.gen_rant_task(self, clr, args, &block)
+	generator.rant_generate(self, clr, args, &block)
+    end
+
+    def plugin(*args, &block)
+	# retrieve caller info
+	clr = caller[1]
+	ch = Rant::Lib::parse_caller_elem(clr)
+	name = nil
+	pre = []
+	ln = ch[:ln] || 0
+	file = ch[:file]
+
+	pl_name = args.shift
+	pl_name = pl_name.to_str if pl_name.respond_to? :to_str
+	pl_name = pl_name.to_s if pl_name.is_a? Symbol
+	unless pl_name.is_a? String
+	    abort(pos_text(file, ln),
+		"Plugin name has to be a string or symbol.")
+	end
+	lc_pl_name = pl_name.downcase
+	begin
+	    require "rant/plugin/#{lc_pl_name}"
+	rescue LoadError
+	    abort(pos_text(file, ln),
+		"`#{lc_pl_name}': no such plugin library")
+	end
+	pl_class = nil
+	begin
+	    pl_class = ::Rant::Plugin.const_get(pl_name)
+	rescue NameError, ArgumentError
+	    abort(pos_text(file, ln),
+		"`#{pl_name}': no such plugin")
+	end
+
+	plugin = pl_class.rant_plugin_new(self, ch, *args, &block)
+	# TODO: check for rant_plugin?
+	@plugins << plugin
+	msg 2, "Plugin `#{plugin.rant_plugin_name}' registered."
+	plugin.rant_plugin_init
+	# return plugin instance
+	plugin
     end
 
     # Add block and prerequisites to the task specified by the
@@ -579,18 +641,6 @@ class Rant::RantApp
     end
 
     ###### public methods regarding plugins ##########################
-    # Every plugin instance has to register itself with this method.
-    # The first argument has to be the plugin object. Currently, no
-    # other arguments are used.
-    def plugin_register(*args)
-	plugin = args[0]
-	unless plugin.respond_to? :rant_plugin?
-	    abort("Invalid plugin register:", plugin.inspect, caller)
-	end
-	@plugins << plugin
-	msg 2, "Plugin `#{plugin.rant_plugin_name}' registered."
-	plugin.rant_plugin_init
-    end
     # The preferred way for a plugin to report a warning.
     def plugin_warn(*args)
 	warn_msg(*args)
@@ -628,6 +678,7 @@ class Rant::RantApp
 	unless have_any_task?
 	    abort("No tasks defined for this rant application!")
 	end
+
 	# Target selection strategy:
 	# Run tasks specified on commandline, if not given:
 	# run default task, if not given:
@@ -645,6 +696,7 @@ class Rant::RantApp
 		@rantfiles.each { |f|
 		    unless f.tasks.empty?
 			first = f.tasks.first.name
+			break
 		    end
 		}
 		target_list << first
@@ -652,7 +704,6 @@ class Rant::RantApp
 	end
 	# Now, run all specified tasks in all rantfiles,
 	# rantfiles in reverse order.
-	rev_files = @rantfiles.reverse
 	force = false
 	matching_tasks = 0
 	target_list.each do |target|
@@ -811,6 +862,7 @@ class Rant::RantApp
 	ARGV.replace(old_argv)
 	rem_args.each { |ra|
 	    if ra =~ /(^[^=]+)=([^=]+)$/
+		msg 2, "Environment: #$1=#$2"
 		ENV[$1] = $2
 	    else
 		@arg_targets << ra
@@ -846,6 +898,7 @@ class Rant::RantApp
 	file.tasks << nt
 	nt
     end
+    public :prepare_task
 
     # Tries to extract task name and prerequisites from the typical
     # argument to the +task+ command. +targ+ should be one of String,
@@ -916,11 +969,14 @@ class Rant::RantApp
     # the rantfile was created and added, otherwise the rantfile
     # already existed.
     def rantfile_for_path path
-	if @rantfiles.any? { |rf| rf.path == path }
-	    file = @rantfiles.find { |rf| rf.path == path }
+	# TODO: optimization: File.expand_path is called very often
+	# (don't forget the calls from Rant::Path#absolute_path)
+	abs_path = File.expand_path(path)
+	if @rantfiles.any? { |rf| rf.absolute_path == abs_path }
+	    file = @rantfiles.find { |rf| rf.absolute_path == abs_path }
 	    [file, false]
 	else
-	    file = Rant::Rantfile.new(path)
+	    file = Rant::Rantfile.new(abs_path)
 	    @rantfiles << file
 	    [file, true]
 	end

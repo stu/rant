@@ -2,11 +2,11 @@
 require 'rant/rantlib'
 
 module Rant
-    class TestTask
+    class Generators::RubyTest
 
 	class << self
 
-	    def gen_rant_task(app, clr, args, &block)
+	    def rant_generate(app, clr, args, &block)
 		if !args || args.empty?
 		    self.new(app, clr, &block)
 		elsif args.size == 1
@@ -14,7 +14,7 @@ module Rant
 		    self.new(app, clr, name, pre, &block)
 		else
 		    app.abort(app.pos_text(file, ln),
-			"TestTask takes only one additional argument, " +
+			"RubyTest takes only one additional argument, " +
 			"which should be like one given to the `task' command.")
 		end
 	    end
@@ -60,7 +60,7 @@ module Rant
 		end
 		arg << "-S testrb " << filelist.arglist
 		arg << optlist
-		ruby arg
+		app.context.instance_eval { ruby arg }
 	    }
 	end
 	def optlist
@@ -82,5 +82,5 @@ module Rant
 	    end
 	    filelist
 	end
-    end
-end
+    end	# class Generators::RubyTest
+end	# module Rant

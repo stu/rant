@@ -21,7 +21,7 @@ module Rant::Plugin
     #
     # Example of configure in Rantfile:
     #
-    #	conf = Plugin::Configure.new doc |conf|
+    #	conf = plugin :Configure do |conf|
     #	    conf.task	# define a task named :configure
     #	    conf.check "profile" do |c|
     #		c.default "full"
@@ -45,6 +45,16 @@ module Rant::Plugin
 	include ::Rant::PluginMethods
 	include ::Rant::Console
 
+	class << self
+	    def rant_plugin_new(app, cinf, *args, &block)
+		if args.size > 1
+		    app.abort(app.pos_text(cinf[:file], cinf[:ln]),
+			"Configure plugin takes only one argument.")
+		end
+		self.new(app, args.first, &block)
+	    end
+	end
+
 	CHECK_MODES	= [
 		:interact,
 		:defaults,
@@ -56,8 +66,6 @@ module Rant::Plugin
 	attr_reader :name
 	# Name of configuration file.
 	attr_accessor :file
-	# A hash with all configuration data.
-	attr_reader :data
 	# This flag is used to determine if data has changed and
 	# should be saved to file.
 	attr_accessor :modified
@@ -73,12 +81,20 @@ module Rant::Plugin
 	# the configuration file.
 	# Defaults are "distclean", "clobber" and "clean".
 	attr_reader :no_action_list
+	# Let the environment set values. A change through an
+	# environment variable will be reflected in the configuration
+	# file.
+	# Defaults to true.
+	#
+	# Note: The environment always overrides the default values
+	# after startup, but it doesn't override whats written in the
+	# configuration file if this value is set to false.
+	attr_accessor :env_overrides
 
-	def initialize(name = nil, app = ::Rant.rantapp)
+	def initialize(app, name = nil)
 	    @name = name || rant_plugin_type
 	    @app = app or raise ArgumentError, "no application given"
 	    @file = "config"
-	    @data = {}
 	    @checklist = []
 	    @startup_mode = :defaults
 	    @no_write = false
@@ -86,21 +102,51 @@ module Rant::Plugin
 	    @no_action_list = ["distclean", "clobber", "clean"]
 	    @no_action = false
 	    @configured = false
+	    @env_overrides = true
 
 	    yield self if block_given?
 	    run_checklist(:defaults)
 	    # we don't need to save our defaults
 	    @modified = false
-
-	    @app.plugin_register(self)
 	end
 
 	def [](key)
-	    @data[key]
+	    c = checklist.find { |c| c.key == key }
+	    c ? c.value : nil
 	end
+	# Creates new check with default value if key doesn't exist.
 	def []=(key, val)
 	    @modified = true
-	    @data[key] = val
+	    c = checklist.find { |c| c.key == key }
+	    if c
+		c.value = val
+	    else
+		self.check(key) { |c|
+		    c.default val
+		}
+	    end
+	end
+
+	# Sets the specified check if a check with the given key
+	# exists.
+	# Returns the value if it was set, nil otherwise.
+	def set_if_exists(key, value)
+	    c = checklist.find { |c| c.key == key }
+	    if c
+		c.value = value
+		@modified = true
+	    else
+		nil
+	    end
+	end
+
+	# Builds a hash with all key-value pairs from checklist.
+	def data
+	    hsh = {}
+	    @checklist.each { |c|
+		hsh[c.key] = c.value
+	    }
+	    hsh
 	end
 
 	# This is true, if either a configure task was run, or the
@@ -135,7 +181,7 @@ module Rant::Plugin
 	# Run the configure process in the given mode.
 	def run_checklist(mode = :guess_interact)
 	    @checklist.each { |c|
-		@data[c.key] = c.run_check(mode)
+		c.run_check(mode)
 	    }
 	    @modified = true
 	end
@@ -187,13 +233,18 @@ module Rant::Plugin
 		end
 	    end
 	    read_yaml
+	    if @env_overrides
+		ENV.each_pair { |k, v|
+		    set_if_exists(k, v)
+		}
+	    end
 	    @configured = true
 	end
 
 	def write_yaml
 	    @app.msg 1, "Writing config to `#{@file}'."
 	    File.open(@file, "w") { |f|
-		f << @data.to_yaml
+		f << data.to_yaml
 		f << "\n"
 	    }
 	    true
@@ -207,7 +258,9 @@ module Rant::Plugin
 	    File.open(@file) { |f|
 		YAML.load_documents(f) { |doc|
 		    if doc.is_a? Hash
-			@data.merge!(doc)
+			doc.each_pair { |k, v|
+			    self[k] = v
+			}
 		    else
 			@app.abort("Invalid config file `#{@file}'.",
 			    "Please remove this file or reconfigure.")
