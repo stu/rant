@@ -206,8 +206,10 @@ class Rant::Task
 	dep = nil
 	uf = false
 	each_dep { |dep|
-	    if Rant::Task === dep
-		dep.invoke && update = true
+	    if Rant::FileTask === dep
+		handle_filetask(dep) && update = true
+	    elsif Rant::Task === dep
+		handle_task(dep) && update = true
 	    else
 		dep, uf = handle_non_task(dep)
 		uf && update = true
@@ -235,6 +237,12 @@ class Rant::Task
 	self.fail
     end
     private :internal_invoke
+    def handle_task(dep)
+	dep.invoke
+    end
+    def handle_filetask(dep)
+	dep.invoke
+    end
     # Override in subclass if specific task can handle
     # non-task-prerequisites.
     #
@@ -256,7 +264,7 @@ class Rant::Task
 	    return @pre.each { |t| yield(t) }
 	end
 	@pre.map! { |t|
-	    if t.is_a? Rant::Task
+	    if Rant::Task === t
 		# Remove references to self from prerequisites!
 		t.name == @name ? nil : yield(t)
 		if t.name == @name
@@ -266,7 +274,7 @@ class Rant::Task
 		    t
 		end
 	    else
-		t = t.to_s if t.is_a? Symbol
+		t = t.to_s if Symbol === t
 		if t == @name
 		    nil
 		else
@@ -314,7 +322,7 @@ end	# class Rant::Task
 
 class Rant::FileTask < Rant::Task
 
-    T0 = Time.at 0
+    T0 = Time.at(0).freeze
 
     def initialize *args
 	super
@@ -369,6 +377,14 @@ class Rant::FileTask < Rant::Task
 	else
 	    @ts = T0
 	    internal_invoke(true)
+	end
+    end
+    def handle_filetask(dep)
+	return true if dep.invoke
+	# TODO: require dep to exist after invoke?
+	if dep.path.exist?
+	    puts "***`#{dep.name}' requires update" if dep.path.mtime > @ts
+	    dep.path.mtime > @ts
 	end
     end
     def handle_non_task(dep)

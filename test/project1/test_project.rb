@@ -114,4 +114,18 @@ class TestProject1 < Test::Unit::TestCase
 	assert_equal(Rant.run("nothing"), 0,
 	    "enhance should create new task if no task with given name exists")
     end
+    def test_incremental_build
+	assert_equal(Rant.run("inc"), 0)
+	assert(test(?f, "inc"))
+	assert(test(?f, "incdep"))
+	old_mtime = test(?M, "incdep")
+	sleep 2
+	assert_equal(Rant.run(%w(--force-run incdep)), 0,
+	    "--force-run should unconditionally run `incdep'")
+	assert(old_mtime < test(?M, "incdep"),
+	    "incdep should have been updated by a forced run")
+	assert_equal(Rant.run("inc"), 0)
+	assert(old_mtime < test(?M, "inc"),
+	    "dependency `incdep' is newer, so `inc' should get rebuilt")
+    end
 end

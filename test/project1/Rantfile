@@ -86,12 +86,20 @@ task :order do |t|
     sleep 2
 end
 
+file "incdep" do |t|
+    sys.touch t.name
+end
+
+file "inc" => "incdep" do |t|
+    sys.touch t.name
+end
+
 task :force_clean do
     sys.rm_f %w(
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
 	fallback fallback_ order1 order2
-	tbe tbe2
-	)
+	tbe tbe2 inc incdep
+	).find_all { |e| test(?e, e) }
     sys.rm_rf %w(dir)
 end

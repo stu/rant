@@ -750,9 +750,9 @@ class Rant::RantApp
 	    (select_tasks { |t| t.name == target }).each { |t|
 		matching_tasks += 1
 		begin
-		    t.run if force || t.needed?
+		    #t.run if force || t.needed?
 		    ### experimental ###
-		    #t.invoke(force)
+		    t.invoke(force)
 		    ####################
 		rescue Rant::TaskFail => e
 		    # TODO: Report failed dependancy.
