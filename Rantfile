@@ -4,6 +4,7 @@
 
 require 'rant'
 require 'rant/rubytest'
+require 'rant/rubydoc'
 
 task :default => :test
 
@@ -12,31 +13,38 @@ doc_files = lib_files + FileList["**/*.rdoc"]
 rdoc_opts = %w(-S -c UTF-8 --title Rant --main lib/rant.rb)
 
 desc "Generate documentation."
-file "doc" => doc_files do
-    touch "doc" if test(?d, "doc")
-    sh "rdoc #{rdoc_opts.arglist} #{doc_files.arglist}"
+gen RubyDoc do |g|
+    g.files.concat FileList["**/*.rdoc"]
+    g.opts = rdoc_opts
+end
+
+# Just to test Rant.
+gen RubyDoc, :rdoc do |g|
+    g.verbose = true
+    g.files = doc_files
+    g.opts = rdoc_opts
 end
 
 desc "Run basic tests."
-gen RubyTest do |t|
-    t.pattern = 'test_*.rb'
+gen RubyTest do |g|
+    g.pattern = 'test_*.rb'
 end
 
 desc "Run first test-project.",
      "Warning: writes to disc."
-gen RubyTest, :testp1 do |t|
-    t.test_files = ["tests/project1/test_project.rb"]
+gen RubyTest, :testp1 do |g|
+    g.test_files = ["tests/project1/test_project.rb"]
 end
 
 desc "Run second test project.",
      "Warning: writes to disc"
-gen RubyTest, :testp2 do |t|
-    t.test_files = ["tests/project2/test_project.rb"]
+gen RubyTest, :testp2 do |g|
+    g.test_files = ["tests/project2/test_project.rb"]
 end
 
 desc "Test plugins."
-gen RubyTest, :testplugins do |t|
-    t.test_files = FileList["tests/plugin/**/test_*"]
+gen RubyTest, :testplugins do |g|
+    g.test_files = FileList["tests/plugin/**/test_*"]
 end
 
 desc "Run all tests."

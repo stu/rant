@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/fileutils'
 
 module Rant
-    VERSION	= '0.2.0'
+    VERSION	= '0.2.1'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -110,11 +110,6 @@ module RantContext
 	rantapp.plugin(*args, &block)
     end
 
-    # Create a path.
-    def directory targ, &block
-	rantapp.directory(targ, &block)
-    end
-
     # Look in the subdirectories, given by args,
     # for rantfiles.
     def subdirs *args
@@ -211,7 +206,7 @@ module Rant
     end
 
     module_function :task, :file, :desc, :subdirs,
-	:gen, :load_rantfile, :source, :enhance, :directory
+	:gen, :load_rantfile, :source, :enhance
 
 end	# module Rant
 
@@ -418,7 +413,7 @@ class Rant::RantApp
 		"First argument to `gen' has to be a task-generator.")
 	end
 	# ask generator to produce a task for this application
-	generator.rant_generate(self, clr, args, &block)
+	generator.rant_generate(self, ch, args, &block)
     end
 
     def plugin(*args, &block)
@@ -475,35 +470,6 @@ class Rant::RantApp
 	    warn_msg "enhance \"#{name}\": no such task",
 		"Generating a new file task with the given name."
 	    Rant::FileTask.new(self, name, pre, &blk)
-	}
-    end
-
-    # An eventuelly given block will be called after creation of the
-    # last directory element.
-    def directory path, &block
-	cinf = Rant::Lib.parse_caller_elem(caller[1])
-	path = normalize_task_name(path, cinf[:file], cinf[:ln])
-	dirs = ::Rant::FileUtils.split_path(path)
-	if dirs.empty?
-	    # TODO: warning
-	    return nil
-	end
-	ld = nil
-	path = nil
-	task_block = @block_task_mkdir
-	dirs.each { |dir|
-	    if block && dir.equal?(dirs.last)
-		task_block = lambda { |t|
-		    @block_task_mkdir[t]
-		    block[t]
-		}
-	    end
-	    path = path.nil? ? dir : File.join(path, dir)
-	    prepare_task({path => (ld || [])},
-		    task_block) { |name,pre,blk|
-		Rant::FileTask.new(self, name, pre, &blk)
-	    }
-	    ld = dir
 	}
     end
 
@@ -638,6 +604,12 @@ class Rant::RantApp
 	else
 	    super
 	end
+    end
+
+    # Print a command message as would be done from a call to a
+    # FileUtils method.
+    def cmd_msg cmd
+	$stderr.puts cmd unless quiet?
     end
 
     ###### public methods regarding plugins ##########################
@@ -886,8 +858,9 @@ class Rant::RantApp
 		end
 	    }
 	end
+	cinf = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
 
-	name, pre, file, ln = normalize_task_arg(targ, clr)
+	name, pre, file, ln = normalize_task_arg(targ, cinf)
 
 	file, is_new = rantfile_for_path(file)
 	nt = yield(name, pre, block)
@@ -910,7 +883,9 @@ class Rant::RantApp
     # The third is the file name of +clr+, the fourth is the line number
     # of +clr+.
     def normalize_task_arg(targ, clr)
-	ch = Rant::Lib::parse_caller_elem(clr)
+	# TODO: check the code calling this method so that we can
+	# assume clr is already a hash
+	ch = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
 	name = nil
 	pre = []
 	ln = ch[:ln] || 0
@@ -983,3 +958,66 @@ class Rant::RantApp
     end
 
 end	# class Rant::RantApp
+
+module Rant
+
+    # Generate a task for making a directory path. Prerequisites can
+    # be given, which will be added as prerequistes for the _last_
+    # directory.
+    #
+    # A special feature is used if you provide a block:
+    # The block will be called after complete directory creation.
+    # After the block execution, the modification time of the
+    # directory will be updated.
+    class Generators::Directory
+
+	class << self
+
+	    def rant_generate(app, ch, args, &block)
+		if args && args.size == 1
+		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
+		    self.new(app, ch, name, pre, &block)
+		else
+		    app.abort(app.pos_text(file, ln),
+			"Directory takes one argument, " +
+			"which should be like one given to the `task' command.")
+		end
+	    end
+	end
+
+	def initialize(app, ch, name, prerequisites = [], &block)
+	    dirs = ::Rant::FileUtils.split_path(name)
+	    if dirs.empty?
+		app.abort(app.pos_text(ch[:file], ch[:ln]),
+		    "Not a valid directory name: `#{name}'")
+	    end
+	    ld = nil
+	    path = nil
+	    task_block = lambda { |t|
+		app.context.instance_eval {
+		    mkdir t.name unless test(?d, t.name)
+		}
+	    }
+	    orig_task_block = task_block
+	    dirs.each { |dir|
+		pre = [ld]
+		pre.compact!
+		if dir.equal?(dirs.last)
+		    pre.concat prerequisites if prerequisites
+		    if block
+			task_block = lambda { |t|
+			    orig_task_block[t]
+			    block[t]
+			    app.context.instance_eval {
+				touch t.name
+			    }
+			}
+		    end
+		end
+		path = path.nil? ? dir : File.join(path, dir)
+		app.file({:__caller__ => ch, path => pre}, &task_block)
+		ld = dir
+	    }
+	end
+    end	# class Generators::Directory
+end	# module Rant

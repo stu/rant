@@ -52,10 +52,10 @@ file "fallback" do |t|
     touch t.name
 end
 
-directory "dir/subdir"
+gen Directory, "dir/subdir"
 task :path => "dir/subdir"
 
-directory "dir/sub2" do |t|
+gen Directory, "dir/sub2" do |t|
     # This block should be called after the creation of the directory
     # `sub2' in `dir'.
     t.name == "dir/sub2" or t.fail

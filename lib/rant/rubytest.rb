@@ -6,12 +6,13 @@ module Rant
 
 	class << self
 
-	    def rant_generate(app, clr, args, &block)
+	    def rant_generate(app, ch, args, &block)
 		if !args || args.empty?
-		    self.new(app, clr, &block)
+		    self.new(app, ch, &block)
 		elsif args.size == 1
-		    name, pre, file, ln = app.normalize_task_arg(args.first, clr)
-		    self.new(app, clr, name, pre, &block)
+		    name, pre, file, ln =
+		    app.normalize_task_arg(args.first, ch)
+		    self.new(app, ch, name, pre, &block)
 		else
 		    app.abort(app.pos_text(file, ln),
 			"RubyTest takes only one additional argument, " +
@@ -27,12 +28,12 @@ module Rant
 	attr_accessor :pattern
 	attr_accessor :test_files
 
-	def initialize(app, clr, name = :test, prerequisites = [], &block)
+	def initialize(app, cinf, name = :test, prerequisites = [], &block)
 	    @name = name
 	    @pre = prerequisites
 	    @block = block
 	    @verbose = nil
-	    cf = Lib.parse_caller_elem(clr)[:file]
+	    cf = cinf[:file]
 	    @libs = []
 	    libdir = File.join(File.dirname(
 		File.expand_path(cf)), 'lib')
@@ -51,7 +52,7 @@ module Rant
 
 	    @pre ||= []
 	    # define the task
-	    app.task({:__caller__ => clr, @name => @pre}) { |t|
+	    app.task({:__caller__ => cinf, @name => @pre}) { |t|
 		arg = ""
 		libpath = (@libs.nil? || @libs.empty?) ?
 		    nil : @libs.join(File::PATH_SEPARATOR)
