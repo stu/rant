@@ -52,7 +52,7 @@ module Rant::Plugin
 		:guess_interact,
 	    ]
 	
-	# Name for this module instance. Defaults to "configure".
+	# Name for this plugin instance. Defaults to "configure".
 	attr_reader :name
 	# Name of configuration file.
 	attr_accessor :file
@@ -75,7 +75,7 @@ module Rant::Plugin
 	attr_reader :no_action_list
 
 	def initialize(name = nil, app = ::Rant.rantapp)
-	    @name = name || rant_plugin_name
+	    @name = name || rant_plugin_type
 	    @app = app or raise ArgumentError, "no application given"
 	    @file = "config"
 	    @data = {}
@@ -146,8 +146,12 @@ module Rant::Plugin
 	end
 
 	###### overriden plugin methods ##############################
-	def rant_plugin_name
+	def rant_plugin_type
 	    "configure"
+	end
+
+	def rant_plugin_name
+	    @name
 	end
 
 	def rant_plugin_init

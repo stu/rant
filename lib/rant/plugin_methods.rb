@@ -8,10 +8,14 @@ require 'rant/rantlib'
 # Include this module in your plugin class to ensure your plugin won't
 # break when Rant requires new methods.
 module Rant::PluginMethods
-    # Please override this method. This is used as a name for your
-    # plugin.
-    def rant_plugin_name
+    # The type of your plugin as string.
+    def rant_plugin_type
 	"rant plugin"
+    end
+    # Please override this method. This is used as a name for your
+    # plugin instance.
+    def rant_plugin_name
+	"rant plugin object"
     end
     # This is used for verification. Usually you don't want to change
     # this for your plugin :-)

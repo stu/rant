@@ -1,28 +1,77 @@
-#!/usr/bin/ruby
 
 require 'rant/env'
 
 # An object extending this module acts as an
 # interface to a C# Compiler.
-module Rant::CsCompiler
+class Rant::CsCompiler
 
     LIB_SYSTEM_XML	= "System.Xml.dll"
     LIB_SYSTEM_DRAWING	= "System.Drawing.dll"
     LIB_SYSTEM_FORMS	= "System.Windows.Forms.dll"
 
-    # Descriptive name for compiler.
+    class << self
+	# Search for a C# compiler in PATH and some
+	# usual locations.
+	def look_for_cs_compiler
+	    csc_bin = nil
+	    if Env.on_windows?
+		csc_bin = "csc" if Env.find_bin "csc"
+		unless csc_bin
+		    csc_bin = look_for_csc
+		end
+	    end
+	    csc_bin = "cscc" if !csc_bin && Env.find_bin("cscc") 
+	    csc_bin
+	end
+
+	# Searches for csc in some usual directories.
+	# Ment to be used on windows only!
+	def look_for_csc
+	    # Is there a way to get a list of all available
+	    # drives?
+	    ("C".."Z").each { |drive|
+		["WINDOWS", "WINNT"].each { |win_dir|
+		    frame_dir = drive + ':\\' + win_dir +
+		    '\Microsoft.NET\Framework'
+		    next unless test(?d,frame_dir)
+		    csc_pathes = []
+		    Dir.entries(frame_dir).each { |e|
+			if test(?d,e)
+			    csc_path = File.join(frame_dir, e, "csc.exe")
+			    if test(?e,csc_path)
+				csc_pathes << csc_path
+			    end
+			end
+		    }
+		    next if csc_pathes.empty?
+		    return csc_pathes.sort.first
+		}
+	    }
+	    nil
+	rescue
+	    nil
+	end
+    end
+
+    # Short name for compiler, such as "csc", "cscc" or "mcs".
     attr_reader :name
+    # Descriptive name for compiler.
+    attr_reader :long_name
     # Compiler path, or cmd on PATH
-    attr_accessor :cc
+    attr_writer :cc
     # Debug flag.
     attr_accessor :debug
     # Target filename.
     attr_accessor :out
     # Libraries to link angainst (usually dlls).
     attr_reader :libs
+    # Preprocessor defines.
+    attr_reader :defines
     # Other args, could be options.
     # Initialized to an empty array.
     attr_accessor :misc_args
+    # Hash with compiler specific arguments.
+    attr_accessor :specific_args
     # Sourcefiles.
     attr_accessor :sources
     # Resources to embedd in assembly.
@@ -38,12 +87,18 @@ module Rant::CsCompiler
     # Enable compiler warnings, defaults to true
     attr_accessor :warnings
 
-    private
-    def init
-        @name = "C# Compiler"
+    def initialize(compiler_name=nil)
+	self.name = (compiler_name || "cscc")
+        @long_name = "C# Compiler"
+	@defines = []
         @libs = []
-        @sources = []
+        @sources = nil
         @misc_args = []
+	@specific_args = {
+	    "cscc"  => [],
+	    "csc"   => [],
+	    "mcs"   => [],
+	}
         @resources = []
         @debug = false
         @out = "a.out"
@@ -52,11 +107,31 @@ module Rant::CsCompiler
         @entry = nil
         @optimize = true
         @warnings = true
+	@cc = nil
     end
 
-    public
+    def cc
+	@cc || @name
+    end
+
+    def name= new_name
+	unless ["cscc", "csc", "mcs"].include?(new_name)
+	    throw "Unsupported C# compiler `#{new_name}'"
+	end
+	@name = new_name
+	@long_name = case @name
+	when "cscc":	"DotGNU C# compiler"
+	when "csc":	"MS Visual.NET C# compiler"
+	when "mcs":	"Mono C# compiler"
+	end
+    end
+
     # Generate compilation command for executable.
     def cmd_exe
+	send @name + "_cmd_exe"
+    end
+
+    def cscc_cmd_exe
         # This generates the compilation command
         # for cscc.
         cc_cmd = cc.dup
@@ -65,118 +140,82 @@ module Rant::CsCompiler
         cc_cmd
     end
 
-    # Generate command for DLL.
-    def cmd_shared
+    def csc_cmd_exe
+        # This generates the compilation command
+        # for csc.
         cc_cmd = cc.dup
-        cc_cmd << " -shared"
+        # Use target:winexe only if not debugging,
+        # because this will suppress a background console window.
+        cc_cmd << " /target:winexe" unless debug
+        cc_cmd << " /main:#{entry}" if entry
         cc_cmd << cc_cmd_args
         cc_cmd
     end
 
+    def mcs_cmd_exe
+    end
+
+    # Generate command for DLL.
+    def cmd_dll
+	send @name + "_cmd_dll"
+    end
+
+    def cscc_cmd_dll
+        cc_cmd = cc.dup
+	cc_cmd << " -shared"
+        cc_cmd << cc_cmd_args
+        cc_cmd
+    end
+
+    def csc_cmd_dll
+        cc_cmd = cc.dup
+        cc_cmd << " /target:library"
+        cc_cmd << cc_cmd_args
+        cc_cmd
+    end
+
+    def mcs_cmd_dll
+    end
+
     # Generate command for object file.
     def cmd_object
+	send @name + "_cmd_object"
+    end
+
+    def cscc_cmd_object
         cc_cmd = cc.dup
         cc_cmd << " -c"
         cc_cmd << cc_cmd_args
         cc_cmd
     end
 
-    # Add C# sources in dir.
-    def cs_source_dir dir
-        @sources ||= []
-        # TODO: better unique check
-        sd = File.join(dir, "*.cs")
-        @sources << sd unless @sources.include? sd
+    def csc_cmd_object
+        cc_cmd = cc.dup
+        cc_cmd << " /target:module"
+        cc_cmd << cc_cmd_args
+        cc_cmd
     end
 
-    # Using System.Xml?
-    def use_xml?
-        @libs.include? LIB_SYSTEM_XML
-    end
-
-    # Set this to true to ensure System.Xml
-    # will be linked against.
-    def use_xml=(bval)
-        if bval && !use_xml?
-            @libs << LIB_SYSTEM_XML
-        else
-            @libs.delete LIB_SYSTEM_XML
-        end
-    end
-
-    # Using WinForms?
-    def use_forms?
-        @libs.include? LIB_SYSTEM_DRAWING and
-            @libs.include? LIB_SYSTEM_FORMS
-    end
-
-    def use_forms=(bval)
-        if bval
-            unless @libs.include? LIB_SYSTEM_DRAWING
-                @libs << LIB_SYSTEM_DRAWING 
-            end
-            unless @libs.include? LIB_SYSTEM_FORMS
-                @libs << LIB_SYSTEM_FORMS
-            end
-        elsif use_forms?
-            @libs.delete LIB_SYSTEM_FORMS
-            @libs.delete LIB_SYSTEM_DRAWING
-        end
+    def mcs_cmd_object
     end
 
     def to_s
         cc + "\n" + "Interface: " + name
     end
 
-    # Search for a C# compiler in PATH and some
-    # usual locations.
-    def look_for_cs_compiler
-        csc_bin = nil
-        if Env.on_windows?
-            csc_bin = "csc" if Env.find_bin "csc"
-            unless csc_bin
-                csc_bin = look_for_csc
-            end
-        end
-        csc_bin = "cscc" if !csc_bin && Env.find_bin("cscc") 
-        csc_bin
-    end
-    
-    # Searches for csc in some usual directories.
-    # Ment to be used on windows only!
-    def look_for_csc
-        # Is there a way to get a list of all available
-        # drives?
-        ("C".."Z").each { |drive|
-            ["WINDOWS", "WINNT"].each { |win_dir|
-                frame_dir = drive + ':\\' + win_dir +
-                    'Microsoft.NET\Framework'
-                next unless File.exist? frame_dir
-                csc_pathes = []
-                Dir.entries(frame_dir).each { |e|
-                    if test ?d,e
-                        csc_path = File.join(frame_dir, e, "csc.exe")
-                        if test ?e,csc_path
-                            csc_pathes << csc_path
-                        end
-                    end
-                }
-                next if csc_pathes.empty?
-                return csc_pathes.sort.first
-            }
-        }
-        nil
-    rescue
-        nil
-    end
-    module_function :look_for_cs_compiler, :look_for_csc
-
     private
     def cc_cmd_args
+	send @name + "_cmd_args"
+    end
+
+    def cscc_cmd_args
         # TODO: Argument quoting (OS dependent!).
         cc_args = ""
-        cc_args << " -g -D DEBUG" if debug
         cc_args << " -o #{out}" if out
+        cc_args << " -g -DDEBUG" if debug
+	defines.each { |p|
+	    cc_args << " -D#{p}"
+	}
         # cscc --help states that -Wall enables all warnings,
         # but when -Wall is supplied it shouts "unrecongized option -Wall"
         #cc_args << " -Wall" if warnings
@@ -198,78 +237,14 @@ module Rant::CsCompiler
         cc_args
     end
 
-end    # module Rant::CsCompiler
-
-# cscc, DotGNU C# Compiler
-class Rant::Cscc
-    include Rant::CsCompiler
-
-    def initialize *args
-        init
-        @name = "cscc, DotGNU C# Compiler"
-        @cc = "cscc"
-    end
-
-    def use_forms?
-        misc_args and misc_args.include? "-winforms"
-    end
-
-    def use_forms=(bval)
-        @misc_args ||= []
-        if bval
-            misc_args << "-winforms" unless misc_args.include? "-winforms"
-        else
-            misc_args.delete "-winforms"
-        end
-    end
-end    # class DotNET::Cscc
-
-# csc, MS .NET C# Compiler
-# Assuming use on Windows.
-class Rant::Csc
-    include Rant::CsCompiler
-
-    def initialize *args
-        init
-        @name = "csc, MS .NET C# Compiler"
-        @cc = "csc"
-    end
-
-    # Generate compilation command for executable.
-    def cmd_exe
-        # This generates the compilation command
-        # for csc.
-        cc_cmd = cc.dup
-        # Use target:winexe only if not debugging,
-        # because this will suppress a background console window.
-        cc_cmd << " /target:winexe" unless debug
-        cc_cmd << " /main:#{entry}" if entry
-        cc_cmd << cc_cmd_args
-        cc_cmd
-    end
-
-    # Generate command for DLL.
-    def cmd_shared
-        cc_cmd = cc.dup
-        cc_cmd << " /target:library"
-        cc_cmd << cc_cmd_args
-        cc_cmd
-    end
-
-    # Generate command for object file.
-    def cmd_object
-        cc_cmd = cc.dup
-        cc_cmd << " /target:module"
-        cc_cmd << cc_cmd_args
-        cc_cmd
-    end
-
-    private
-    def cc_cmd_args
+    def csc_cmd_args
         # TODO: Argument quoting (OS dependent!).
         cc_args = ""
-        cc_args << " /debug /d:DEBUG" if debug
         cc_args << " /out:#{out}" if out
+        cc_args << " /debug /d:DEBUG" if debug
+	defines.each { |p|
+	    cc_args << " /d:#{p}"
+	}
 	cc_args << " /optimize" if optimize
         # TODO: cc_args << " -Wall" if warnings
         lib_include_pathes.each { |p|
@@ -288,4 +263,7 @@ class Rant::Csc
         cc_args
     end
 
-end    # class Rant::Csc
+    def mcs_cmd_args
+    end
+
+end    # class Rant::CsCompiler

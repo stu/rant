@@ -1,7 +1,7 @@
 #!/usr/bin/ruby
 # Run rant in current development directory.
 
-$:.unshift "lib"
+$:.unshift File.expand_path(File.join(File.dirname(__FILE__), "lib"))
 require 'rant'
 
 exit Rant.run

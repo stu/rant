@@ -1,0 +1,4 @@
+
+require 'rant/plugin/cs'
+
+assembly "hello.exe" => "Hello.cs"

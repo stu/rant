@@ -501,6 +501,18 @@ class Rant::RantApp
     def plugin_err(*args)
 	err_msg(*args)
     end
+
+    # Get the plugin with the given name or nil. Yields the plugin
+    # object if block given.
+    def plugin_named(name)
+	@plugins.each { |plugin|
+	    if plugin.rant_plugin_name == name
+		yield plugin if block_given?
+		return plugin
+	    end
+	}
+	nil
+    end
     ##################################################################
 
     # All targets given on commandline, including those given
