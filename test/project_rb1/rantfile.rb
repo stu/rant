@@ -7,6 +7,7 @@ gen RubyDoc do |g|
     g.files = lib_files + ["README"]
 end
 
+desc "Create packages for distribution."
 gen RubyPackage, "wgrep" do |g|
     g.version "1.0.0"
     g.files FileList["{bin,lib,test}/**/*"] +

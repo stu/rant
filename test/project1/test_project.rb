@@ -191,4 +191,13 @@ class TestProject1 < Test::Unit::TestCase
 	end
 	assert_equal(test(?M, "one_target"), old_mtime)
     end
+    def test_task_gen_with_pre
+	out, err = capture_std do
+	    assert_equal(0, Rant.run("task_two"))
+	end
+	assert(test(?e, "one_target"),
+	    "one_target should be created as prerequisite of task_two")
+	assert_match(/task_two$/, out,
+	    "task_two action prints task name")
+    end
 end

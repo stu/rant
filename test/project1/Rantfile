@@ -112,6 +112,10 @@ gen Task, :task_one do |t|
     end
 end
 
+gen Task, :task_two => :task_one do |t|
+    t.act { print t.name }
+end
+
 task :force_clean do
     sys.rm_f %w(
 	test_touch target dep dep1 dep2 t2

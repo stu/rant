@@ -134,4 +134,20 @@ class TestProjectRb1 < Test::Unit::TestCase
 	FileUtils.cd old_pwd unless Dir.pwd == old_pwd
 	FileUtils.rm_rf tmp_dir
     end
+    def test_rant_import
+	require 'rant/import'
+	out, err = capture_std do
+	    assert_equal(0, Rant::RantImport.run(%w(--auto make)))
+	end
+	# TODO: some out, err checking
+	
+	# run the monolithic rant script
+	out = `#{Rant::Env::RUBY} make -T`
+	assert_equal(0, $?,
+	    "imported `rant -T' should return 0")
+	assert_match(/\bpkg\b/, out,
+	    "imported `rant -T' should list described task `pkg'")
+    ensure
+	File.delete "make" if File.exist? "make"
+    end
 end

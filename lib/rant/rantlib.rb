@@ -957,8 +957,7 @@ class Rant::RantApp
 	}
     end
 
-    def prepare_task targ, block
-	clr = caller[2]
+    def prepare_task(targ, block, clr = caller[2])
 
 	# Allow override of caller, usefull for plugins and libraries
 	# that define tasks.

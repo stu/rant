@@ -246,15 +246,15 @@ module Rant
 
 	class << self
 	    def rant_generate(app, ch, args, &block)
-		unless args.size == 1
-		    app.abort("LightTask takes only one argument " +
-			"which has to be the taskname (string or symbol)")
-		end
 		if args.size == 1
-		    LightTask.rant_generate(app, ch, args, &block)
+		    if Hash === args.first
+			UserTask.rant_generate(app, ch, args, &block)
+		    else
+			LightTask.rant_generate(app, ch, args, &block)
+		    end
 		else
 		    app.abort("Task generator currently takes only one" +
-			" argument. (Generates a LightTask)")
+			" argument. (Generates a LightTask or UserTask)")
 		end
 	    end
 	end
@@ -321,7 +321,6 @@ module Rant
 	end
 
 	def needed?
-	    return false if done?
 	    invoke(:needed? => true)
 	end
 
@@ -331,11 +330,6 @@ module Rant
 	    return if done?
 	    internal_invoke opt
 	end
-
-	def update_init
-	    false
-	end
-	private :update_init
 
 	def internal_invoke opt, ud_init = true
 	    update = ud_init || opt[:force]
@@ -374,10 +368,25 @@ module Rant
 	end
 	private :internal_invoke
 
+	# Called from internal_invoke. +dep+ is a prerequisite which
+	# is_a? Worker, but not a FileTask. +opt+ are opts as given to
+	# Worker#invoke.
+	#
+	# Override this method in subclasses to modify behaviour of
+	# prerequisite handling.
+	#
+	# See also: handle_filetask, handle_non_worker
 	def handle_worker(dep, opt)
 	    dep.invoke opt
 	end
 
+	# Called from internal_invoke. +dep+ is a prerequisite which
+	# is_a? FileTask. +opt+ are opts as given to Worker#invoke.
+	#
+	# Override this method in subclasses to modify behaviour of
+	# prerequisite handling.
+	#
+	# See also: handle_worker, handle_non_worker
 	def handle_filetask(dep, opt)
 	    dep.invoke opt
 	end
@@ -389,6 +398,8 @@ module Rant
 	# This method should do one of the two following:
 	# [1] Fail with an exception.
 	# [2] Return two values: replacement_for_dep, update_required
+	#
+	# See also: handle_worker, handle_filetask
 	def handle_non_worker(dep, opt)
 	    err_msg "Unknown task `#{dep}',",
 		"referenced in `#{rantfile.path}', line #{@line_number}!"
@@ -439,6 +450,57 @@ module Rant
 	    @pre_resolved = true
 	end
     end	# class Task
+
+    # A UserTask is equivalent to a Task, but it additionally takes a
+    # block (see #needed) which is used to determine if it is needed?.
+    class UserTask < Task
+
+	class << self
+	    def rant_generate(app, ch, args, &block)
+		unless args.size == 1
+		    app.abort("UserTask takes only one argument " +
+			"which has to be like one given to the " +
+			"`task' function")
+		end
+		app.prepare_task(args.first, nil, ch) { |name,pre,blk|
+		    self.new(app, name, pre, &block)
+		}
+	    end
+	end
+
+	def initialize(*args)
+	    super
+	    # super will set @block to a given block, but the block is
+	    # used for initialization, not ment as action
+	    @block = nil
+	    @needed = nil
+	    # allow setting of @block and @needed
+	    yield self if block_given?
+	end
+
+	def act &block
+	    @block = block
+	end
+
+	def needed &block
+	    @needed = block
+	end
+	
+	# We simply override this method and call internal_invoke with
+	# the +ud_init+ flag according to the result of a call to the
+	# +needed+ block.
+	def invoke(opt = INVOKE_OPT)
+	    return if done?
+	    internal_invoke(opt, ud_init_by_needed)
+	end
+
+	private
+	def ud_init_by_needed
+	    if @needed
+		@needed.arity == 0 ? @needed.call : @needed[self]
+	    end
+	end
+    end	# class UserTask
 
     class FileTask < Task
 
