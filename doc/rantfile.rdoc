@@ -31,6 +31,8 @@ methods with the Rant application:
 		on it.
 +source+::	Takes a filename as argument and causes Rant to read
 		it in as Rantfile.
++subdirs+::	Takes a list of subdirectories in which Rant should
+		look for Rantfiles.
 
 === Defining a task
 
@@ -225,6 +227,102 @@ Currently the following are coming with Rant:
 +RubyPackage+::	Generate tar, zip and gem packages of your Ruby
 		application/library.
 As these are all Ruby specific, please read the Ruby project howto.
+
+=== The +subdirs+ command
+
+The +subdirs+ command allows you to give Rant a list of subdirectories
+(relative to the Rantfile) where it should look for additional
+Rantfiles. The tasks defined in those subdirectories can be referenced
+from your main Rantfile and vice versa.
+
+A small example: We are assuming the following files:
+    myprog/
+	Rantfile	# the main Rantfile
+	README
+	src/
+	    Rantfile
+	    main.c
+	    lib.c
+	    lib.h
+Then the main Rantfile could look like:
+    desc "Build myprog."
+    file "myprog" => "src/myprog" do
+	sys.cp "src/myprog", "myprog"
+    end
+
+    desc "Remove compiler products."
+    task :clean => "src/clean" do
+	sys.rm_f "myprog"
+    end
+
+    # Tell Rant to look in src for an Rantfile,
+    # we could list more directories here.
+    subdirs "src"
+And src/Rantfile:
+    file "lib.o" => %w(lib.c lib.h) do
+	sys "cc -c -o lib.o lib.c"
+    end
+
+    file "main.o" => "main.c" do
+	sys "cc -c -o main.o main.c"
+    end
+
+    file "myprog" => %w(lib.o main.o) do
+	sys "cc -o myprog main.o lib.o"
+    end
+
+    task :clean do
+	sys.rm_f Dir["*.o"] + %w(myprog)
+    end
+Note that we refer to the task in subdirectory simply by prepending
+the directory name and a slash to the task name.
+    file "myprog" => "src/myprog" do
+This tells Rant that the "myprog" task depends on the "myprog" task
+defined in the Rantfile in the "src" directory. The same goes for the
+"clean" task.
+
+Let's examine what Rant thinks about our build specification:
+    myprog % rant -T
+    rant myprog   # Build myprog.
+    rant clean    # Remove compiler products.
+Since the "myprog" task is the first in our Rantfile, we don't need to
+specify a task to build myprog:
+    myprog % rant
+    cc -c -o lib.o lib.c
+    cc -c -o main.o main.c
+    cc -o myprog main.o lib.o
+    cp src/myprog myprog
+And to save disk space, remove generated files:
+    myprog % rant clean
+    rm -f lib.o main.o myprog
+    rm -f myprog
+The nice thing about our buildfiles is, that we can use the
+src/Rantfile independent from our main Rantfile. Consider you are
+working on <tt>lib.c</tt> and only want to check that it compiles
+correctly.
+You can specify the task explicitely:
+    myprog % rant src/lib.o
+    cc -c -o lib.o lib.c
+But if you are working a long time only in the src/ directory it is
+convinient to do:
+    myprog % cd src
+    myprog/src % rant lib.o
+    cc -c -o lib.o lib.c
+To clean only the src directory:
+    myprog/src % rant clean
+    rm -f lib.o main.o myprog
+You can find this example project in the doc/examples/myprog directory
+of the Rant distribution.
+
+Of course you can also have a subdirectory in src/ containing an
+Rantfile. Simply put a +subdirs+ command into the src/Rantfile. Rant
+integrates well into your file system :)
+
+If you want to refer to a task in the main Rantfile from a subdir
+Rantfile, put a # in front of the task name:
+    task "a" => "#b"
+But note that this Rantfile won't work as a standalone buildfile,
+because it refers to a main Rantfile.
 
 == See also
 

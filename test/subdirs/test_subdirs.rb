@@ -79,4 +79,18 @@ class TestSubdirs < Test::Unit::TestCase
 	assert(test(?f, "sub2/sub/rootref.t"))
 	assert(test(?f, "t"))
     end
+    def test_import
+	run_import %w(--auto ant)
+	assert_equal($?, 0)
+	capture_std do
+	    assert_nothing_raised {
+		Rant::Sys.ruby("ant", "-q", "sub_sub")
+	    }
+	end
+	assert(test(?f, "sub_sub.t"))
+	assert(test(?f, "sub2/sub/rootref.t"))
+	assert(test(?f, "t"))
+    ensure
+	File.delete "ant" if File.exist? "ant"
+    end
 end

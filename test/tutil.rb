@@ -7,6 +7,9 @@ require 'rant/rantsys'
 RANT_BIN = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "run_rant"))
 
+RANT_IMPORT_BIN = File.expand_path(
+    File.join(File.dirname(__FILE__), "..", "run_import"))
+
 RANT_DEV_LIB_DIR = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "lib"))
 
@@ -109,5 +112,9 @@ When testing Rant: `#{Dir.pwd + "/" + errfn}' exists.
 end
 
 def run_rant(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.arglist}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.arglist}`
+end
+
+def run_import(*args)
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_IMPORT_BIN)} #{args.flatten.arglist}`
 end

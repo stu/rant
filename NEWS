@@ -1,0 +1,21 @@
+
+= Rant NEWS
+
+== Rant 0.3.2
+
+This version should be fully backwards compatible to 0.3.0.
+
+New features:
+* Support splitting your buildfiles up and placing them into multiple
+  directories with the +subdirs+ command. Please read
+  doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html] for usage.
+  This is especially usefull for bigger projects.
+
+== Rant 0.3.0
+
+First release of Rant on RubyForge.
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]

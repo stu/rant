@@ -1,0 +1,13 @@
+desc "Build myprog."
+file "myprog" => "src/myprog" do
+    sys.cp "src/myprog", "myprog"
+end
+
+desc "Remove compiler products."
+task :clean => "src/clean" do
+    sys.rm_f "myprog"
+end
+
+# Tell Rant to look in src for an Rantfile,
+# we could list more directories here.
+subdirs "src"

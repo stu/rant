@@ -18,7 +18,7 @@ gen RubyPackage, "rant" do |t|
     t.author = "Stefan Lang"
     t.email = "langstefan@gmx.at"
     t.rubyforge_project = "make"
-    t.gem_extra_rdoc_files = FileList["**/README"].no_dir("pkg").no_dir("test") + FileList["doc/**/*.rdoc"]
+    t.gem_extra_rdoc_files = FileList["**/README", "NEWS"].no_dir("pkg").no_dir("test") + FileList["doc/**/*.rdoc"]
     t.homepage = "http://make.rubyforge.org"
     desc "Create packages for distribution."
     t.package_task
@@ -27,7 +27,7 @@ end
 desc "Generate documentation."
 gen RubyDoc do |g|
     g.dir = "doc/html"
-    g.files.concat FileList["**/README"].no_dir("pkg").no_dir("test")
+    g.files.concat FileList["NEWS", "**/README"].no_dir("pkg").no_dir("test")
     g.files.concat FileList["doc/**/*.rdoc"]
     g.opts = %w(-S -c UTF-8 --title Rant --main README)
 end

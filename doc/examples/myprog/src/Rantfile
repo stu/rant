@@ -1,0 +1,15 @@
+file "lib.o" => %w(lib.c lib.h) do
+    sys "cc -c -o lib.o lib.c"
+end
+
+file "main.o" => "main.c" do
+    sys "cc -c -o main.o main.c"
+end
+
+file "myprog" => %w(lib.o main.o) do
+    sys "cc -o myprog main.o lib.o"
+end
+
+task :clean do
+    sys.rm_f Dir["*.o"] + %w(myprog)
+end
