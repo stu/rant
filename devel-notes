@@ -7,3 +7,13 @@
     rescue RDoc::RDocError
         $stderr.puts "Error when running rdoc: " + $!.message
     end
+
+== Changing the behaviour of Rant from Rantfiles
+    Perhaps a method named like `behave' would be appropriate to to
+    set options of the Rant application.
+
+== Subdirectories
+    Allow the use of `#' at the start of a pathname to tell rant that
+    it should be interpreted relative to the project's root directory.
+
+# vim:tw=70:

@@ -48,6 +48,9 @@ class Rant::Task
 	@line_number = 0
     end
 
+    # Get a list of the *names* of all prerequisites. The underlying
+    # list of prerequisites can't be modified by the value returned by
+    # this method.
     def prerequisites
 	@pre.collect { |pre|
 	    if pre.is_a? String
@@ -70,14 +73,18 @@ class Rant::Task
 	self.class.fail msg, caller
     end
 
+    # Was this task ever run? If this is true, it doesn't necessarily
+    # mean that the run was successfull!
     def ran?
 	@ran
     end
 
+    # True if last task run fail.
     def fail?
 	@fail
     end
 
+    # Task was run and didn't fail.
     def done?
 	ran? && !fail?
     end
@@ -91,13 +98,17 @@ class Rant::Task
     # Enhance this task with the given dependencies and blk.
     def enhance(deps = [], &blk)
 	@pre.concat deps if deps
-	first_block = @block
-	@block = lambda { |t|
-	    first_block[t]
-	    blk[t]
-	}
+	if blk
+	    first_block = @block
+	    @block = lambda { |t|
+		first_block[t]
+		blk[t]
+	    }
+	end
     end
 
+    # Unconditionally run this tasks. All dependencies will be
+    # run if necessary.
     # Raises a Rant::TaskFail exception on failure.
     def run
 	@ran = true
@@ -126,6 +137,7 @@ class Rant::Task
 	end
     end
 
+    # Run each needed task prerequisite.
     def ensure_tasks
 	each_task { |t| t.run if t.needed?  }
     rescue Rant::TaskFail
@@ -133,6 +145,8 @@ class Rant::Task
 	raise
     end
 
+    # Resolve all prerequisites which aren't already Rant::Task
+    # instances.
     def resolve_prerequisites
 	resolve_tasks
 	each_non_task { |t|
@@ -156,12 +170,15 @@ class Rant::Task
 	@pre.flatten!
     end
 
+    # Yield for each Rant::Task in prerequisites.
     def each_task
 	@pre.each { |t|
 	    yield(t) if t.is_a? Rant::Task
 	}
     end
 
+    # Yield for each element which isn't an Rant::Task instance in
+    # prerequisites.
     def each_non_task
 	@pre.each { |t|
 	    yield(t) unless t.is_a? Rant::Task
@@ -173,7 +190,7 @@ class Rant::Task
     end
 
     def eql? other
-	self.hash == other.hash
+	Rant::Task === other and @name.eql? other.name
     end
 end	# class Rant::Task
 

@@ -11,8 +11,8 @@ module Rant::Plugin
     # The configuration file will be read and the data hash
     # set up accordingly.
     # ==== Config file doesn't exist
-    # The configuration process is run with +startup_mode+ which
-    # has to be one of CHECK_MODES. +startup_mode+ defaults to
+    # The configuration process is run with +startup_modes+ which
+    # has to be one of CHECK_MODES. +startup_modes+ defaults to
     # :default, which means if the configfile doesn't exist,
     # all values will be set to their defaults on startup.
     # === Access to configuration in Rantfile
@@ -56,70 +56,83 @@ module Rant::Plugin
 	end
 
 	CHECK_MODES	= [
-		:interact,
-		:defaults,
+		:default,
+		:env,
 		:guess,
-		:guess_interact,
+		:interact,
 	    ]
 	
 	# Name for this plugin instance. Defaults to "configure".
 	attr_reader :name
+
 	# Name of configuration file.
 	attr_accessor :file
+
 	# This flag is used to determine if data has changed and
 	# should be saved to file.
 	attr_accessor :modified
+
 	# An array with all checks to perform.
 	attr_reader :checklist
-	# Decide what the configure plugin does on startup.
-	attr_accessor :startup_mode
+
+	# Decide what the configure plugin does on startup if the
+	# configuration file doesn't exist. Initialized to
+	# <tt>[:guess]</tt>.
+	attr_accessor :init_modes
+
+	# Decide what the configure plugin does *after* reading the
+	# configuration file (or directly after running +init_modes+
+	# if the configuration file doesn't exist).
+	# Initialized to <tt>[:env]</tt>, probably the only usefull
+	# value.
+	attr_accessor :override_modes
+
 	# Don't write to file, config values will be lost when
 	# rant exits!
 	attr_accessor :no_write
-	# Don't do anything if *first* target given on commandline
+
+	# Don't read or write to configuration file nor run +guess+ or
+	# +interact+ blocks if *first* target given on commandline
 	# is in this list. This is usefull for targets that remove
 	# the configuration file.
 	# Defaults are "distclean", "clobber" and "clean".
 	attr_reader :no_action_list
-	# Let the environment set values. A change through an
-	# environment variable will be reflected in the configuration
-	# file.
-	# Defaults to true.
-	#
-	# Note: The environment always overrides the default values
-	# after startup, but it doesn't override whats written in the
-	# configuration file if this value is set to false.
-	attr_accessor :env_overrides
 
 	def initialize(app, name = nil)
 	    @name = name || rant_plugin_type
 	    @app = app or raise ArgumentError, "no application given"
 	    @file = "config"
 	    @checklist = []
-	    @startup_mode = :defaults
+	    @init_modes = [:guess]
+	    @override_modes = [:env]
 	    @no_write = false
 	    @modified = false
 	    @no_action_list = ["distclean", "clobber", "clean"]
 	    @no_action = false
 	    @configured = false
-	    @env_overrides = true
 
 	    yield self if block_given?
-	    run_checklist(:defaults)
+
+	    run_checklist([:default])
 	    # we don't need to save our defaults
 	    @modified = false
 	end
 
+	# Get the value for +key+ from +checklist+ or +nil+ if there
+	# isn't a check with the given +key+.
 	def [](key)
 	    c = checklist.find { |c| c.key == key }
 	    c ? c.value : nil
 	end
+
 	# Creates new check with default value if key doesn't exist.
 	def []=(key, val)
-	    @modified = true
 	    c = checklist.find { |c| c.key == key }
 	    if c
-		c.value = val
+		if c.value != val
+		    c.value = val
+		    @modified = true
+		end
 	    else
 		self.check(key) { |c|
 		    c.default val
@@ -156,32 +169,40 @@ module Rant::Plugin
 	end
 
 	# Define a task with +name+ that will run the configuration
-	# process in the given +check_mode+.
-	def task(name = nil, check_mode = :guess_interact)
+	# process in the given +check_modes+. If no task name is given
+	# or it is +nil+, the plugin name will be used as task name.
+	def task(name = nil, check_modes = [:guess, :interact])
 	    name ||= @name
 	    cinf = ::Rant::Lib.parse_caller_elem(caller[0])
 	    file = cinf[:file]
 	    ln = cinf[:ln] || 0
-	    unless CHECK_MODES.include? check_mode
-		@app.abort(@app.pos_text(file,ln),
-		    "Unknown checkmode `#{check_mode.to_s}'.")
+	    if !Array === check_modes || check_modes.empty?
+		@app.abort(@app.pos_text(file, ln),
+		    "check_modes given to configure task has to be an array",
+		    "containing at least one CHECK_MODE symbol")
 	    end
+	    check_modes.each { |cm|
+		unless CHECK_MODES.include? cm
+		    @app.abort(@app.pos_text(file,ln),
+			"Unknown checkmode `#{cm.to_s}'.")
+		end
+	    }
 	    nt = @app.task(name) { |t|
-		run_checklist(check_mode)
+		run_checklist(check_modes)
 		save
 		@configured = true
 	    }
 	    nt
 	end
 
-	def check(key, hsh = {}, &block)
-	   checklist << ConfigureCheck.new(key, hsh, &block) 
+	def check(key, val = nil, &block)
+	   checklist << ConfigureCheck.new(key, val, &block) 
 	end
 
-	# Run the configure process in the given mode.
-	def run_checklist(mode = :guess_interact)
+	# Run the configure process in the given modes.
+	def run_checklist(modes = [:guess, :interact])
 	    @checklist.each { |c|
-		c.run_check(mode)
+		c.run_check(modes)
 	    }
 	    @modified = true
 	end
@@ -190,13 +211,13 @@ module Rant::Plugin
 	def save
 	    return if @no_write
 	    write_yaml if @modified
-	    @modified = false
 	    true
 	end
 
 	# Immediately write configuration to +file+.
 	def write
 	    write_yaml
+	    @modified = false
 	end
 
 	###### overriden plugin methods ##############################
@@ -222,23 +243,15 @@ module Rant::Plugin
 
 	# Returns true on success, nil on failure.
 	def init_config
-	    unless File.exist? @file
-		return if @startup_mode == :defaults
-		if CHECK_MODES.include?(@startup_mode)
-		    return run_checklist(@startup_mode)
-		else
-		    @app.plugin_warn("Unknown startup mode " + 
-			"`#{@startup_mode.to_s}' for #{@name} module.")
-		    return run_checklist(:defaults)
-		end
+	    if File.exist? @file
+		read_yaml
+		@configured = true
+	    elsif !@init_modes == [:default]
+		run_checklist @init_modes
 	    end
-	    read_yaml
-	    if @env_overrides
-		ENV.each_pair { |k, v|
-		    set_if_exists(k, v)
-		}
+	    if @override_modes && !@override_modes.empty?
+		run_checklist @override_modes
 	    end
-	    @configured = true
 	end
 
 	def write_yaml
@@ -279,20 +292,17 @@ module Rant::Plugin
 
 	attr_reader :key
 	attr_accessor :value
+	attr_accessor :default
 	attr_accessor :guess_block
 	attr_accessor :interact_block
 	attr_accessor :react_block
-	def initialize(key, hsh)
+	def initialize(key, val = nil)
 	    @key = key or raise ArgumentError, "no key given"
-	    @value = hsh[:value]
-	    @default = hsh[:default]
-	    @guess_block = hsh[:guess]
-	    @interact_block = hsh[:interact]
+	    @value = @default = val
+	    @guess_block = nil
+	    @interact_block = nil
+	    @react_block = nil
 	    yield self if block_given?
-
-	    # let ENV override value
-	    ev = ENV[@key]
-	    @value = ev unless ev.nil?
 	end
 	def default(val)
 	    @value = val
@@ -307,37 +317,26 @@ module Rant::Plugin
 	    @react_block = block
 	end
 
-	# Before doing anything else, this looks in ENV if it has a
-	# value that is not +nil+ and uses that as default.
-	# Four possible modes:
-	# [:interact]
-	#	Run interact block if given.
-	# [:defaults]
-	#	Just use default value.
-	# [:guess]
-	#	Run the guess block if given.
-	# [:guess_interact]
-	#	Run the guess block first, if it gives nil,
-	#	run the interact block.
-	def run_check(mode = :guess)
+	# Run checks as specified by +modes+. +modes+ has to be a list
+	# of symbols from the Configure::CHECK_MODES.
+	def run_check(modes = [:guess], env = ENV)
 	    val = nil
-	    # look in ENV first
-	    ev = ENV[@key]
-	    @value = ev unless ev.nil?
-	    case mode
-	    when :interact
-		val = @interact_block[self] if @interact_block
-	    when :defaults
-		# nothing to do here
-	    when :guess
-		val = @guess_block[self] if @guess_block
-	    when :guess_interact
-		val = @guess_block[self] if @guess_block
-		val = @interact_block[self] if val.nil? && @interact_block
-	    else
-		raise "unknown configure mode"
-	    end
-	    val.nil? || @value = val
+	    modes.each { |mode|
+		case mode
+		when :default
+		    val = @default
+		when :env
+		    val = env[@key]
+		when :interact
+		    val = @interact_block[self] if @interact_block
+		when :guess
+		    val = @guess_block[self] if @guess_block
+		else
+		    raise "unknown configure mode"
+		end
+		break unless val.nil?
+	    }
+	    val.nil? or @value = val
 	    @react_block && @react_block[@value]
 	    @value
 	end

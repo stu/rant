@@ -10,6 +10,8 @@ task :hello do |t|
 end
 
 conf = plugin :Configure do |conf|
+    conf.init_modes = [:default]
+    conf.override_modes = nil
     conf.task		# define a task named :configure
     conf.check "a" do |c|
 	c.default "value_a"
