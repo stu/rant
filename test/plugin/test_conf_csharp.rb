@@ -44,5 +44,10 @@ if $have_csc
 	assert(test(?f, "myprog.exe"),
 	    "target should be set to myprog.exe from config")
     end
+else
+    # required to fool test/unit
+    def test_dummy
+	assert(true)
+    end
 end
 end

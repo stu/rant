@@ -1,8 +1,22 @@
 
 # This file contains methods that aid in testing Rant.
 
+require 'rant/rantenv'
+
 RANT_BIN = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "run_rant"))
+
+$rant_test_to = Rant::Env.on_windows? ? 3 : 2
+if ENV["TO"]
+    begin
+	$rant_test_to = Integer(ENV["TO"])
+    rescue
+    end
+end
+
+def timeout
+    sleep $rant_test_to
+end
 
 # Everything written to $stdout during +yield+ will be returned. No
 # output to $stdout.

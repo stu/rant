@@ -37,14 +37,14 @@ class TestProject1 < Test::Unit::TestCase
 	end
 	assert(File.exist?("target"))
 	Rant.reset
-	sleep 2
+	timeout
 	capture_std do
 	    assert_equal(Rant.run("create_dep"), 0)
 	end
 	assert(File.exist?("dep"))
 	assert(sys.uptodate?("dep", "target"),
 	    "`create_target' was run before `create_dep'")
-	sleep 2
+	timeout
 	capture_std do
 	    assert_equal(Rant.run("target"), 0)
 	end
@@ -54,7 +54,7 @@ class TestProject1 < Test::Unit::TestCase
 	    "`target' should be newer than `dep'")
 	t1 = File.mtime "target"
 	Rant.reset
-	sleep 2
+	timeout
 	capture_std do
 	    assert_equal(Rant.run("target"), 0)
 	end
@@ -158,7 +158,7 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?f, "inc"))
 	assert(test(?f, "incdep"))
 	old_mtime = test(?M, "incdep")
-	sleep 2
+	timeout
 	capture_std do
 	    assert_equal(Rant.run(%w(--force-run incdep)), 0,
 		"--force-run should unconditionally run `incdep'")
@@ -185,7 +185,7 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?e, "one_target"),
 	    "one_target should get `touched' by task_one")
 	old_mtime = test(?M, "one_target")
-	sleep 2
+	timeout
 	capture_std do
 	    assert_equal(Rant.run("task_one"), 0)
 	end
