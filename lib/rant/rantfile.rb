@@ -19,6 +19,8 @@ class Rant::Task
     
     # Name of the task, this is always a string.
     attr_reader :name
+    # A description for this task.
+    attr_accessor :description
     # A reference to the application this task belongs to.
     attr_reader :app
     # The rantfile this task was defined in.
@@ -30,6 +32,7 @@ class Rant::Task
     def initialize(app, name, prerequisites = [], &block)
 	@app = app || Rant.rantapp
 	@name = name or raise ArgumentError, "name not given"
+	@description = nil
 	@pre = prerequisites || []
 	@block = block
 	@ran = false
@@ -84,6 +87,9 @@ class Rant::Task
 	    rescue ::Rant::CommandError => e
 		@fail = true
 		err_msg e.message
+	    rescue SystemCallError => e
+		@fail = true
+		err_msg e.message
 	    rescue
 		@fail = true
 		err_msg $!.message, $!.backtrace
@@ -105,7 +111,7 @@ class Rant::Task
 	resolve_tasks
 	each_non_task { |t|
 	    err_msg "Unknown task `#{t.to_s}',",
-		"referenced in `#{rantfile.path}'!"
+		"referenced in `#{rantfile.path}', line #{@line_number}!"
 	    raise Rant::TaskFail, @name.to_s
 	}
     end

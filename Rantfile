@@ -7,27 +7,34 @@ require 'rant/testtask'
 
 task :default => :test
 
-lib_files = Dir["lib/**/*.rb"]
-doc_files = lib_files + Dir["**/*.rdoc"]
+lib_files = FileList["lib/**/*.rb"]
+doc_files = lib_files + FileList["**/*.rdoc"]
 rdoc_opts = %w(-S -c UTF-8 --title Rant --main lib/rant.rb)
 
+desc "Generate documentation."
 file "doc" => doc_files do
     touch "doc" if test(?d, "doc")
-    sh "rdoc #{rdoc_opts.join(' ')} #{doc_files.join(' ')}"
+    sh "rdoc #{rdoc_opts.join(' ')} #{doc_files.arglist}"
 end
 
+desc "Run basic tests."
 TestTask.new do |t|
     t.pattern = 'test_*.rb'
 end
 
+desc "Run first test-project.",
+     "Warning: writes to disc."
 TestTask.new :testp1 do |t|
     t.test_files = ["tests/project1/test_project.rb"]
 end
 
+desc "Run second test project.",
+     "Warning: writes to disc"
 TestTask.new :testp2 do |t|
     t.test_files = ["tests/project2/test_project.rb"]
 end
 
+desc "Run all tests."
 task :testall => %w(test testp1 testp2)
 
 if $0 == __FILE__

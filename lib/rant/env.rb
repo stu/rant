@@ -84,7 +84,7 @@ module Rant::Env
         Dir.chdir olddir
     end
 
-    module_function :on_windows?, :pathes, :find_bin, :indir
+    module_function :on_windows?, :on_linux?, :pathes, :find_bin, :indir
 end    # module Rant::Env
 
 module Rant::Console

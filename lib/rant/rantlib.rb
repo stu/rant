@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.2'
+    VERSION	= '0.1.4'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -123,17 +123,19 @@ module Rant
 	@@rantapp.file(targ, &block)
     end
 
-    def desc *args
+    def show(*args)
+	Rant.rantapp.show(*args)
+    end
+
+    def desc(*args)
+	Rant.rantapp.desc(*args)
     end
 
     # Create a path.
-    # TODO:
-=begin
     def directory targ
 	ensure_rantapp
 	@@rantapp.directory(targ)
     end
-=end
 
     # Look in the subdirectories, given by args,
     # for rantfiles.
@@ -156,8 +158,8 @@ module Rant
 	end
     end
 
-    module_function :task, :file, :abort_rant, :subdirs
-    module_function :ensure_rantapp
+    module_function :task, :file, :show, :desc, :subdirs
+    module_function :ensure_rantapp, :abort_rant
 
 end	# module Rant
 
@@ -174,19 +176,18 @@ class Rant::RantApp
 	[ "--verbose",	"-v",	GetoptLong::NO_ARGUMENT,
 	    "Print more messages to stderr."			],
 	[ "--quiet",	"-q",	GetoptLong::NO_ARGUMENT,
-	    "Suppress most messages to stderr."			],
+	    "Don't print commands."			],
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Process RANTFILE instead of standard rantfiles.\n" +
 	    "Multiple files may be specified with this option"	],
 	[ "--force-run","-a",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Force TARGET to be run, even if it isn't required.\n"],
+	[ "--targets",	"-T",	GetoptLong::NO_ARGUMENT,
+	    "Show a list of all described targets and exit."	],
     ]
 
     # Arguments, usually those given on commandline.
     attr_reader :args
-    # A hash of options influencing this app.
-    # Commandline options are mapped to this hash.
-    attr_reader :opts
     # A list of all Rantfiles used by this app.
     attr_reader :rantfiles
     # A list of target names to be forced (run even
@@ -197,13 +198,8 @@ class Rant::RantApp
     attr_reader :force_targets
     # A list with all tasks.
     attr_reader :tasks
-
     # A list of all registered plugins.
     attr_reader :plugins
-
-    @@block_task_mkpath = lambda { |task|
-	::Rant::FileUtils.mkpath task.name
-    }
 
     def initialize *args
 	@args = args.flatten
@@ -221,6 +217,22 @@ class Rant::RantApp
 	@rootdir = nil		# root directory for this app
 	@tasks = []
 	@plugins = []
+
+	@task_show = nil
+	@task_desc = nil
+
+	@block_task_mkdir = lambda { |task|
+	    ::Rant::FileUtils.mkdir task.name
+	}
+
+    end
+
+    def [](opt)
+	@opts[opt]
+    end
+
+    def []=(opt, val)
+	@opts[opt] = val
     end
 
     def rootdir
@@ -256,6 +268,9 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_start }
 	process_args
 	load_rantfiles
+	if @opts[:targets]
+	    show_descriptions
+	end
 	run_tasks
 	raise Rant::RantDoneException
     rescue Rant::RantDoneException
@@ -276,6 +291,14 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_quit }
     end
 
+    def show *args
+	@task_show = *args.join("\n")
+    end
+
+    def desc *args
+	@task_desc = args.join("\n")
+    end
+
     def task targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
 	    Rant::Task.new(self, name, pre, &blk)
@@ -288,10 +311,31 @@ class Rant::RantApp
 	}
     end
 
-    def directory targ
-	prepare_task(targ, @@block_task_mkpath) { |name,pre,blk|
-	    Rant::Task.new(self, name, pre, &blk)
+    def directory path
+	cinf = Rant::Lib.parse_caller_elem(caller[1])
+	path = normalize_task_arg(path, cinf[:file], cinf[:ln])
+	dirs = ::Rant::FileUtils.split_path(path)
+	if dirs.empty?
+	    # TODO: warning
+	    return nil
+	end
+	ld = nil
+	path = nil
+	dirs.each { |dir|
+	    path = path.nil? ? dir : File.join(path, dir)
+	    prepare_task({path => (ld || [])},
+		    @block_task_mkdir) { |name,pre,blk|
+		Rant::FileTask.new(self, name, pre, &blk)
+	    }
+	    ld = dir
 	}
+    end
+
+    def load_rantfile rantfile
+	rf, is_new = rantfile_for_path(rantfile)
+	return false unless is_new
+	load_file rf
+	true
     end
 
     # Search the given directories for Rantfiles.
@@ -364,22 +408,41 @@ class Rant::RantApp
 	}
 	raise Rant::RantDoneException
     end
-		
-    def load_rantfile rantfile
-	rf, is_new = rantfile_for_path(rantfile)
-	return false unless is_new
-	load_file rf
-	true
-    end
 
+    def show_descriptions
+	tlist = (select_tasks { |t| t.description }).reverse
+	if tlist.empty?
+	    msg "No described targets."
+	    raise Rant::RantDoneException
+	end
+	prefix = "rant "
+	infix = "  # "
+	name_length = 0
+	tlist.each { |t|
+	    if t.name.length > name_length
+		name_length = t.name.length
+	    end
+	}
+	name_length < 7 && name_length = 7
+	cmd_length = prefix.length + name_length
+	tlist.each { |t|
+	    print(prefix + t.name.ljust(name_length) + infix)
+	    dt = t.description.sub(/\s+$/, "")
+	    puts dt.sub("\n", "\n" + ' ' * cmd_length + infix + "  ")
+	}
+	raise Rant::RantDoneException
+    end
+		
     # Increase verbosity.
     def more_verbose
-	verbose ? (@opts[:verbose] += 1) : (@opts[:verbose] = 1)
+	@opts[:verbose] += 1
 	@opts[:quiet] = false
     end
+    
     def verbose
 	@opts[:verbose]
     end
+
     def quiet?
 	@opts[:quiet]
     end
@@ -473,7 +536,7 @@ class Rant::RantApp
     end
 
     # Returns a list with all tasks for which yield
-    # returns true.
+    # returns true. The list will be in reverse definition order.
     def select_tasks
 	selection = []
 	@rantfiles.reverse.each { |rf|
@@ -581,6 +644,8 @@ class Rant::RantApp
 		@arg_rantfiles << value
 	    when "--force-run"
 		@force_targets << value
+	    when "--targets"
+		@opts[:targets] = true
 	    end
 	}
     rescue GetoptLong::Error => e
@@ -597,28 +662,11 @@ class Rant::RantApp
 	}
     end
 
-    # Increase verbosity.
-    def more_verbose
-	@opts[:verbose] += 1
-	@opts[:quiet] = false
-    end
-    def verbose
-	@opts[:verbose]
-    end
-    def quiet?
-	@opts[:quiet]
-    end
-
-    def pos_text file, ln
-	t = "in file `#{file}'"
-	if ln && ln > 0
-	    t << ", line #{ln}"
-	end
-	t + ": "
-    end
-
     def prepare_task targ, block
 	clr = caller[2]
+
+	# Allow override of caller, usefull for plugins and libraries
+	# that define tasks.
 	if targ.is_a? Hash
 	    targ.reject! { |k, v|
 		case k
@@ -630,17 +678,15 @@ class Rant::RantApp
 		end
 	    }
 	end
+
 	ch = Rant::Lib::parse_caller_elem(clr)
 	name = nil
 	pre = []
 	ln = ch[:ln] || 0
 	file = ch[:file]
 	
-	if targ.is_a?(String) || targ.is_a?(Symbol)
-	    name = targ.to_s
-	elsif targ.respond_to? :to_str
-	    name = targ.to_str
-	elsif targ.is_a? Hash
+	# process and validate targ
+	if targ.is_a? Hash
 	    if targ.empty?
 		abort(pos_text(file, ln),
 		    "Empty hash as task argument, " +
@@ -655,18 +701,24 @@ class Rant::RantApp
 		name = normalize_task_arg(k, file, ln)
 		pre = v
 	    }
-	    if pre.is_a? Array
+	    if pre.respond_to? :to_ary
+		pre = pre.to_ary.dup
 		pre.map! { |elem|
 		    normalize_task_arg(elem, file, ln)
 		}
 	    else
 		pre = [normalize_task_arg(pre, file, ln)]
 	    end
+	else
+	    name = normalize_task_arg(targ, file, ln)
 	end
+
 	file, is_new = rantfile_for_path(file)
 	nt = yield(name, pre, block)
 	nt.rantfile = file
 	nt.line_number = ln
+	nt.description = @task_desc
+	@task_desc = nil
 	file.tasks << nt
 	nt
     end

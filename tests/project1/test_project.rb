@@ -68,4 +68,11 @@ class TestProject1 < Test::Unit::TestCase
 	assert(File.exist?("fallback"),
 	    "second task for `fallback' should have been run")
     end
+    def test_directory
+	assert_equal(Rant.run("path"), 0)
+	assert(test(?d, "dir"),
+	    "dir should have been created as prerequisite of dir/subdir")
+	assert(test(?d, "dir/subdir"),
+	    "dir/subdir should have been created as prerequisite of path")
+    end
 end

@@ -2,6 +2,8 @@
 require 'test/unit'
 require 'rant/rantlib'
 
+$-w = true
+
 class TestTask < Test::Unit::TestCase
     def setup
     end

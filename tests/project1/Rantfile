@@ -52,10 +52,14 @@ file "fallback" do |t|
     touch t.name
 end
 
+directory "dir/subdir"
+task :path => "dir/subdir"
+
 task :force_clean do
     rm_f %w(
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
 	fallback fallback_
 	)
+    rm_rf %w(dir)
 end

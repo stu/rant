@@ -3,6 +3,162 @@ require 'fileutils'
 require 'rant/env'
 
 module Rant
+
+    class FileList
+
+	attr_reader :pattern
+
+	class << self
+	    def [] pattern
+		new(pattern).no_suffix("~").no_suffix(".bak")
+	    end
+	end
+
+	def initialize(pattern, flags = 0)
+	    #@a = Dir[pattern]
+	    @a = Dir.glob(pattern, flags)
+	    @actions = []
+	end
+
+	# Direct access to the underlying list. You can apply
+	# any array methods (even those that modify the receiver)
+	# to this attribute.
+	def ary
+	    @a
+	end
+
+	# Like #ary.
+	def to_ary
+	    @a
+	end
+
+	# A copy of the underlying list.
+	def to_a
+	    @a.dup
+	end
+
+	def +(other)
+	    fl = self.dup
+	    fl.ary.concat(other.to_ary)
+	    fl
+	end
+
+	# Reevaluate pattern. Replay all modifications
+	# if replay is given.
+	def update(replay = true)
+	    @a = Dir[pattern]
+	    if replay
+		@actions.each { |action|
+		    self.send(*action)
+		}
+	    end
+	    @actions.clear
+	end
+
+	# Remove all entries which contain a directory with the
+	# given name.
+	# If no argument or +nil+ given, remove all directories.
+	#
+	# Example:
+	#	file_list.no_dir "CVS"
+	# would remove the following entries from file_list:
+	#	CVS/
+	#       src/CVS/lib.c
+	#       CVS/foo/bar/
+	def no_dir(name = nil)
+	    @actions << [:no_dir, name]
+	    entry = nil
+	    unless name
+		@a.reject! { |entry|
+		    test(?d, entry)
+		}
+		return self
+	    end
+	    elems = nil
+	    @a.reject! { |entry|
+		elems = FileUtils.split_path(entry)
+		i = elems.index(name)
+		if i
+		    path = File.join(*elems[0..i])
+		    test(?d, path)
+		else
+		    false
+		end
+	    }
+	    self
+	end
+
+	# Remove all files which have the given name.
+	def no_file(name)
+	    @actions << [:no_file, name]
+	    @a.reject! { |entry|
+		entry == name and test(?f, entry)
+	    }
+	    self
+	end
+
+	# Remove all entries which contain an element
+	# with the given suffix.
+	def no_suffix(suffix)
+	    @actions << [:no_suffix, suffix]
+	    elems = elem = nil
+	    @a.reject! { |entry|
+		elems = FileUtils.split_path(entry)
+		elems.any? { |elem|
+		    elem =~ /#{suffix}$/
+		}
+	    }
+	    self
+	end
+
+	# Remove all entries which contain an element
+	# with the given prefix.
+	def no_prefix(prefix)
+	    @actions << [:no_prefix, prefix]
+	    elems = elem = nil
+	    @a.reject! { |entry|
+		elems = FileUtils.split_path(entry)
+		elems.any? { |elem|
+		    elem =~ /^#{prefix}/
+		}
+	    }
+	    self
+	end
+
+	# Get a string with all entries. This is very usefull
+	# if you invoke a shell:
+	#	files # => ["foo/bar", "with space"]
+	#	sh "rdoc #{files.arglist}"
+	# will result on windows:
+	#	rdoc foo\bar "with space"
+	# on other systems:
+	#	rdoc foo/bar 'with space'
+	def arglist
+	    self.list.join(' ')
+	end
+
+	def list
+	    if ::Rant::Env.on_windows?
+		@a.collect { |entry|
+		    entry = entry.tr("/", "\\")
+		    if entry.include? ' '
+			'"' + entry + '"'
+		    else
+			entry
+		    end
+		}
+	    else
+		@a.collect { |entry|
+		    if entry.include? ' '
+			"'" + entry + "'"
+		    else
+			entry
+		    end
+		}
+	    end
+	end
+    end	# class FileList
+
     class CommandError < StandardError
 	attr_reader :cmd
 	attr_reader :status
@@ -43,7 +199,7 @@ module Rant
 	# This methods prints each argument on its
 	# own line to $stderr.
 	def rant_fu_msg *args
-	    $stderr.puts args
+	    $stderr.puts(args) unless ::Rant.rantapp[:quiet]
 	end
 
 	def fu_output_message(msg)	#:nodoc:
