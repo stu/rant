@@ -45,6 +45,7 @@ module Rant
 	    @verbose = false
 
 	    yield self if block_given?
+	    app.var["gen-rubydoc-rdoc_opts"] = self.rdoc_opts.dup
 
 	    @pre ||= []
 	    @pre.concat(self.rdoc_source_deps)
@@ -74,7 +75,22 @@ module Rant
 	def rdoc_opts
 	    optlist = []
 	    optlist << "-o" << @op_dir if @op_dir
-	    optlist.concat @opts if @opts
+	    if @opts
+		# validate opts
+		case @opts
+		when Array # ok, nothing to do
+		when String
+		    @opts = @opts.split
+		else
+		    if @opts.respond_to? :to_ary
+			@opts = @opts.to_ary 
+		    else
+			raise RantfileException,
+			    "RDoc options should be a string or a list of strings."
+		    end
+		end
+		optlist.concat @opts
+	    end
 	    optlist
 	end
 	alias options rdoc_opts

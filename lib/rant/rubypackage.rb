@@ -64,6 +64,7 @@ class Rant::RubyPackage
 	"executable",
 	"extension",
 	"files",
+	"rdoc_options",
 	"requires",
 	"test_files",
 	"test_suites",
@@ -218,14 +219,17 @@ class Rant::RubyPackage
 	}
     end
 
-    # Create task for gem building.
+    # Create task for gem building. If tname is a true value, a
+    # shortcut-task will be created.
     def gem_task(tname = :gem)
 	# We first define the task to create the gem, and afterwards
 	# the task to create the pkg directory to ensure that a
 	# pending description is used to describe the gem task.
 	pkg_name = gem_pkg_path
-	# shortcut task
-	@app.task({:__caller__ => @ch, tname => pkg_name})
+	if tname
+	    # shortcut task
+	    @app.task({:__caller__ => @ch, tname => pkg_name})
+	end
 	# actual gem-creating task
 	@gem_task = @app.file({:__caller__ => @ch,
 		pkg_name => [@pkg_dir] + files}) { |t|
@@ -237,9 +241,18 @@ class Rant::RubyPackage
 		t.fail "Couldn't load `rubygems'. " +
 		    "Probably RubyGems isn't installed on your system."
 	    end
-	    spec = Gem::Specification.new
-	    map_to_gemspec(spec)
 	    Gem.manage_gems
+	    # map rdoc options from application vars
+	    @data["rdoc_options"] ||= @app.var["gen-rubydoc-rdoc_opts"]
+	    if @data["rdoc_options"]
+		# remove the --op option, otherwise rubygems will
+		# install the rdoc in the wrong directory (at least as
+		# of version 0.8.6 of rubygems)
+		@data["rdoc_options"] = without_rdoc_op_opt(@data["rdoc_options"])
+	    end
+	    spec = Gem::Specification.new do |s|
+		map_to_gemspec(s)
+	    end
 	    fn = nil
 	    begin
 		fn = Gem::Builder.new(spec).build
@@ -258,8 +271,10 @@ class Rant::RubyPackage
 	# is used for the tar task and not for the dist dir task.
 	pkg_name = tar_pkg_path
 	pkg_files = files
-	# shortcut task
-	@app.task({:__caller__ => @ch, tname => pkg_name})
+	if tname
+	    # shortcut task
+	    @app.task({:__caller__ => @ch, tname => pkg_name})
+	end
 	# actual tar-creating task
 	@tar_task = @app.file(:__caller__ => @ch,
 		pkg_name => [pkg_dist_dir] + pkg_files) { |t|
@@ -275,8 +290,10 @@ class Rant::RubyPackage
 	# is used for the zip task and not for the dist dir task.
 	pkg_name = zip_pkg_path
 	pkg_files = files
-	# shortcut task
-	@app.task({:__caller__ => @ch, tname => pkg_name})
+	if tname
+	    # shortcut task
+	    @app.task({:__caller__ => @ch, tname => pkg_name})
+	end
 	# actual zip-creating task
 	@zip_task = @app.file(:__caller__ => @ch,
 		pkg_name => [pkg_dist_dir] + pkg_files) { |t|
@@ -289,6 +306,48 @@ class Rant::RubyPackage
 	    }
 	}
 	dist_dir_task
+    end
+
+    # Create a task which runs gem/zip/tar tasks.
+    def package_task(tname = :package)
+	def_tasks = [@gem_task, @tar_task, @zip_task].compact
+	if def_tasks.empty?
+	    # take description for overall package task
+	    pdesc = @app.pop_desc
+	    unless def_available_tasks
+		@app.desc pdesc
+		@app.warn_msg("No tools for packaging available (tar, zip, gem):",
+		    "Can't generate task `#{tname}'.")
+		return
+	    end
+	    @app.desc pdesc
+	end
+	pre = []
+	pre << tar_pkg_path if @tar_task
+	pre << zip_pkg_path if @zip_task
+	pre << gem_pkg_path if @gem_task
+	@app.task(:__caller__ => @ch, tname => pre)
+    end
+
+    # Returns true if at least one task was defined.
+    def def_available_tasks
+	defined = false
+	if Rant::Env.have_tar?
+	    # we don't create shortcut tasks, hence nil as argument
+	    self.tar_task(nil)
+	    defined = true
+	end
+	if Rant::Env.have_zip?
+	    self.zip_task(nil)
+	    defined = true
+	end
+	begin
+	    require 'rubygems'
+	    self.gem_task(nil)
+	    defined = true
+	rescue LoadError
+	end
+	defined
     end
 
     def pkg_base_name
@@ -325,6 +384,28 @@ class Rant::RubyPackage
 
     def pkg_dist_dir
 	@pkg_dir ? File.join(@pkg_dir, pkg_base_name) : pkg_base_name
+    end
+
+    # Remove -o and --op options from rdoc arguments.
+    # Note that this only works if -o isn't part of an argument with
+    # multiple one-letter options!
+    def without_rdoc_op_opt(rdoc_args)
+	last_was_op = false
+	rdoc_args.reject { |arg|
+	    if last_was_op
+		last_was_op = false
+		next true
+	    end
+	    case arg
+	    when /^(-o|--op)$/
+		last_was_op = true
+		true
+	    when /^-o./
+		true
+	    else
+		false
+	    end
+	}
     end
 
 end	# class Rant::RubyPackage

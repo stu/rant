@@ -21,6 +21,9 @@ module Rant
     class RantDoneException < StandardError
     end
 
+    class RantfileException < StandardError
+    end
+
     # This module is a namespace for generator classes.
     module Generators
     end
@@ -121,7 +124,7 @@ module RantContext
     end
 
     def sys *args
-	rantapp.sys *args
+	rantapp.sys(*args)
     end
 
 end	# module RantContext
@@ -250,6 +253,10 @@ class Rant::RantApp
     # may be called through an instance_eval on this object (e.g. from
     # plugins).
     attr_reader :context
+    # The [] and []= operators may be used to set/get values from this
+    # object (like a hash). It is intended to let the different
+    # modules, plugins and tasks to communicate to each other.
+    attr_reader :var
 
     def initialize *args
 	@args = args.flatten
@@ -269,6 +276,7 @@ class Rant::RantApp
 	@done = false
 	@tasks = []
 	@plugins = []
+	@var = {}
 
 	@task_show = nil
 	@task_desc = nil
@@ -344,6 +352,10 @@ class Rant::RantApp
 	# Notify plugins
 	@plugins.each { |plugin| plugin.rant_done }
 	return 0
+    rescue Rant::RantfileException
+	err_msg "Invalid Rantfile: " + $!.message
+	$stderr.puts "rant aborted!"
+	return 1
     rescue Rant::RantAbortException
 	$stderr.puts "rant aborted!"
 	return 1
@@ -513,10 +525,17 @@ class Rant::RantApp
 	if args.empty?
 	    @sys
 	else
-	    @sys.sh *args
+	    @sys.sh(*args)
 	end
     end
     ##################################################################
+
+    # Pop (remove and return) current pending task description.
+    def pop_desc
+	td = @task_desc
+	@task_desc = nil
+	td
+    end
 
     def abort *msg
 	err_msg(msg) unless msg.empty?

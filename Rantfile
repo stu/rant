@@ -11,7 +11,6 @@ task :default => :test
 
 lib_files = FileList["lib/**/*.rb"]
 doc_files = lib_files + FileList["**/*.rdoc"]
-rdoc_opts = %w(-S -c UTF-8 --title Rant --main lib/rant.rb)
 
 gen RubyPackage, "rant" do |t|
     t.version = `#{Env::RUBY} run_rant --version`.split[1]
@@ -19,25 +18,27 @@ gen RubyPackage, "rant" do |t|
     t.files = FileList["*"].no_dir + FileList["{bin,lib,test}/**/*"]
     t.bindir = "bin"
     t.executable = "rant"
-    desc "Create RubyGem."
-    t.gem_task
-    desc "Create tar.gz archive for distribution."
-    t.tar_task
-    desc "Create zip archive for Windows users."
-    t.zip_task
+    #desc "Create RubyGem."
+    #t.gem_task
+    #desc "Create tar.gz archive for distribution."
+    #t.tar_task
+    #desc "Create zip archive for Windows users."
+    #t.zip_task
+    desc "Create packages for distribution."
+    t.package_task
 end
 
 desc "Generate documentation."
 gen RubyDoc do |g|
-    g.files.concat FileList["**/*.rdoc"]
-    g.opts = rdoc_opts
+    g.files.concat FileList["**/*.rdoc"].no_dir("pkg")
+    g.opts = %w(-S -c UTF-8 --title Rant --main lib/rant.rb)
 end
 
 # Just to test Rant.
 gen RubyDoc, :rdoc do |g|
     g.verbose = true
     g.files = doc_files
-    g.opts = rdoc_opts
+    g.opts = %w(-S -c UTF-8 --title Rant --main lib/rant.rb)
 end
 
 desc "Run basic tests."

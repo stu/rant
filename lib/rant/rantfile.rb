@@ -63,6 +63,12 @@ class Rant::Task
 	}
     end
 
+    # True if this task has at least one action (block to be executed)
+    # associated.
+    def has_actions?
+	!!@block
+    end
+
     # Add a prerequisite.
     def <<(pre)
 	@pre << pre
