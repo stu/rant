@@ -166,19 +166,19 @@ FileUtils module:
     sys.safe_ln "src", "dest"	 # create a hardlink or fall back to
 				 # copying
 If you're tired of typing <tt>sys.</tt> all the time, you can include
-the +Sys+ module in your Rantfile (though it is not recommended to do
-this):
-    include Sys
+the +Rant::Sys+ module in your Rantfile (though it is not recommended
+to do this):
+    include Rant::Sys
     task :clean do
 	rm_f "myprog"
     end
 Then you can invoke these methods without the <tt>sys</tt> function.
-Note::	You are highly encouraged to not <tt>include Sys</tt> into
-	your Rantfile as this introduces many methods in the global
-	namespace, which can cause name clashes with other libraries.
-	Of course if you have just some tasks to remove backup files
-	in your home directory and do not use other Ruby libraries in
-	your Rantfile, it is no problem.
+Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
+	into your Rantfile as this introduces many methods in the
+	global namespace, which can cause name clashes with other
+	libraries.  Of course if you have just some tasks to remove
+	backup files in your home directory and do not use other Ruby
+	libraries in your Rantfile, it is no problem.
 
 === Generators
 

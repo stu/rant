@@ -338,7 +338,7 @@ module Rant
 	# We override the output method of the FileUtils module to
 	# allow the Rant application to control output.
 	def fu_output_message(msg)	#:nodoc:
-	    ::Rant.rantapp.cmd_msg msg if ::Rant.rantapp
+	    ::Rant.rac.cmd_msg msg if ::Rant.rac
 	end
 
 	def sh(*cmd_args, &block)

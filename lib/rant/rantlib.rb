@@ -141,65 +141,66 @@ end
 module RantContext
     include Rant::Generators
 
+    Env = Rant::Env
+    FileList = Rant::FileList
+
     # Define a basic task.
     def task targ, &block
-	rantapp.task(targ, &block)
+	rac.task(targ, &block)
     end
 
     # Define a file task.
     def file targ, &block
-	rantapp.file(targ, &block)
+	rac.file(targ, &block)
     end
 
     # Add code and/or prerequisites to existing task.
     def enhance targ, &block
-	rantapp.enhance(targ, &block)
+	rac.enhance(targ, &block)
     end
 
     def desc(*args)
-	rantapp.desc(*args)
+	rac.desc(*args)
     end
 
     def gen(*args, &block)
-	rantapp.gen(*args, &block)
+	rac.gen(*args, &block)
     end
 
     def import(*args, &block)
-	rantapp.import(*args, &block)
+	rac.import(*args, &block)
     end
 
     def plugin(*args, &block)
-	rantapp.plugin(*args, &block)
+	rac.plugin(*args, &block)
     end
 
     # Look in the subdirectories, given by args,
     # for rantfiles.
     def subdirs *args
-	rantapp.subdirs(*args)
+	rac.subdirs(*args)
     end
 
     def source rantfile
-	rantapp.source(rantfile)
+	rac.source(rantfile)
     end
 
     def sys *args
-	rantapp.sys(*args)
+	rac.sys(*args)
     end
 end	# module RantContext
 
 class RantAppContext
-    include Rant
     include RantContext
 
     def initialize(app)
-	@rantapp = app
+	@rac = app
     end
 
-    def rantapp
-	@rantapp
+    # +rac+ stands for "rant compiler"
+    def rac
+	@rac
     end
-    # +rac+ stands for "rant compiler" and should replace +rantapp+.
-    alias rac rantapp
 
     def method_missing(sym, *args)
 	# See the documentation for Rant::MAIN_OBJECT why we're doing
@@ -214,11 +215,10 @@ class RantAppContext
 end
 
 module Rant
-    include RantContext
 
     # In the class definition of Rant::RantApp, this will be set to a
     # new application object.
-    @@rantapp = nil
+    @@rac = nil
 
     class << self
 
@@ -248,42 +248,29 @@ module Rant
 	def run(first_arg=nil, *other_args)
 	    other_args = other_args.flatten
 	    args = first_arg.nil? ? ARGV.dup : ([first_arg] + other_args)
-	    if @@rantapp && !@@rantapp.ran?
-		@@rantapp.args.replace(args.flatten)
-		@@rantapp.run
+	    if @@rac && !@@rac.ran?
+		@@rac.args.replace(args.flatten)
+		@@rac.run
 	    else
-		@@rantapp = Rant::RantApp.new(args)
-		@@rantapp.run
+		@@rac = Rant::RantApp.new(args)
+		@@rac.run
 	    end
 	end
 
-	def rantapp
-	    @@rantapp
+	def rac
+	    @@rac
 	end
 
-	def rantapp=(app)
-	    @@rantapp = app
+	def rac=(app)
+	    @@rac = app
 	end
 
 	# "Clear" the current Rant application. After this call,
 	# Rant has the same state as immediately after startup.
 	def reset
-	    @@rantapp = nil
+	    @@rac = nil
 	end
     end
-
-    def rantapp
-	@@rantapp
-    end
-    alias rac rantapp
-
-    # Pre 0.2.7: Manually making necessary methods module
-    # functions. Note that it caused problems with caller
-    # parsing when the Rantfile did a `require "rant"' (irb!).
-    #module_function :task, :file, :desc, :subdirs,
-    #	:gen, :source, :enhance, :sys, :plugin
-
-    extend self
 
 end	# module Rant
 
@@ -362,7 +349,7 @@ class Rant::RantApp
 	# Rantfiles will be loaded in the context of this object.
 	@context = RantAppContext.new(self)
 	@sys = ::Rant::SysObject.new(self)
-	Rant.rantapp ||= self
+	Rant.rac ||= self
 	@rantfiles = []
 	@tasks = {}
 	@opts = {
@@ -538,7 +525,7 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_quit }
 	# restore pwd
 	Dir.pwd != @orig_pwd && Dir.chdir(@orig_pwd)
-	Rant.rantapp = self.class.new
+	Rant.rac = self.class.new
     end
 
     ###### methods accessible through RantContext ####################
@@ -1221,9 +1208,9 @@ class Rant::RantApp
 	end
     end
 
-    # Just ensure that Rant.rantapp holds an RantApp after loading
+    # Just ensure that Rant.rac holds an RantApp after loading
     # this file. The code in initialize will register the new app with
-    # Rant.rantapp= if necessary.
+    # Rant.rac= if necessary.
     self.new
 
 end	# class Rant::RantApp

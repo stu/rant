@@ -2,7 +2,11 @@
 
 require 'rant/rantlib'
 
-include Rant
+def rac
+    Rant.rac
+end
+
+include RantContext
 
 if $0 == __FILE__
     exit Rant.run

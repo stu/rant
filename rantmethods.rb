@@ -12,6 +12,11 @@ task :rant_methods do
     puts "*** total: #{ml.size} methods ***"
 end
 
+desc "Print constants introduced by Rant."
+task :constants do
+    puts ((self.class.constants - Object.constants).sort)
+end
+
 desc "Print all attribute writers of a Gem::Specification."
 task :gem_attrs do
     require 'rubygems'

@@ -20,7 +20,7 @@ class TestFileTask < Test::Unit::TestCase
     end
     def test_needed_no_dep
 	run = false
-	t = Rant.file $test_filetask_file do
+	t = Rant.rac.file $test_filetask_file do
 	    run = true
 	end
 	assert(!t.needed?,
@@ -29,11 +29,11 @@ class TestFileTask < Test::Unit::TestCase
     end
     def test_single_dep
 	tr = false
-	t = Rant.task :t do
+	t = Rant.rac.task :t do
 	    tr = true
 	end
 	run = false
-	f = Rant.file "testfile" => :t do
+	f = Rant.rac.file "testfile" => :t do
 	    run = true
 	end
 	f.invoke
@@ -41,13 +41,13 @@ class TestFileTask < Test::Unit::TestCase
 	assert(run)
     end
     def test_prerequisites
-	Rant.file "a" do
+	Rant.rac.file "a" do
 	    true
 	end
-	Rant.file "b" do
+	Rant.rac.file "b" do
 	    true
 	end
-	f = Rant.file "c" => %w(a b) do |t|
+	f = Rant.rac.file "c" => %w(a b) do |t|
 	    assert_equal(t.prerequisites, %w(a b),
 		"prerequisites should always be an array of _strings_")
 	    true

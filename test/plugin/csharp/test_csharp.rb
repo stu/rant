@@ -9,7 +9,8 @@ $have_csc ||= Rant::Env.find_bin("csc") ||
     Rant::Env.find_bin("cscc") || Rant::Env.find_bin("mcs")
 
 class TestPluginCsharp < Test::Unit::TestCase
-    include Rant
+    Assembly = Rant::Generators::Assembly
+    Env = Rant::Env
 
     def setup
 	# Ensure we run in test directory.

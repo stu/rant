@@ -1,6 +1,15 @@
 
 = Rant NEWS
 
+== Rant 0.3.4
+
+Incompatible changes:
+* Replace
+    include Sys
+  with
+    include Rant::Sys
+  in Rantfiles.
+
 == Rant 0.3.2
 
 This version should be fully backwards compatible to 0.3.0.

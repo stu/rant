@@ -1,7 +1,7 @@
 
 require 'rant/rantlib'
 
-class Rant::RubyPackage
+class Rant::Generators::RubyPackage
 
     class << self
 	def rant_generate(app, ch, args, &block)

@@ -284,7 +284,7 @@ module Rant
 
 	def initialize(app, name, prerequisites = [], &block)
 	    super()
-	    @app = app || Rant.rantapp
+	    @app = app || Rant.rac
 	    @name = name or raise ArgumentError, "name not given"
 	    @pre = prerequisites || []
 	    @pre_resolved = false
@@ -690,6 +690,8 @@ module Rant
 	end
     end	# class DirTask
     module Generators
+	Task = ::Rant::Task
+	LightTask = ::Rant::LightTask
 	Directory = ::Rant::DirTask
     end
 end # module Rant
