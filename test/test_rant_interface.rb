@@ -40,7 +40,7 @@ class TestRantInterface < Test::Unit::TestCase
 	    "rant should set arguments of form var2=val2 in ENV")
     end
     def test_opt_targets
-	@app = RantApp.new("--targets")
+	@app = RantApp.new("--tasks")
 	@app.desc 'This is a "public" target.'
 	@app.task :public_task
 	@app.task :private_task

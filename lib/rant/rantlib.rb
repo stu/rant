@@ -1,5 +1,6 @@
 
 require 'getoptlong'
+require 'rant/rantvar'
 require 'rant/rantenv'
 require 'rant/rantfile'
 require 'rant/rantsys'
@@ -282,8 +283,8 @@ class Rant::RantApp
 	    "Multiple files may be specified with this option"	],
 	[ "--force-run","-a",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Force TARGET to be run, even if it isn't required.\n"],
-	[ "--targets",	"-T",	GetoptLong::NO_ARGUMENT,
-	    "Show a list of all described targets and exit."	],
+	[ "--tasks",	"-T",	GetoptLong::NO_ARGUMENT,
+	    "Show a list of all described tasks and exit."	],
 	
 	# "private" options intended for debugging, testing and
 	# internal use. A private option is distuingished from others
@@ -335,7 +336,7 @@ class Rant::RantApp
 	@ran = false
 	@done = false
 	@plugins = []
-	@var = {}
+	@var = Rant::RantVar::Space.new
 	@imports = []
 
 	@task_show = nil
@@ -936,7 +937,7 @@ class Rant::RantApp
 		@arg_rantfiles << value
 	    when "--force-run"
 		@force_targets << value
-	    when "--targets"
+	    when "--tasks"
 		@opts[:targets] = true
 	    when "--stop-after-load"
 		@opts[:stop_after_load] = true
