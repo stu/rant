@@ -80,7 +80,7 @@ class TestSubdirs < Test::Unit::TestCase
 	assert(test(?f, "t"))
     end
     def test_import
-	run_import %w(--auto ant)
+	run_import %w(-q --auto ant)
 	assert_equal($?, 0)
 	capture_std do
 	    assert_nothing_raised {
