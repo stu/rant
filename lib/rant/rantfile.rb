@@ -107,7 +107,7 @@ module Rant
 	end
 
 	def eql? other
-	    Worker === other and name.eql? other.name
+	    Worker === other and full_name.eql? other.full_name
 	end
     end
 
@@ -238,16 +238,13 @@ module Rant
 	    return false if done?
 	    return true if @needed.nil?
 	    goto_task_home
-	    if @needed.arity == 0
-		@needed.call
-	    else
-		@needed[self]
-	    end
+	    @needed.arity == 0 ? @needed.call : @needed[self]
 	end
 
 	def invoke(opt = INVOKE_OPT)
 	    return needed? if opt[:needed?]
-	    goto_task_home
+	    # +run+ already calls +goto_task_home+
+	    #goto_task_home
 	    if opt[:force] && !@done
 		self.run
 		@done = true
@@ -446,6 +443,7 @@ module Rant
 		return @pre.each { |t| yield(t) }
 	    end
 	    my_full_name = full_name
+	    my_project_subdir = project_subdir
 	    @pre.map! { |t|
 		if Worker === t
 		    # Remove references to self from prerequisites!
@@ -462,7 +460,7 @@ module Rant
 		    else
 			#STDERR.puts "selecting `#{t}'"
 			selection = @app.select_tasks_by_name t,
-					project_subdir
+					my_project_subdir
 			#STDERR.puts selection.size
 			if selection.empty?
 			    # use return value of yield
@@ -528,6 +526,7 @@ module Rant
 	    if @needed
 		goto_task_home
 		@needed.arity == 0 ? @needed.call : @needed[self]
+	    #else: true #??
 	    end
 	end
     end	# class UserTask
@@ -589,8 +588,6 @@ module Rant
     # An instance of this class is a task to create a _single_
     # directory.
     class DirTask < Task
-
-	# TODO: subdir support
 
 	class << self
 
@@ -656,6 +653,7 @@ module Rant
 
 	def invoke(opt = INVOKE_OPT)
 	    return if done?
+	    goto_task_home
 	    @isdir = test(?d, @name)
 	    if @isdir
 		@ts = @block ? test(?M, @name) : Time.now

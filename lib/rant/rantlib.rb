@@ -14,7 +14,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.3.2'
+    VERSION	= '0.3.3'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -198,6 +198,8 @@ class RantAppContext
     def rantapp
 	@rantapp
     end
+    # +rac+ stands for "rant compiler" and should replace +rantapp+.
+    alias rac rantapp
 
     def method_missing(sym, *args)
 	# See the documentation for Rant::MAIN_OBJECT why we're doing
@@ -273,6 +275,7 @@ module Rant
     def rantapp
 	@@rantapp
     end
+    alias rac rantapp
 
     # Pre 0.2.7: Manually making necessary methods module
     # functions. Note that it caused problems with caller
@@ -591,20 +594,23 @@ class Rant::RantApp
 
     # Currently ignores block.
     def import(*args, &block)
+	ch = Rant::Lib::parse_caller_elem(caller[1])
 	if block
-	    warn_msg "import: currently ignoring block"
+	    warn_msg pos_text(ch[:file], ch[:ln]),
+		"import: ignoring block"
 	end
 	args.flatten.each { |arg|
 	    unless String === arg
-		abort("import: currently " + 
-		    "only strings are allowed as arguments")
+		abort(pos_text(ch[:file], ch[:ln]),
+		    "import: only strings allowed as arguments")
 	    end
 	    unless @imports.include? arg
 		unless Rant::CODE_IMPORTS.include? arg
 		    begin
 			require "rant/import/#{arg}"
 		    rescue LoadError => e
-			abort("No such import - #{arg}")
+			abort(pos_text(ch[:file], ch[:ln]),
+			    "No such import - #{arg}")
 		    end
 		    Rant::CODE_IMPORTS << arg.dup
 		end
@@ -704,7 +710,7 @@ class Rant::RantApp
 	    end
 	    unless arg.is_a? String
 		abort(pos_text(file, ln),
-		    "in `subdirs' command: arguments must be strings")
+		    "subdirs: arguments must be strings")
 	    end
 	    loaded = false
 	    prev_subdir = @current_subdir
@@ -727,13 +733,12 @@ class Rant::RantApp
 		goto_project_dir prev_subdir
 	    end
 	    unless loaded || quiet?
-		warn_msg(pos_text(file, ln) + "; in `subdirs' command:",
-		    "No Rantfile in subdir `#{arg}'.")
+		warn_msg(pos_text(file, ln),
+		    "subdirs: No Rantfile in subdir `#{arg}'.")
 	    end
 	}
     rescue SystemCallError => e
-	abort(pos_text(file, ln),
-	    "in `subdirs' command: " + e.message)
+	abort(pos_text(file, ln), "subdirs: " + e.message)
     end
 
     def sys(*args)

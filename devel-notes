@@ -63,4 +63,7 @@ following:
 * Worker#needed?
 * RantApp#run before returning.
 
+== RantContext#rantapp rename
+Rename +rantapp+ to +rac+.
+
 # vim:tw=70:

@@ -93,4 +93,35 @@ class TestSubdirs < Test::Unit::TestCase
     ensure
 	File.delete "ant" if File.exist? "ant"
     end
+    def test_directory
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/dt/dt"))
+	end
+	assert(test(?d, "sub2/sub/dt"))
+	assert(test(?d, "sub2/sub/dt/dt"))
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/dt/dt"))
+	end
+    end
+    def test_lighttask
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/lt"))
+	end
+	assert(test(?f, "sub2/sub/lt"))
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/lt"))
+	end
+    end
+    def test_gen_task
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/gt"))
+	end
+	assert(test(?f, "sub2/sub/gt"))
+	assert(test(?d, "sub2/sub/dt"))
+	assert(!test(?d, "sub2/sub/dt/dt"))
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/gt"))
+	end
+	assert(!test(?d, "sub2/sub/dt/dt"))
+    end
 end

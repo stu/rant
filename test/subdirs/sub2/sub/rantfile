@@ -8,7 +8,20 @@ file "rootref.t" => "#t" do |t|
     sys.touch t.name
 end
 
+gen Directory, "dt/dt"
+
+gen Task, "gt" => "dt" do |t|
+    t.needed { !test(?f, t.name) }
+    t.act { sys.touch t.name }
+end
+
+gen LightTask, "lt" do |lt|
+    lt.needed { !test(?f, lt.name) }
+    lt.act { sys.touch lt.name }
+end
+
 task :clean do
+    sys.rm_rf %w(dt)
     sys.rm_f Dir["*t"]
 end
 
