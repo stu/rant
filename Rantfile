@@ -98,6 +98,9 @@ end
 # for quich rant testing
 #plugin :Configure
 
+# mainly for rant testing
+source 'rantmethods.rb'
+
 if $0 == __FILE__
     Rant.run
 end

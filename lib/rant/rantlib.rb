@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.9'
+    VERSION	= '0.2.10'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -16,6 +16,9 @@ module Rant
 		  ]
     
     # Names of plugins and imports for which code was loaded.
+    # Files that where loaded with the `import' commant are directly
+    # added; files loaded with the `plugin' command are prefixed with
+    # "plugin/".
     CODE_IMPORTS = []
     
     class RantAbortException < StandardError
@@ -157,7 +160,7 @@ module RantContext
     end
 
     def source rantfile
-	rantapp.load_rantfile(rantfile)
+	rantapp.source(rantfile)
     end
 
     def sys *args
@@ -407,6 +410,7 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_start }
 	if @opts[:targets]
 	    show_descriptions
+	    raise Rant::RantDoneException
 	end
 	# run tasks
 	run_tasks
@@ -572,9 +576,12 @@ class Rant::RantApp
 	}
     end
 
-    def load_rantfile rantfile
+    def source rantfile
 	rf, is_new = rantfile_for_path(rantfile)
 	return false unless is_new
+	unless rf.exist?
+	    abort("source: No such file to load - #{rantfile}")
+	end
 	load_file rf
 	true
     end
@@ -647,7 +654,7 @@ class Rant::RantApp
 	tlist = select_tasks { |t| t.description }
 	if tlist.empty?
 	    msg "No described targets."
-	    raise Rant::RantDoneException
+	    return
 	end
 	prefix = "rant "
 	infix = "  # "
@@ -664,7 +671,7 @@ class Rant::RantApp
 	    dt = t.description.sub(/\s+$/, "")
 	    puts dt.sub("\n", "\n" + ' ' * cmd_length + infix + "  ")
 	}
-	raise Rant::RantDoneException
+	true
     end
 		
     # Increase verbosity.
@@ -795,7 +802,10 @@ class Rant::RantApp
     # returns true.
     def select_tasks
 	selection = []
-	@rantfiles.reverse.each { |rf|
+	### pre 0.2.10 ##################
+	# @rantfile.reverse.each { |rf|
+	#################################
+	@rantfiles.each { |rf|
 	    rf.tasks.each { |t|
 		selection << t if yield t
 	    }
@@ -861,7 +871,7 @@ class Rant::RantApp
     end
 
     def load_file rantfile
-	msg 1, "loading #{rantfile.path}"
+	msg 1, "source #{rantfile.path}"
 	begin
 	    path = rantfile.absolute_path
 	    @context.instance_eval(File.read(path), path)

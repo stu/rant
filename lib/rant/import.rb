@@ -10,9 +10,14 @@ module Rant
     class RantImportAbortException < RantAbortException
     end
 
+    # This class is the implementation for the rant-import command.
+    # Usage similar to RantApp class.
     class RantImport
 	include Rant::Console
 
+	# TODO: We currently only look for imports and plugins
+	# relative to this LIB_DIR. We should also look in all pathes
+	# in $LOAD_PATH after looking in LIB_DIR.
 	LIB_DIR = File.expand_path(File.dirname(__FILE__))
 
 	OPTIONS = [
@@ -24,12 +29,18 @@ module Rant
 		"Include PLUGINS (comma separated list)."	],
 	    [ "--imports",	"-i",	GetoptLong::REQUIRED_ARGUMENT,
 		"Include IMPORTS (coma separated list)."	],
-	    [ "--force",	"-f",	GetoptLong::NO_ARGUMENT,
+	    [ "--force",		GetoptLong::NO_ARGUMENT,
 		"Force overwriting of output file."		],
 	    [ "--with-comments",	GetoptLong::NO_ARGUMENT,
 		"Include comments from Rant sources."		],
 	    [ "--reduce-whitespace", "-r",GetoptLong::NO_ARGUMENT,
 		"Remove as much whitespace from Rant sources as possible." ],
+	    [ "--auto",		"-a",	GetoptLong::NO_ARGUMENT,
+		"Automatically try to determine imports and plugins.\n" +
+		"Warning: loads Rantfile!"			],
+	    [ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
+		"Load RANTFILE. This also sets --auto!\n" +
+		"May be given multiple times."			],
 	]
 
 	class << self
@@ -52,6 +63,9 @@ module Rant
 	attr_accessor :skip_comments
 	# Remove whitespace from Rant sources? Defaults to false.
 	attr_accessor :reduce_whitespace
+	# Try automatic determination of imports and plugins?
+	# Defaults to false.
+	attr_accessor :auto
 
 	def initialize(*args)
 	    @args = args.flatten
@@ -66,10 +80,24 @@ module Rant
 	    @included_imports = []
 	    @skip_comments = true
 	    @reduce_whitespace = false
+	    @auto = false
+	    @arg_rantfiles = []
 	end
 
 	def run
 	    process_args
+
+	    if @auto
+		@rantapp = RantApp.new(
+		    %w(-v --stop-after-load) +
+		    @arg_rantfiles.collect { |rf| "-f#{rf}" }
+		    )
+		unless @rantapp.run == 0
+		    abort("Auto-determination of required code failed.")
+		end
+		@imports.concat(@rantapp.imports)
+		@plugins.concat(@rantapp.plugins.map { |p| p.name })
+	    end
 	    
 	    if File.exist?(@mono_fn) && !@force
 		abort("#{@mono_fn} exists. Rant won't overwrite this file.",
@@ -136,6 +164,11 @@ EOF
 		    @imports.concat(value.split(/\s*,\s*/))
 		when "--plugins"
 		    @plugins.concat(value.split(/\s*,\s*/))
+		when "--auto"
+		    @auto = true
+		when "--rantfile"
+		    @auto = true
+		    @arg_rantfiles << value.dup
 		end
 	    }
 	    rem_args = ARGV.dup

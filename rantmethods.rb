@@ -6,7 +6,6 @@ desc "Print all methods which allow to communicate with rant."
 task :rant_methods do
     ml = methods
     om = Object.instance_methods
-    fu = FileUtils.instance_methods
 
     ml = ml.select { |m| not om.include?(m) }.sort
     puts ml

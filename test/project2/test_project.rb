@@ -49,8 +49,8 @@ class TestProject2 < Test::Unit::TestCase
     def test_load_rantfile
 	capture_std do
 	    app("b_f2")
-	    assert(@app.load_rantfile("buildfile"),
-		"load_rantfile should return a true value on success")
+	    assert(@app.source("buildfile"),
+		"source should return a true value on success")
 	    assert_equal(@app.run, 0)
 	end
 	assert(File.exist?("b_f2"))
