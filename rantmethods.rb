@@ -24,7 +24,7 @@ task :gem_attrs do
 end
 
 file "bench-rant" do |t|
-    c = 100
+    c = 500
     if ENV["TC"]
 	c = Integer(ENV["TC"])
     end

@@ -2,13 +2,23 @@
 require 'rant/rantenv'
 
 class Rant::TaskFail < StandardError
+    def initialize(*args)
+	@task = args.shift
+	super(args.shift)
+    end
+    def task
+	@task
+    end
+    def tname
+	@task ? @task.name : nil
+    end
 end
 
 class Rant::Rantfile < Rant::Path
 
     attr_reader :tasks
     
-    def initialize(path)
+    def initialize(*args)
 	super
 	@tasks = []
     end
@@ -17,13 +27,6 @@ end	# class Rant::Rantfile
 class Rant::Task
     include Rant::Console
 
-    class << self
-	def fail msg = nil, clr = nil
-	    clr ||= caller
-	    raise Rant::TaskFail, msg, clr
-	end
-    end
-    
     # Name of the task, this is always a string.
     attr_reader :name
     # A description for this task.
@@ -41,8 +44,9 @@ class Rant::Task
 	@name = name or raise ArgumentError, "name not given"
 	@description = nil
 	@pre = prerequisites || []
+	@pre_resolved = false
 	@block = block
-	@ran = false
+	@run = false
 	@fail = false
 	@rantfile = nil
 	@line_number = 0
@@ -71,18 +75,19 @@ class Rant::Task
 
     # Add a prerequisite.
     def <<(pre)
+	@pre_resolved = false
 	@pre << pre
     end
 
     # Cause task to fail. Equivalent to calling Task.fail.
     def fail msg = nil
-	self.class.fail msg, caller
+	raise Rant::TaskFail.new(self), msg, caller
     end
 
     # Was this task ever run? If this is true, it doesn't necessarily
     # mean that the run was successfull!
-    def ran?
-	@ran
+    def run?
+	@run
     end
 
     # True if last task run fail.
@@ -92,13 +97,15 @@ class Rant::Task
 
     # Task was run and didn't fail.
     def done?
-	ran? && !fail?
+	run? && !fail?
     end
 
     def needed?
+	# TODO: optimize
+	done? or return true
 	resolve_tasks
 	each_task { |t| return true if t.needed? }
-	!done?
+	false
     end
 
     # Enhance this task with the given dependencies and blk.
@@ -117,7 +124,7 @@ class Rant::Task
     # run if necessary.
     # Raises a Rant::TaskFail exception on failure.
     def run
-	@ran = true
+	@run = true
 	resolve_prerequisites
 	ensure_tasks
 	if @block
@@ -125,7 +132,11 @@ class Rant::Task
 	    begin
 		# A task run is considered as failed, if the called
 		# block raises an exception.
-		@block[self]
+		if @block.arity == 0
+		    @block.call
+		else
+		    @block[self]
+		end
 		@fail = false
 	    rescue ::Rant::TaskFail => e
 		m = e.message
@@ -138,7 +149,7 @@ class Rant::Task
 		err_msg $!.message, $!.backtrace
 	    end
 	    if @fail
-		raise Rant::TaskFail, @name.to_s
+		self.fail
 	    end
 	end
     end
@@ -163,6 +174,7 @@ class Rant::Task
     end
 
     def resolve_tasks
+	# TODO: optimize
 	@pre.map! { |t|
 	    if t.is_a? Rant::Task
 		# Remove references to self from prerequisites!
@@ -181,6 +193,100 @@ class Rant::Task
 	@pre.flatten!
 	@pre.compact!
     end
+
+    ####### experimental #############################################
+    # Returns a true value if task was acutally run.
+    # Raises Rant::TaskFail to signal task (or prerequiste) failure.
+    def invoke(force = true)
+	return if done? && !force
+	internal_invoke(true)
+    end
+    def internal_invoke force
+	update = force
+	dep = nil
+	uf = false
+	each_dep { |dep|
+	    if Rant::Task === dep
+		dep.invoke && update = true
+	    else
+		dep, uf = handle_non_task(dep)
+		uf && update = true
+		dep
+	    end
+	}
+	if update
+	    @run = true
+	    if @block
+		@block.arity == 0 ? @block.call : @block[self]
+	    end
+	end
+	@run
+    rescue StandardError => e
+	@fail = true
+	case e
+	when Rant::TaskFail: raise
+	when Rant::CommandError
+	    err_msg e.message
+	when SystemCallError
+	    err_msg e.message
+	else
+	    err_msg e.message, e.backtrace
+	end
+	self.fail
+    end
+    private :internal_invoke
+    # Override in subclass if specific task can handle
+    # non-task-prerequisites.
+    #
+    # Notes for overriding:
+    # This method should do one of the two following:
+    # [1] Fail with an exception.
+    # [2] Return two values: replacement_for_dep, update_required
+    def handle_non_task(dep)
+	err_msg "Unknown task `#{dep}',",
+	    "referenced in `#{rantfile.path}', line #{@line_number}!"
+	self.fail
+    end
+    # For each non-task prerequiste, the value returned from yield
+    # will replace the original prerequisite (of course only if
+    # @pre_resolved is false).
+    def each_dep
+	t = nil
+	if @pre_resolved
+	    return @pre.each { |t| yield(t) }
+	end
+	@pre.map! { |t|
+	    if t.is_a? Rant::Task
+		# Remove references to self from prerequisites!
+		t.name == @name ? nil : yield(t)
+		if t.name == @name
+		    nil
+		else
+		    yield(t)
+		    t
+		end
+	    else
+		t = t.to_s if t.is_a? Symbol
+		if t == @name
+		    nil
+		else
+		    # Take care: selection is an array of tasks
+		    selection = @app.select_tasks { |st| st.name == t }
+		    if selection.empty?
+			# use return value of yield
+			yield(t)
+		    else
+			selection.each { |st| yield(st) }
+			selection
+		    end
+		end
+	    end
+	}
+	@pre.flatten!
+	@pre.compact!
+	@pre_resolved = true
+    end
+    ##################################################################
 
     # Yield for each Rant::Task in prerequisites.
     def each_task
@@ -207,6 +313,9 @@ class Rant::Task
 end	# class Rant::Task
 
 class Rant::FileTask < Rant::Task
+
+    T0 = Time.at 0
+
     def initialize *args
 	super
 	if @name.is_a? Rant::Path
@@ -215,6 +324,7 @@ class Rant::FileTask < Rant::Task
 	else
 	    @path = Rant::Path.new @name
 	end
+	@ts = T0
     end
     def path
 	@path
@@ -249,4 +359,26 @@ class Rant::FileTask < Rant::Task
 	    t
 	}
     end
+
+    ####### experimental #############################################
+    def invoke(force = false)
+	return if done? && !force
+	if @path.exist?
+	    @ts = @path.mtime
+	    internal_invoke(force)
+	else
+	    @ts = T0
+	    internal_invoke(true)
+	end
+    end
+    def handle_non_task(dep)
+	dep = Rant::Path.new(dep) unless Rant::Path === dep
+	unless dep.exist?
+	    err_msg @app.pos_text(rantfile.path, line_number),
+		"in prerequisites: no such file or task: `#{dep}'"
+	    self.fail
+	end
+	[dep, dep.mtime > @ts]
+    end
+    ##################################################################
 end	# class Rant::FileTask

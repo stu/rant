@@ -70,15 +70,45 @@ module Rant::Lib
 	rh = {	:file => parts[0],
 		:ln => parts[1].to_i
 	     }
+=begin
+	# commented for better performance
 	meth = parts[2]
 	if meth && meth =~ /\`(\w+)'/
 	    meth = $1
 	end
 	rh[:method] = meth
+=end
 	rh
     end
 
     module_function :parse_caller_elem
+
+    # currently unused
+    class Caller
+	def self.[](i)
+	    new(caller[i+1])
+	end
+	def initialize(clr)
+	    @clr = clr
+	    @file = @ln = nil
+	end
+	def file
+	    unless @file
+		ca = Lib.parse_caller_elem(clr)
+		@file = ca[:file]
+		@ln = ca[:ln]
+	    end
+	    @file
+	end
+	def ln
+	    unless @ln
+		ca = Lib.parse_caller_elem(clr)
+		@file = ca[:file]
+		@ln = ca[:ln]
+	    end
+	    @ln
+	end
+    end
 end
 
 # The methods in this module are the public interface to Rant that can
@@ -339,6 +369,10 @@ class Rant::RantApp
 	end
 	# read rantfiles
 	load_rantfiles
+
+	# currently for testing only
+	raise Rant::RantDoneException if ENV["RANT_LOAD"]
+
 	# Notify plugins before running tasks
 	@plugins.each { |plugin| plugin.rant_start }
 	if @opts[:targets]
@@ -717,9 +751,12 @@ class Rant::RantApp
 		matching_tasks += 1
 		begin
 		    t.run if force || t.needed?
+		    ### experimental ###
+		    #t.invoke(force)
+		    ####################
 		rescue Rant::TaskFail => e
 		    # TODO: Report failed dependancy.
-		    abort("Task `#{e.message}' fail.")
+		    abort("Task `#{e.tname}' fail.")
 		end
 	    }
 	    if matching_tasks == 0
@@ -967,15 +1004,14 @@ class Rant::RantApp
     # with an appropriate error message using file and ln.
     def normalize_task_name(arg, file, ln)
 	return arg if arg.is_a? String
-	if arg.respond_to? :to_str
-	    arg = arg.to_str
-	elsif arg.is_a? Symbol
-	    arg = arg.to_s
+	if Symbol === arg
+	    arg.to_s
+	elsif arg.respond_to? :to_str
+	    arg.to_str
 	else
 	    abort(pos_text(file, ln),
 		"Task name has to be a string or symbol.")
 	end
-	arg
     end
 
     # Returns a Rant::Rantfile object as first value
@@ -990,7 +1026,7 @@ class Rant::RantApp
 	    file = @rantfiles.find { |rf| rf.absolute_path == abs_path }
 	    [file, false]
 	else
-	    file = Rant::Rantfile.new(abs_path)
+	    file = Rant::Rantfile.new(abs_path, abs_path)
 	    @rantfiles << file
 	    [file, true]
 	end

@@ -6,8 +6,9 @@ module Rant end
 
 class Rant::Path
     attr_reader :path
-    def initialize path
+    def initialize path, abs_path = nil
 	@path = path or raise ArgumentError, "path not given"
+	@abs_path = abs_path
     end
     def to_s
 	@path.dup
@@ -28,7 +29,7 @@ class Rant::Path
 	File.mtime @path
     end
     def absolute_path
-	File.expand_path(@path)
+	@abs_path ||= File.expand_path(@path)
     end
 end
 

@@ -31,7 +31,7 @@ class TestTask < Test::Unit::TestCase
 	    task.run
 	}
 	assert(task.fail?)
-	assert(task.ran?, "although task failed, it was ran")
+	assert(task.run?, "although task failed, it was ran")
     end
 
     def test_dependant
@@ -48,14 +48,16 @@ class TestTask < Test::Unit::TestCase
 
     def test_dependance_fails
 	t1 = Rant::Task.new(nil, :t1) { true }
-	t2 = Rant::Task.new(nil, :t2) { Rant::Task.fail }
+	t2 = Rant::Task.new(nil, :t2) { |t| t.fail }
 	t1 << t2
 	assert_raise(Rant::TaskFail,
 	    "dependency t2 failed, so t1 should fail too") {
 	    t1.run
 	}
-	assert(t1.fail?)
-	assert(t2.fail?)
+	assert(t1.fail?,
+	    "fail flag should be set for task if dependency fails")
+	assert(t2.fail?,
+	    "fail flag should be set for task if it fails")
     end
 
     def test_task

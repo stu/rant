@@ -159,6 +159,14 @@ module Rant
 	    @pre.concat(@assembly.resources) if @assembly.resources
 	    super
 	end
+	### experimental ###
+	def invoke(force = false)
+	    @assembly.init
+	    @pre.concat(@assembly.sources)
+	    @pre.concat(@assembly.resources) if @assembly.resources
+	    super
+	end
+	####################
     end
 end	# module Rant
 
