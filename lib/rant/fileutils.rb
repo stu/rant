@@ -115,6 +115,7 @@ module Rant
 	#	rdoc foo\bar "with space"
 	# on other systems:
 	#	rdoc foo/bar 'with space'
+=begin
 	def arglist
 	    self.list.join(' ')
 	end
@@ -139,6 +140,7 @@ module Rant
 		}
 	    end
 	end
+=end
     end	# class FileList
 
     class CommandError < StandardError
@@ -207,6 +209,12 @@ module Rant
 	    end
 	end
 
+	# Returns a string that can be used as a valid path argument on the
+	# shell respecting portability issues.
+	def sp path
+	    Env.shell_path path
+	end
+
 	# If supported, make a symbolic link, otherwise
 	# fall back to copying.
 	def safe_ln(*args)
@@ -230,6 +238,7 @@ module Rant
 	    split_path(base) + [last]
 	end
 
-	module_function :rant_fu_msg, :sh, :ruby, :safe_ln, :split_path
+	module_function :rant_fu_msg, :sh, :ruby, :safe_ln,
+		:split_path, :sp
     end	# module FileUtils
 end	# module Rant

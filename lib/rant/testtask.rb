@@ -41,16 +41,16 @@ module Rant
 		libpath = (@libs.nil? || @libs.empty?) ?
 		    nil : @libs.join(File::PATH_SEPARATOR)
 		if libpath
-		    arg << "-I " << libpath << " "
+		    arg << "-I " << Env.shell_path(libpath) << " "
 		end
-		arg << "-S testrb " << filelist.join(' ')
+		arg << "-S testrb " << filelist.arglist
 		arg << optlist
 		ruby arg
 	    }
 	end
 	def optlist
 	    options = (@options.is_a? Array) ?
-		@options.join(' ') : @options 
+		@options.arglist : @options 
 	    ENV["TESTOPTS"] || options || ""
 	end
 	def filelist

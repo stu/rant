@@ -49,10 +49,12 @@ module Rant::Env
     # Get an array with all pathes in the PATH
     # environment variable.
     def pathes
-        path = ENV["PATH"]
+	# Windows doesn't care about case in environment variables,
+	# but the ENV hash does!
+        path = on_windows? ? ENV["Path"] : ENV["PATH"]
         return [] unless path
         if on_windows?
-            path.split(",")
+            path.split(";")
         else
             path.split(":")
         end
@@ -63,19 +65,49 @@ module Rant::Env
     # if an executable called bin_name couldn't be found.
     def find_bin bin_name
         if on_windows?
-            bin_name += ".exe" unless bin_name =~ /\.exe$/i
-        end
-        pathes.each { |dir|
-            file = File.join(dir, bin_name)
-            if File.exist? file
-                return file if on_windows?
-                return file if File.executable? file
-            end
-        }
+            bin_name_exe = nil
+	    if bin_name !~ /\.[^\.]{1,3}$/i
+		bin_name_exe = bin_name + ".exe"
+	    end
+	    pathes.each { |dir|
+		file = File.join(dir, bin_name)
+		return file if test(?f, file)
+		if bin_name_exe
+		    file = File.join(dir, bin_name_exe)
+		    return file if test(?f, file)
+		end
+	    }
+	else
+	    pathes.each { |dir|
+		file = File.join(dir, bin_name)
+		return file if test(?x, file)
+	    }
+	end
         nil
     end
 
+    # Add quotes to a path and replace File::Separators if necessary.
+    def shell_path path
+	# TODO: check for more characters when deciding wheter to use
+	# quotes.
+	if on_windows?
+	    path = path.tr("/", "\\")
+	    if path.include? ' '
+		'"' + path + '"'
+	    else
+		path
+	    end
+	else
+	    if path.include? ' '
+		"'" + path + "'"
+	    else
+		path
+	    end
+	end
+    end
+
     # Run block in directory dir.
+    # Deprecated. Use FileUtils.cd instead.
     def indir dir
         olddir = Dir.pwd
         Dir.chdir dir
@@ -84,7 +116,8 @@ module Rant::Env
         Dir.chdir olddir
     end
 
-    module_function :on_windows?, :on_linux?, :pathes, :find_bin, :indir
+    module_function :on_windows?, :on_linux?, :pathes, :find_bin,
+    	:indir, :shell_path
 end    # module Rant::Env
 
 module Rant::Console
@@ -126,7 +159,8 @@ module Rant::Console
     end
     def prompt text
         $stderr.print msg_prefix + text
-        $stdin.readline
+        input = $stdin.readline
+	input ? input.chomp : input
     end
     module_function :msg, :err_msg, :warn_msg, :ask_yes_no, :prompt
 end

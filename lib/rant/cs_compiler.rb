@@ -27,7 +27,6 @@ class Rant::CsCompiler
 	# Search for a C# compiler in PATH and some
 	# usual locations.
 	def look_for_cs_compiler
-	    # TODO: look for mcs
 	    csc_bin = nil
 	    if Env.on_windows?
 		csc_bin = "csc" if Env.find_bin "csc"
@@ -52,15 +51,16 @@ class Rant::CsCompiler
 		    next unless test(?d,frame_dir)
 		    csc_pathes = []
 		    Dir.entries(frame_dir).each { |e|
-			if test(?d,e)
-			    csc_path = File.join(frame_dir, e, "csc.exe")
+			vdir = File.join(frame_dir, e)
+			if test(?d, vdir)
+			    csc_path = File.join(vdir, "csc.exe")
 			    if test(?e,csc_path)
 				csc_pathes << csc_path
 			    end
 			end
 		    }
 		    next if csc_pathes.empty?
-		    return csc_pathes.sort.first
+		    return csc_pathes.sort.last
 		}
 	    }
 	    nil
@@ -245,24 +245,24 @@ class Rant::CsCompiler
         cc_args << " -Wall" if warnings
         cc_args << " -O2" if optimize
         lib_link_pathes.each { |p|
-            cc_args << " -L #{p}"
+            cc_args << " -L #{Env.shell_path(p)}"
         }
         libs.each { |p|
-            cc_args << " -l #{p}"
+            cc_args << " -l #{Env.shell_path(p)}"
         }
         cc_args << " " << misc_args.join(' ') if misc_args
 	sargs = specific_args["cscc"]
 	cc_args << " " << sargs.join(' ') if sargs
         resources.each { |p|
-            cc_args << " -fresources=#{p}"
+            cc_args << " -fresources=#{Env.shell_path(p)}"
         }
-        cc_args << " " << sources.join(" ") if sources
+        cc_args << " " << sources.arglist if sources
         cc_args
     end
 
     def csc_cmd_args
         cc_args = ""
-        cc_args << " /out:#{out}" if out
+        cc_args << " /out:#{Env.shell_path(out)}" if out
         cc_args << " /debug /d:DEBUG" if debug
 	defines.each { |p|
 	    cc_args << " /d:#{p}"
@@ -273,21 +273,21 @@ class Rant::CsCompiler
             #TODO:    cc_args << " -L #{p}"
         }
         libs.each { |p|
-            cc_args << " /r:#{p}"
+            cc_args << " /r:#{Env.shell_path(p)}"
         }
         cc_args << " " << misc_args.join(' ') if misc_args
 	sargs = specific_args["csc"]
 	cc_args << " " << sargs.join(' ') if sargs
         resources.each { |p|
-            cc_args << " /res:#{p}"
+            cc_args << " /res:#{Env.shell_path(p)}"
         }
-        cc_args << " " << sources.join(" ") if sources
+        cc_args << " " << sources.arglist if sources
         cc_args
     end
 
     def mcs_cmd_args
         cc_args = ""
-        cc_args << " -o #{out}" if out
+        cc_args << " -o #{Env.shell_path(out)}" if out
         cc_args << " -g -d:DEBUG" if debug
 	defines.each { |p|
 	    cc_args << " -d:#{p}"
@@ -296,18 +296,18 @@ class Rant::CsCompiler
 	# Warning level for mcs: highest 4, default 2
         cc_args << " -warn:4" if warnings
 	lib_link_pathes.each { |p|
-	    cc_args << " -L #{p}"
+	    cc_args << " -L #{Env.shell_path(p)}"
 	}
 	if libs && !libs.empty?
-	    cc_args << " -r:" + libs.join(',')
+	    cc_args << " -r:" + (libs.collect { |p| Env.shell_path(p) }).join(',')
 	end
         cc_args << " " << misc_args.join(' ') if misc_args
 	sargs = specific_args["mcs"]
 	cc_args << " " << sargs.join(' ') if sargs
         resources.each { |p|
-            cc_args << " -resource:#{p}"
+            cc_args << " -resource:#{Env.shell_path(p)}"
         }
-        cc_args << " " << sources.join(' ') if sources
+        cc_args << " " << sources.arglist if sources
         cc_args
     end
 

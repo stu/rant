@@ -1,9 +1,35 @@
 
 require 'getoptlong'
-require 'rant/rantlib'
 require 'rant/env'
 require 'rant/rantfile'
 require 'rant/fileutils'
+
+class Array
+    def arglist
+	self.shell_pathes.join(' ')
+    end
+
+    def shell_pathes
+	if ::Rant::Env.on_windows?
+	    self.collect { |entry|
+		entry = entry.tr("/", "\\")
+		if entry.include? ' '
+		    '"' + entry + '"'
+		else
+		    entry
+		end
+	    }
+	else
+	    self.collect { |entry|
+		if entry.include? ' '
+		    "'" + entry + "'"
+		else
+		    entry
+		end
+	    }
+	end
+    end
+end
 
 module Rant end
 
@@ -32,7 +58,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.8'
+    VERSION	= '0.1.9'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
