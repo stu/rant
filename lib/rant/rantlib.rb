@@ -5,7 +5,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.4'
+    VERSION	= '0.2.5'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -737,23 +737,18 @@ class Rant::RantApp
 	end
 	# Now, run all specified tasks in all rantfiles,
 	# rantfiles in reverse order.
-	force = false
+	opt = {}
 	matching_tasks = 0
 	target_list.each do |target|
 	    matching_tasks = 0
 	    if @force_targets.include?(target)
-		force = true
+		opt[:force] = true
 		@force_targets.delete(target)
-	    else
-		force = false
 	    end
 	    (select_tasks { |t| t.name == target }).each { |t|
 		matching_tasks += 1
 		begin
-		    #t.run if force || t.needed?
-		    ### experimental ###
-		    t.invoke(force)
-		    ####################
+		    t.invoke(opt)
 		rescue Rant::TaskFail => e
 		    # TODO: Report failed dependancy.
 		    abort("Task `#{e.tname}' fail.")
@@ -1033,66 +1028,3 @@ class Rant::RantApp
     end
 
 end	# class Rant::RantApp
-
-module Rant
-
-    # Generate a task for making a directory path. Prerequisites can
-    # be given, which will be added as prerequistes for the _last_
-    # directory.
-    #
-    # A special feature is used if you provide a block:
-    # The block will be called after complete directory creation.
-    # After the block execution, the modification time of the
-    # directory will be updated.
-    class Generators::Directory
-
-	class << self
-
-	    def rant_generate(app, ch, args, &block)
-		if args && args.size == 1
-		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
-		    self.new(app, ch, name, pre, &block)
-		else
-		    app.abort(app.pos_text(file, ln),
-			"Directory takes one argument, " +
-			"which should be like one given to the `task' command.")
-		end
-	    end
-	end
-
-	def initialize(app, ch, name, prerequisites = [], &block)
-	    dirs = ::Rant::Sys.split_path(name)
-	    if dirs.empty?
-		app.abort(app.pos_text(ch[:file], ch[:ln]),
-		    "Not a valid directory name: `#{name}'")
-	    end
-	    ld = nil
-	    path = nil
-	    task_block = lambda { |t|
-		app.context.instance_eval {
-		    sys.mkdir t.name unless test(?d, t.name)
-		}
-	    }
-	    orig_task_block = task_block
-	    dirs.each { |dir|
-		pre = [ld]
-		pre.compact!
-		if dir.equal?(dirs.last)
-		    pre.concat prerequisites if prerequisites
-		    if block
-			task_block = lambda { |t|
-			    orig_task_block[t]
-			    block[t]
-			    app.context.instance_eval {
-				sys.touch t.name
-			    }
-			}
-		    end
-		end
-		path = path.nil? ? dir : File.join(path, dir)
-		app.file({:__caller__ => ch, path => pre}, &task_block)
-		ld = dir
-	    }
-	end
-    end	# class Generators::Directory
-end	# module Rant

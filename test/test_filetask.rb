@@ -2,12 +2,31 @@
 require 'test/unit'
 require 'rant/rantlib'
 
+$test_filetask_file = File.expand_path(__FILE__)
+
 class TestFileTask < Test::Unit::TestCase
     def setup
     end
     def teardown
     end
 
+    def test_needed_non_existent
+	run = false
+	t = Rant::FileTask.new(nil, "non_existent") { run = true }
+	assert(t.needed?,
+	    "`non_existent' doesn't exist, so filetask is needed")
+	assert(!run,
+	    "only FileTask#needed? was called, which shouldn't run task block")
+    end
+    def test_needed_no_dep
+	run = false
+	t = Rant.file $test_filetask_file do
+	    run = true
+	end
+	assert(!t.needed?,
+	    "file exists and has no prerequisite, so needed? should return false")
+	assert(!run)
+    end
     def test_single_dep
 	tr = false
 	t = Rant.task :t do
@@ -17,7 +36,7 @@ class TestFileTask < Test::Unit::TestCase
 	f = Rant.file "testfile" => :t do
 	    run = true
 	end
-	f.run
+	f.invoke
 	assert(tr)
 	assert(run)
     end
@@ -33,6 +52,6 @@ class TestFileTask < Test::Unit::TestCase
 		"prerequisites should always be an array of _strings_")
 	    true
 	end
-	f.run
+	f.invoke
     end
 end

@@ -14,13 +14,24 @@ class TestTask < Test::Unit::TestCase
 	assert(Rant::VERSION.length >= 5)
     end
 
-    def test_run
+    def test_needed
+	run = false
+	t = Rant::Task.new(nil, :non_existent) { run = true }
+	assert(t.needed?,
+	    "Rant::Task should always be 'needed?' before first invocation")
+	assert(!run,
+	    "Rant::Task shouldn't get run when 'needed?' is called")
+    end
+
+    def test_invoke
 	run = false
 	block = lambda { run = true }
 	task = Rant::Task.new(nil, :test_run, &block)
-	task.run
+	task.invoke
 	assert(run, "block should have been executed")
 	assert(task.done?, "task is done")
+	assert(!task.needed?,
+	    "task is done, so 'needed?' should return false")
     end
 
     def test_fail
@@ -28,7 +39,7 @@ class TestTask < Test::Unit::TestCase
 	task = Rant::Task.new(nil, :test_fail, &block)
 	assert_raise(Rant::TaskFail,
 	    "run should throw Rant::TaskFail if block raises Exception") {
-	    task.run
+	    task.invoke
 	}
 	assert(task.fail?)
 	assert(task.run?, "although task failed, it was ran")
@@ -39,11 +50,13 @@ class TestTask < Test::Unit::TestCase
 	t1 = Rant::Task.new(nil, :t1) { r1 = true }
 	t2 = Rant::Task.new(nil, :t2) { r2 = true }
 	t1 << t2
-	t1.run
+	t1.invoke
 	assert(r1)
 	assert(r2, "t1 depends on t2, so t2 should have been run")
 	assert(t1.done?)
 	assert(t2.done?)
+	assert(!t1.needed?)
+	assert(!t2.needed?)
     end
 
     def test_dependance_fails
@@ -52,7 +65,7 @@ class TestTask < Test::Unit::TestCase
 	t1 << t2
 	assert_raise(Rant::TaskFail,
 	    "dependency t2 failed, so t1 should fail too") {
-	    t1.run
+	    t1.invoke
 	}
 	assert(t1.fail?,
 	    "fail flag should be set for task if dependency fails")
@@ -65,7 +78,7 @@ class TestTask < Test::Unit::TestCase
 	t = Rant.task :t do |t|
 	    run = true
 	end
-	t.run
+	t.invoke
 	assert(run)
     end
 
@@ -74,7 +87,7 @@ class TestTask < Test::Unit::TestCase
 	t = Rant.task :t => "t" do |t|
 	    run = true
 	end
-	th = Thread.new { t.run }
+	th = Thread.new { t.invoke }
 	# shouldn't take half a second...
 	assert_equal(th.join(0.5), th,
 	    "task should remove dependency on itself")
@@ -92,7 +105,7 @@ class TestTask < Test::Unit::TestCase
 	t3 = Rant.task :t3 => [:t1, :t3, :t2] do |t|
 	    rl << t.name
 	end
-	th = Thread.new { t3.run }
+	th = Thread.new { t3.invoke }
 	# shouldn't take half a second...
 	assert_equal(th.join(0.5), th,
 	    "task should remove dependency on itself from dependency list")

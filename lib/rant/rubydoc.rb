@@ -52,9 +52,9 @@ module Rant
 	    index = self.op_html_index
 	    # define task task with given name first, so that it takes
 	    # any previously set description
-	    app.task({:__caller__ => ch, @name => index})
+	    t = app.task(:__caller__ => ch, @name => [])
 	    # The task which will actually run rdoc.
-	    app.file({:__caller__ => ch, index => @pre}) { |t|
+	    t << app.file(:__caller__ => ch, index => @pre) { |t|
 		# We delay the require of the RDoc code until it is
 		# actually needed, so it will be only loaded if the
 		# rdoc task has to be run.
