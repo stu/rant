@@ -5,7 +5,7 @@ require 'rant/plugin/csharp'
 require 'tutil'
 
 $testPluginCsDir = File.expand_path(File.dirname(__FILE__))
-$have_csc = Env.find_bin("csc") || Env.find_bin("cscc") || Env.find_bin("mcs")
+$have_csc ||= Env.find_bin("csc") || Env.find_bin("cscc") || Env.find_bin("mcs")
 
 class TestPluginCsharp < Test::Unit::TestCase
     def setup
@@ -16,6 +16,8 @@ class TestPluginCsharp < Test::Unit::TestCase
 	capture_std do
 	    assert(Rant.run("clean"), 0)
 	end
+	assert(Dir["*.{exe,dll,obj}"].empty?,
+	    "task :clean should remove exe, dll and obj files")
     end
 if $have_csc
     # Try to compile the "hello world" program. Requires cscc, csc

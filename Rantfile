@@ -20,7 +20,7 @@ gen RubyPackage, "rant" do |t|
     t.executable %w(rant rant-import)
     t.author = "Stefan Lang"
     t.email = "langstefan@gmx.at"
-    t.gem_rubyforge_project = "make"
+    t.rubyforge_project = "make"
     t.gem_extra_rdoc_files = FileList["**/README"].no_dir("pkg").no_dir("test") + FileList["doc/**/*.rdoc"]
     t.homepage = "http://make.rubyforge.org"
     desc "Create packages for distribution."

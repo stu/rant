@@ -1,0 +1,43 @@
+
+conf = plugin :Configure do |conf|
+    conf.init_modes = [:guess, :interact]
+    conf.override_modes = [:env]
+    conf.task           # define a task named :configure
+    conf.check "target" do |c|
+        c.default "conf_csharp.exe"
+        c.interact {
+            c.prompt "Name for executable: "
+        }
+    end
+    # define more checks
+end
+
+task :default => ["conf_csharp.cs", conf["target"]]
+
+plugin :Csharp do |cs|
+    cs.config = conf
+end
+
+# from our example above
+gen Assembly, conf["target"] do |t|
+    t.libs = %w(System.Xml.dll)
+    t.sources = Dir["*.cs"]
+end
+
+file "conf_csharp.cs" do |t|
+    File.open(t.name, "w") { |f|
+	f << <<-EOF
+class ConfCSharp
+{
+    public static void Main(string[] args)
+    {
+	System.Console.WriteLine("ConfCSharp");
+    }
+}
+	EOF
+    }
+end
+
+task :clean do
+    sys.rm_f Dir["*.{exe,cs}"] + %w(config)
+end

@@ -4,37 +4,121 @@ require 'rant/rantenv'
 
 module Rant
 
+    class Glob < String
+	class << self
+	    # A synonym for +new+.
+	    def [](pattern)
+		new(pattern)
+	    end
+	end
+    end
+
     class FileList < Array
 
-	attr_reader :pattern
+	# Flags for the File::fnmatch method.
+	# Initialized to 0.
+	attr_accessor :flags
 
 	class << self
-	    def [] pattern
-		new(pattern).no_suffix("~").no_suffix(".bak")
+	    def [](*patterns)
+		new(*patterns)
 	    end
 	end
 
-	def initialize(pattern, flags = 0)
-	    super(Dir.glob(pattern, flags))
-	    @actions = []
+	# IMPORTANT NOTE: Array#dup and Array#clone seem to do some
+	# very special things which results in things like this:
+	# (with a FileList implementation that doesn't override #dup
+	# and #clone, the inspect method wasn't overrided to allow
+	# this test, pwd contained 15 entries, Ruby 1.8.2)
+=begin
+	irb(main):009:0> fl = FileList["*"]
+	=> []
+	irb(main):010:0> cl = fl.clone
+	=> []
+	irb(main):011:0> cl.size
+	=> 15
+	irb(main):012:0> fl.size
+	=> 0
+	irb(main):013:0> fl.to_a
+	=> []
+=end
+    
+	# The above should be related to this problem. The following
+	# Rantfile will actually never remove anything:
+=begin
+	task :clean do
+	    sys.rm_f FileList["*.{exe,dll,obj}"]
+	end
+=end
+	# (Same problem with corresponding Rakefile.)
+	# The rm_f command first does a [arg].flatten.map, where arg
+	# is our FileList.
+	#
+	# Think I finally found the problem: The flatten method seems
+	# to copy elements directly before calling any method on our
+	# FileList because our FileList is an Array.
+	#
+	# After testing and searching in the Ruby sources, I found out
+	# that it can be solved by overriding the is_a? method.
+	
+	# override Array methods
+	ml = Array.instance_methods - Object.instance_methods
+	%w(to_a inspect dup clone is_a?).each {
+	    |m| ml << m unless ml.include? m
+	}
+	ml.each { |m|
+	    #puts "override #{m}"
+	    eval <<-EOM
+		def #{m}(*args)
+		    resolve if @pending
+		    super
+		end
+	    EOM
+	}
+
+	def initialize(*patterns)
+	    super()
+	    @flags = 0
+	    @actions = patterns.map { |pat| [:apply_include, pat] }
+	    @pending = true
 	end
 
-	def +(other)
-	    fl = self.dup
-	    fl.concat(other.to_ary)
-	    fl
-	end
+	#def +(other)
+	#    self.dup.concat(other.to_ary)
+	#end
 
-	# Reevaluate pattern. Replay all modifications
-	# if replay is given.
-	def update(replay = true)
-	    self.replace(Dir[pattern])
-	    if replay
-		@actions.each { |action|
-		    self.send(*action)
-		}
-	    end
+	def resolve
+	    @pending = false
+	    @actions.each { |action|
+		self.send(*action)
+	    }
 	    @actions.clear
+	end
+
+	def include(*patterns)
+	    patterns.each { |pat|
+		@actions << [:apply_include, pat]
+	    }
+	    @pending = true
+	    self
+	end
+
+	def apply_include(pattern)
+	    self.concat Dir.glob(pattern, @flags)
+	end
+
+	def exclude(*patterns)
+	    patterns.each { |pat|
+		@actions << [:apply_exclude, pat]
+	    }
+	    @pending = true
+	    self
+	end
+
+	def apply_exclude(pattern)
+	    self.reject! { |elem|
+		File.fnmatch? pattern, elem, @flags
+	    }
 	end
 
 	# Remove all entries which contain a directory with the
@@ -48,7 +132,12 @@ module Rant
 	#       src/CVS/lib.c
 	#       CVS/foo/bar/
 	def no_dir(name = nil)
-	    @actions << [:no_dir, name]
+	    @actions << [:apply_no_dir, name]
+	    @pending = true
+	    self
+	end
+
+	def apply_no_dir(name)
 	    entry = nil
 	    unless name
 		self.reject! { |entry|
@@ -67,36 +156,49 @@ module Rant
 		    false
 		end
 	    }
-	    self
 	end
 
 	# Remove all files which have the given name.
 	def no_file(name)
-	    @actions << [:no_file, name]
+	    @actions << [:apply_no_file, name]
+	    @pending = true
+	    self
+	end
+
+	def apply_no_file(name)
 	    self.reject! { |entry|
 		entry == name and test(?f, entry)
 	    }
-	    self
 	end
 
 	# Remove all entries which contain an element
 	# with the given suffix.
 	def no_suffix(suffix)
 	    @actions << [:no_suffix, suffix]
-	    elems = elem = nil
+	    @pending = true
+	    self
+	end
+
+	def apply_no_suffix(suffix)
+	    elems =  nil
+	    elem = nil
 	    self.reject! { |entry|
 		elems = Sys.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /#{suffix}$/
 		}
 	    }
-	    self
 	end
 
 	# Remove all entries which contain an element
 	# with the given prefix.
 	def no_prefix(prefix)
 	    @actions << [:no_prefix, prefix]
+	    @pending = true
+	    self
+	end
+
+	def apply_no_prefix(prefix)
 	    elems = elem = nil
 	    self.reject! { |entry|
 		elems = Sys.split_path(entry)
@@ -104,7 +206,6 @@ module Rant
 		    elem =~ /^#{prefix}/
 		}
 	    }
-	    self
 	end
 
 	# Get a string with all entries. This is very usefull

@@ -267,11 +267,24 @@ EOF
 	# code by directly inserting the code.
 	def resolve_requires script
 	    rs = ""
+	    # TODO: skip multiline comments (=begin, =end) only of
+	    # @skip_comments is true
+	    in_ml_comment = false
 	    script.each { |line|
+		if in_ml_comment
+		    if line =~ /^=end/
+			in_ml_comment = false
+		    end
+		    next
+		end
 		# skip shebang line
 		next if line =~ /^#! ?(\/|\\)?\w/
 		# skip pure comment lines
 		next if line =~ /^\s*#/ if @skip_comments
+		if line =~ /^=begin\s/
+		    in_ml_comment = true
+		    next
+		end
 		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
 		    name = $3
 		    next if @core_imports.include? name
