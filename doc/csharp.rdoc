@@ -59,9 +59,8 @@ linked against, the +sources+ attribute should be clear and the
 assembly.
 
 Now let's see what is actually done by rant when we feed it this
-Rantfile. Because we have only one task defined, there is no need to
-specify a task on the commandline:
-    % rant
+Rantfile. We tell rant to build <tt>myprog.exe</tt>:
+    % rant myprog.exe
     cscc -o myprog.exe -Wall -O2 -l System.Drawing.dll -l System.Windows.Forms.dll -fresources=res/MyProg.legend.png src/MyProg.cs src/Util.cs
 This was on a Linux system, on Windows you'll probably see a command
 with csc.

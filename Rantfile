@@ -1,15 +1,12 @@
-#!/usr/bin/env ruby
 
 # Rantfile for Rant :)
-
-require 'rant'
 
 import %w(rubytest rubydoc rubypackage)
 
 task :default => :test
 
 lib_files = FileList["lib/**/*.rb"]
-dist_files = FileList["{bin,lib,test,doc}/**/*"].no_dir("html") +
+dist_files = FileList["{bin,lib,test,doc}/**/*"].shun("html", "coverage") +
 	FileList["*"].no_dir.exclude("InstalledFiles", "Session.vim")
 
 gen RubyPackage, "rant" do |t|
@@ -41,15 +38,13 @@ gen RubyTest do |g|
     g.pattern = 'test_*.rb'
 end
 
-desc "Run first test-project.",
-     "Warning: writes to disc."
+desc "Run first test-project."
 gen RubyTest, :testp1 do |g|
     g.libs << "test"
     g.test_files = ["test/project1/test_project.rb"]
 end
 
-desc "Run second test project.",
-     "Warning: writes to disc"
+desc "Run second test project."
 gen RubyTest, :testp2 do |g|
     g.libs << "test"
     g.test_files = ["test/project2/test_project.rb"]
@@ -88,6 +83,12 @@ task :clean do
     sys.rm_rf %w(doc/html pkg test/coverage)
 end
 
+desc "Publish html docs on make.rubyfore.org.",
+     "Note: scp will prompt for rubyforge password."
+task "publish-docs" => :doc do
+    sys "scp -r doc/html/* langi@rubyforge.org:/var/www/gforge-projects/make/"
+end
+
 # Just for quick visual testing of rant...
 task :please_fail do |t|
     sys "mix_nix_gibts"
@@ -98,7 +99,3 @@ end
 
 # mainly for rant testing
 #source 'rantmethods.rb'
-
-if $0 == __FILE__
-    Rant.run
-end
