@@ -1,4 +1,18 @@
 
+require 'rant'
 require 'rant/plugin/cs'
 
+src_files = FileList["src/*.cs"]
+
 assembly "hello.exe" => "Hello.cs"
+
+assembly "AB.dll" => src_files + ["hello.exe"] do |t|
+    t.sources = src_files
+    t.debug = true
+    t.optimize = true
+    t.warnings = true
+end
+
+task :clean do
+    rm_f FileList["*.{exe,dll,obj}"]
+end

@@ -10,9 +10,24 @@ class Rant::CsCompiler
     LIB_SYSTEM_FORMS	= "System.Windows.Forms.dll"
 
     class << self
+	# Get the short name for the compiler referenced by this path.
+	def cs_compiler_name(path)
+	    case path
+	    when /csc(\.exe)$/i
+		"csc"
+	    when /cscc(\.exe)$/i
+		"cscc"
+	    when /mcs(\.exe)$/i
+		"mcs"
+	    else
+		nil
+	    end
+	end
+
 	# Search for a C# compiler in PATH and some
 	# usual locations.
 	def look_for_cs_compiler
+	    # TODO: look for mcs
 	    csc_bin = nil
 	    if Env.on_windows?
 		csc_bin = "csc" if Env.find_bin "csc"
@@ -64,7 +79,7 @@ class Rant::CsCompiler
     # Target filename.
     attr_accessor :out
     # Libraries to link angainst (usually dlls).
-    attr_reader :libs
+    attr_accessor :libs
     # Preprocessor defines.
     attr_reader :defines
     # Other args, could be options.
@@ -230,6 +245,8 @@ class Rant::CsCompiler
             cc_args << " -l #{p}"
         }
         cc_args << " " << misc_args.join(' ') if misc_args
+	sargs = specific_args["cscc"]
+	cc_args << " " << sargs.join(' ') if sargs
         resources.each { |p|
             cc_args << " -fresources=#{p}"
         }
@@ -256,6 +273,9 @@ class Rant::CsCompiler
         libs.each { |p|
             cc_args << " /r:#{p}"
         }
+        cc_args << " " << misc_args.join(' ') if misc_args
+	sargs = specific_args["csc"]
+	cc_args << " " << sargs.join(' ') if sargs
         resources.each { |p|
             cc_args << " /res:#{p}"
         }

@@ -85,6 +85,7 @@ module Rant::Plugin
 	    @modified = false
 	    @no_action_list = ["distclean", "clobber", "clean"]
 	    @no_action = false
+	    @configured = false
 
 	    yield self if block_given?
 	    run_checklist(:defaults)
@@ -102,6 +103,12 @@ module Rant::Plugin
 	    @data[key] = val
 	end
 
+	# This is true, if either a configure task was run, or the
+	# configuration file was read.
+	def configured?
+	    @configured
+	end
+
 	# Define a task with +name+ that will run the configuration
 	# process in the given +check_mode+.
 	def task(name = nil, check_mode = :guess_interact)
@@ -116,6 +123,7 @@ module Rant::Plugin
 	    nt = @app.task(name) { |t|
 		run_checklist(check_mode)
 		save
+		@configured = true
 	    }
 	    nt
 	end
@@ -179,6 +187,7 @@ module Rant::Plugin
 		end
 	    end
 	    read_yaml
+	    @configured = true
 	end
 
 	def write_yaml
@@ -212,6 +221,8 @@ module Rant::Plugin
     end	# class Configure
     class ConfigureCheck
 	include ::Rant::Console
+	
+	public :msg, :prompt, :ask_yes_no
 
 	attr_reader :key
 	attr_accessor :value

@@ -26,10 +26,10 @@ class TestProject1 < Test::Unit::TestCase
 	assert_equal(Rant.run("create_target"), 0)
 	assert(File.exist?("target"))
 	Rant.reset
-	sleep 1
+	sleep 2
 	assert_equal(Rant.run("create_dep"), 0)
 	assert(File.exist?("dep"))
-	sleep 1
+	sleep 2
 	assert_equal(Rant.run("target"), 0)
 	assert(File.exist?("target"))
 	assert(File.exist?("dep"))
@@ -37,7 +37,7 @@ class TestProject1 < Test::Unit::TestCase
 	    "`target' should be newer than `dep'")
 	t1 = File.mtime "target"
 	Rant.reset
-	sleep 1
+	sleep 2
 	assert_equal(Rant.run("target"), 0)
 	assert_equal(t1, File.mtime("target"),
 	    "`target' was already up to date")

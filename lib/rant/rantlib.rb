@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.5'
+    VERSION	= '0.1.6'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
