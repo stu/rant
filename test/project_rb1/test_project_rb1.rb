@@ -42,8 +42,16 @@ class TestProjectRb1 < Test::Unit::TestCase
 	assert_equal(Rant.run(%w(pkg)), 0)
 	assert(test(?d, "packages"),
 	    "task `pkg' should create dir `packages'")
-	have_tar = !`tar --help`.empty?
-	have_zip = !`zip -help`.empty?
+	begin
+	    have_tar = !`tar --help`.empty?
+	rescue
+	    have_tar = false
+	end
+	begin
+	    have_zip = !`zip -help`.empty?
+	rescue
+	    have_zip = false
+	end
 	have_gem = false
 	pkg_base = "packages/wgrep-1.0.0"
 	begin

@@ -4,6 +4,7 @@ require 'rant'
 require 'rant/plugin/cs'
 
 $testPluginCsDir = File.expand_path(File.dirname(__FILE__))
+$have_csc = Env.find_bin("csc") || Env.find_bin("cscc") || Env.find_bin("mcs")
 
 class TestPluginCs < Test::Unit::TestCase
     def setup
@@ -13,6 +14,7 @@ class TestPluginCs < Test::Unit::TestCase
     def teardown
 	assert(Rant.run("clean"), 0)
     end
+if $have_csc
     # Try to compile the "hello world" program. Requires cscc, csc
     # or mcs to be on your PATH.
     def test_hello
@@ -74,4 +76,19 @@ class TestPluginCs < Test::Unit::TestCase
 	test_opts
 	Assembly.csc = old_csc
     end
+else
+    def test_dummy
+	# required to fool test/unit if no C# compiler available,
+	# so we skip all real tests
+	assert(true)
+	# remove this method if a test is added that doesn't depend on
+	# the C# compiler
+    end
+    print <<-EOF
+************************************************************
+* No C# compiler found on your path. Skipping all tests    *
+* depending on a C# compiler.                              *
+************************************************************
+    EOF
+end
 end
