@@ -9,6 +9,9 @@ class Rant::Path
     def initialize path
 	@path = path or raise ArgumentError, "path not given"
     end
+    def to_s
+	@path.dup
+    end
     def to_str
 	@path.dup
     end
@@ -23,6 +26,9 @@ class Rant::Path
     end
     def mtime
 	File.mtime @path
+    end
+    def absolute_path
+	File.expand_path(@path)
     end
 end
 

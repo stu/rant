@@ -1,0 +1,50 @@
+
+= Rant plugins
+
+An Rant plugin provides additional functionality for the Rant program.
+Every Ruby script (file ending in <tt>.rb</tt>) in the
+<tt>rant/plugin</tt> directory is considered a plugin. Normally, it
+contains one class in the Rant::Plugin module.
+
+== Requirements for a plugin
+
+One file ending in <tt>.rb</tt> in the <tt>rant/plugin</tt> directory.
+One class, defined in this file, in the Rant::Plugin namespace
+responding to the +new_plugin+ method. Note that the *class* has to
+respond!
+
+This is a list of all methods the plugin class/instance has to respond
+to:
+
+=== Class methods:
+
+[new_plugin]
+    Instantiates the plugin. Will be called every time a new
+    Rant::RantApp is created.
+
+=== Instance methods:
+
+[rant_plugin_init]
+    Called on Rant startup. Usually directly after plugin
+    instantiation.
+[rant_start]
+    Called before Rant runs the first task.
+[rant_done]
+    Called when Rant has *successfully* processed all required
+    tasks.
+[rant_plugin_stop]
+    Signals that the plugin should be stopped.
+    The plugin object should respond by disposing all reserved
+    resources, closing open files etc.
+[rant_quit]
+    This is always called before the Rant application quits, even
+    if there was a failure. Usually immediately called after
+    +rant_plugin_stop+.
+
+== Startup
+
+Every time a Rant application is initialized, it calls the
++new_plugin+ method of every class (which has this method) in the
+Plugin module. This method should return a new plugin instance.
+
+== Shutdown

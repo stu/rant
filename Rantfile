@@ -8,17 +8,27 @@ require 'rant/testtask'
 task :default => :test
 
 lib_files = Dir["lib/**/*.rb"]
-doc_files = lib_files.dup
-rdoc_opts = %w(-c UTF-8 --title Rant --main lib/rant.rb)
+doc_files = lib_files + Dir["**/*.rdoc"]
+rdoc_opts = %w(-S -c UTF-8 --title Rant --main lib/rant.rb)
 
 file "doc" => doc_files do
     touch "doc" if test(?d, "doc")
-    sh "rdoc #{rdoc_opts.join(' ')} lib"
+    sh "rdoc #{rdoc_opts.join(' ')} #{doc_files.join(' ')}"
 end
 
 TestTask.new do |t|
-    t.pattern = '**/test_*.rb'
+    t.pattern = 'test_*.rb'
 end
+
+TestTask.new :testp1 do |t|
+    t.test_files = ["tests/project1/test_project.rb"]
+end
+
+TestTask.new :testp2 do |t|
+    t.test_files = ["tests/project2/test_project.rb"]
+end
+
+task :testall => %w(test testp1 testp2)
 
 if $0 == __FILE__
     Rant.run

@@ -1,13 +1,15 @@
 
+require 'rant/env'
+
 class Rant::TaskFail < StandardError
 end
 
-class Rant::Rantfile
-    attr_reader :path
+class Rant::Rantfile < Rant::Path
+
     attr_reader :tasks
     
     def initialize(path)
-	@path = path or raise ArgumentError, "path not given"
+	super
 	@tasks = []
     end
 end	# class Rant::Rantfile

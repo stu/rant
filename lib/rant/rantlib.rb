@@ -166,6 +166,8 @@ class Rant::RantApp
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Process RANTFILE instead of standard rantfiles.\n" +
 	    "Multiple files may be specified with this option"	],
+	[ "--force-run","-a",	GetoptLong::REQUIRED_ARGUMENT,
+	    "Force TARGET to be run, even if it isn't required.\n"],
     ]
 
     # Arguments, usually those given on commandline.
@@ -175,6 +177,12 @@ class Rant::RantApp
     attr_reader :opts
     # A list of all Rantfiles used by this app.
     attr_reader :rantfiles
+    # A list of target names to be forced (run even
+    # if not required). Each of these targets will be removed
+    # from this list after the first run.
+    #
+    # Forced targets will be run before other targets.
+    attr_reader :force_targets
 
     def initialize *args
 	@args = args.flatten
@@ -187,8 +195,23 @@ class Rant::RantApp
 	}
 	@arg_rantfiles = []	# rantfiles given in args
 	@arg_targets = []	# targets given in args
+	@force_targets = []
 	@ran = false
 	@done = false
+	@rootdir = nil		# root directory for this app
+    end
+
+    def rootdir
+	@rootdir.dup
+    end
+
+    def rootdir=(newdir)
+	if @ran
+	    raise "rootdir of rant application can't " +
+		"be changed after calling `run'"
+	end
+	@rootdir = newdir
+	rootdir	# return a dup of the new rootdir
     end
 
     def ran?
@@ -202,6 +225,11 @@ class Rant::RantApp
     # Returns 0 on success and 1 on failure.
     def run
 	@ran = true
+	if @rootdir
+	    ::RantFileUtils.cd(@rootdir) unless @rootdir == Dir.pwd
+	else
+	    @rootdir = Dir.pwd
+	end
 	process_args
 	load_rantfiles
 	run_tasks
@@ -284,14 +312,15 @@ class Rant::RantApp
 	    if lopt
 		optstr << lopt
 		if arg
-		    optstr << "=" << arg
+		    optstr << " " << arg
 		end
+		optstr = optstr.ljust(30)
 	    end
 	    if sopt
 		optstr << "   " unless optstr.empty?
 		optstr << sopt
 		if arg
-		    optstr << "=" << arg
+		    optstr << " " << arg
 		end
 	    end
 	    puts "  " + optstr
@@ -320,7 +349,7 @@ class Rant::RantApp
 	# Run tasks specified on commandline, if not given:
 	# run default task, if not given:
 	# run first defined task.
-	target_list = @arg_targets.dup
+	target_list = @force_targets + @arg_targets
 	# The target list is a list of strings, not Task objects!
 	if target_list.empty?
 	    have_default = @rantfiles.any? { |f|
@@ -341,18 +370,25 @@ class Rant::RantApp
 	# Now, run all specified tasks in all rantfiles,
 	# rantfiles in reverse order.
 	rev_files = @rantfiles.reverse
-	target_list.each { |target|
+	force = false
+	target_list.each do |target|
+	    if @force_targets.include?(target)
+		force = true
+		@force_targets.delete(target)
+	    else
+		force = false
+	    end
 	    rev_files.each { |f|
 		(f.tasks.select { |st| st.name == target }).each { |t|
 		    begin
-			t.run if t.needed?
+			t.run if force || t.needed?
 		    rescue Rant::TaskFail => e
 			# TODO: Report failed dependancy.
 			abort("Task `#{e.message}' fail.")
 		    end
 		}
 	    }
-	}
+	end
     end
 
     def load_rantfiles
@@ -390,7 +426,8 @@ class Rant::RantApp
     def load_file rantfile
 	msg "loading #{rantfile.path}" if verbose
 	begin
-	    load rantfile.path
+	    # load with absolute path to avoid require problems
+	    load rantfile.absolute_path
 	rescue NameError => e
 	    abort("Name error when loading `#{rantfile.path}':",
 	    e.message, e.backtrace)
@@ -427,9 +464,6 @@ class Rant::RantApp
 	files
     end
 
-    def process_tasks
-    end
-
     def process_args
 	# WARNING: we currently have to fool getoptlong,
 	# by temporory changing ARGV!
@@ -449,6 +483,10 @@ class Rant::RantApp
 		raise Rant::RantDoneException
 	    when "--help"
 		help
+	    when "--rantfile"
+		@arg_rantfiles << value
+	    when "--force-run"
+		@force_targets << value
 	    end
 	}
     rescue GetoptLong::Error => e
