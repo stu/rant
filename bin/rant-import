@@ -1,5 +1,13 @@
 #! /usr/local/bin/ruby
 
+# rant-import -- Create a monolithic rant script.
+#
+# Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
+#
+# This program is free software.
+# You can distribute/modify this program under the terms of
+# the GNU LGPL, Lesser General Public License version 2.1.
+
 begin
   require 'rant/import'
 rescue LoadError

@@ -1,4 +1,12 @@
 
+# rantlib.rb - The core of Rant.
+#
+# Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
+#
+# This program is free software.
+# You can distribute/modify this program under the terms of
+# the GNU LGPL, Lesser General Public License version 2.1.
+
 require 'getoptlong'
 require 'rant/rantvar'
 require 'rant/rantenv'
@@ -6,7 +14,7 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.10'
+    VERSION	= '0.2.11'
 
     # Those are the filenames for rantfiles.
     # Case matters!

@@ -1,0 +1,110 @@
+
+= Rant -- Ruby's ant
+
+Rant is a flexible build tool written entirely in Ruby.
+
+The equivalent to a _Makefile_ for _make_ is the _Rantfile_. An
+_Rantfile_ is actually a valid Ruby script that is read in by the
+_rant_ command.
+
+Rant currently features:
+* Rantfiles are written in Ruby.
+* Defining custom tasks
+* Automated packaging, testing and RDoc generation for Ruby
+  applications and libraries.
+* Primitive support for compiling C# sources portably with csc, cscc
+  and mcs.
+* A _configure_ plugin for easy environment and build-parameter
+  checking (but not like autoconf!) which saves data in a yaml file.
+* The <em>rant-import</em> command creates a monolithic rant script,
+  so you don't depend on an rant installation anymore.
+
+== Support
+
+The newest version of this document can be found at
+http://make.rubyforge.org.
+
+For further information, feature requests, bugreports or comments
+visit the
+{RubyForge site for Rant}[http://rubyforge.org/projects/make/].
+
+Also feel free to contact the author directly by sending an email to
+mailto:langstefan@gmx.at.
+
+== Roadmap
+
+Installing Rant::
+    read the section _Installation_ in this document
+License::
+    read the section _Copying_ in this document
+Invoking *rant*::
+    read doc/rant.rdoc[link:files/doc/rant_rdoc.html]
+Writing an *Rantfile*::
+    read doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+
+== Installation
+
+Of course you need Ruby to run rant. You can get the latest Ruby
+package from the {Ruby hompage}[http://www.ruby-lang.org/en/].
+
+There are two ways to install Rant on your system:
+
+=== Installing Rant as a RubyGem
+
+RubyGems has to be installed on your system. Check this by trying
+the _gem_ command:
+    % gem
+If this prints a help message, RubyGems should work. Otherwise
+install Rant as described in the next section.
+Now the following command:
+    % gem install --remote rant
+will download and install Rant. Depending on the RubyGems
+configuration, you will probably need superuser privileges.
+Then try to run:
+    % rant --help
+which should print a help message for the _rant_ command. If this
+is done, you have successfully installed Rant. Congratulations!
+
+=== Conventional installation
+
+First download the latest version of Rant from
+http://rubyforge.org/frs/?group_id=615. Choose the .zip or .tar.gz
+file, whatever you like, with the highest version number. Then unpack
+the archive, cd to the new directory and run the setup.rb script. This
+could look like:
+    % tar -xzf rant-<version>.tar.gz
+    % cd rant-<version>
+    % ruby setup.rb
+Depending on your Ruby installation, you'll probably need superuser
+privileges for the last command. If you wan't to install Rant in
+another location than the default, run
+    % ruby setup.rb --help
+which will show you a bunch of options for the installation.
+
+After performing the steps listed above, try to run
+    % rant --help
+to verify Rant was installed correctly.
+
+== Copying
+
+Copyright (C) 2005  Stefan Lang
+
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+Lesser General Public License for more details.
+
+You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+---
+
+The file COPYING[link:../../COPYING] in the Rant package contains a
+copy of the LGPL. Of course your Rantfiles don't need to be licenced
+under the terms of the LGPL.
