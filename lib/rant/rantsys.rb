@@ -13,11 +13,12 @@ module Rant
 	end
     end
 
-    class FileList < Array
+    class FileList
+	include Enumerable
 
 	# Flags for the File::fnmatch method.
 	# Initialized to 0.
-	attr_accessor :flags
+	attr_accessor :glob_flags
 
 	class << self
 	    def [](*patterns)
@@ -25,67 +26,48 @@ module Rant
 	    end
 	end
 
-	# IMPORTANT NOTE: Array#dup and Array#clone seem to do some
-	# very special things which results in things like this:
-	# (with a FileList implementation that doesn't override #dup
-	# and #clone, the inspect method wasn't overrided to allow
-	# this test, pwd contained 15 entries, Ruby 1.8.2)
-=begin
-	irb(main):009:0> fl = FileList["*"]
-	=> []
-	irb(main):010:0> cl = fl.clone
-	=> []
-	irb(main):011:0> cl.size
-	=> 15
-	irb(main):012:0> fl.size
-	=> 0
-	irb(main):013:0> fl.to_a
-	=> []
-=end
-    
-	# The above should be related to this problem. The following
-	# Rantfile will actually never remove anything:
-=begin
-	task :clean do
-	    sys.rm_f FileList["*.{exe,dll,obj}"]
-	end
-=end
-	# (Same problem with corresponding Rakefile.)
-	# The rm_f command first does a [arg].flatten.map, where arg
-	# is our FileList.
-	#
-	# Think I finally found the problem: The flatten method seems
-	# to copy elements directly before calling any method on our
-	# FileList because our FileList is an Array.
-	#
-	# After testing and searching in the Ruby sources, I found out
-	# that it can be solved by overriding the is_a? method.
-	
-	# override Array methods
-	ml = Array.instance_methods - Object.instance_methods
-	%w(to_a inspect dup clone is_a? to_ary).each {
-	    |m| ml << m unless ml.include? m
-	}
-	ml.each { |m|
-	    #puts "override #{m}"
-	    eval <<-EOM
-		def #{m}(*args)
-		    resolve if @pending
-		    super
-		end
-	    EOM
-	}
-
 	def initialize(*patterns)
 	    super()
-	    @flags = 0
+	    @glob_flags = 0
+	    @files = []
 	    @actions = patterns.map { |pat| [:apply_include, pat] }
 	    @pending = true
 	end
 
-	#def +(other)
-	#    self.dup.concat(other.to_ary)
-	#end
+	def each &block
+	    resolve if @pending
+	    @files.each &block
+	end
+
+	def to_ary
+	    resolve if @pending
+	    @files
+	end
+
+	def to_a
+	    to_ary
+	end
+
+	def +(other)
+	    case other
+	    when Array
+		to_ary + other
+	    when self.class
+		# TODO: more efficient implementation
+		to_ary + other.to_ary
+	    else
+		raise "argument has to be an Array or FileList"
+	    end
+	end
+
+	def <<(file)
+	    @files << file
+	end
+
+	def size
+	    resolve if @pending
+	    @files.size
+	end
 
 	def resolve
 	    @pending = false
@@ -104,7 +86,7 @@ module Rant
 	end
 
 	def apply_include(pattern)
-	    self.concat Dir.glob(pattern, @flags)
+	    @files.concat Dir.glob(pattern, @glob_flags)
 	end
 
 	def exclude(*patterns)
@@ -116,8 +98,8 @@ module Rant
 	end
 
 	def apply_exclude(pattern)
-	    self.reject! { |elem|
-		File.fnmatch? pattern, elem, @flags
+	    @files.reject! { |elem|
+		File.fnmatch? pattern, elem, @glob_flags
 	    }
 	end
 
@@ -140,13 +122,13 @@ module Rant
 	def apply_no_dir(name)
 	    entry = nil
 	    unless name
-		self.reject! { |entry|
+		@files.reject! { |entry|
 		    test(?d, entry)
 		}
-		return self
+		return
 	    end
 	    elems = nil
-	    self.reject! { |entry|
+	    @files.reject! { |entry|
 		elems = Sys.split_path(entry)
 		i = elems.index(name)
 		if i
@@ -166,7 +148,7 @@ module Rant
 	end
 
 	def apply_no_file(name)
-	    self.reject! { |entry|
+	    @files.reject! { |entry|
 		entry == name and test(?f, entry)
 	    }
 	end
@@ -182,7 +164,7 @@ module Rant
 	def apply_no_suffix(suffix)
 	    elems =  nil
 	    elem = nil
-	    self.reject! { |entry|
+	    @files.reject! { |entry|
 		elems = Sys.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /#{suffix}$/
@@ -200,7 +182,7 @@ module Rant
 
 	def apply_no_prefix(prefix)
 	    elems = elem = nil
-	    self.reject! { |entry|
+	    @files.reject! { |entry|
 		elems = Sys.split_path(entry)
 		elems.any? { |elem|
 		    elem =~ /^#{prefix}/
@@ -216,6 +198,9 @@ module Rant
 	#	rdoc foo\bar "with space"
 	# on other systems:
 	#	rdoc foo/bar 'with space'
+	def arglist
+	    to_ary.arglist
+	end
 =begin
 	def arglist
 	    self.list.join(' ')
@@ -242,6 +227,15 @@ module Rant
 	    end
 	end
 =end
+
+	def method_missing(sym, *args, &block)
+	    if @files.respond_to? sym
+		resolve if @pending
+		@files.send(sym, *args, &block)
+	    else
+		super
+	    end
+	end
     end	# class FileList
 
     class CommandError < StandardError

@@ -42,7 +42,7 @@ anything. To associate an action with the task, add a block:
     task :mytask do
 	puts "Hello, mytask running."
     end
-Put these 3 lines of code into an Rantfile and run rant:
+Put these 3 lines of code into a file called +Rantfile+ and run rant:
     % rant mytask
     Hello, mytask running.
 Note: you could have ommited the mytask argument to rant because it is
@@ -67,7 +67,7 @@ Add prerequisites to create relations between tasks:
     task :t2 do |t|
 	puts t.name
     end
-In the definition of the "first" task we told Rant that it +depends+
+In the definition of the "first" task we told Rant that it _depends_
 on task "t1" and task "t2". "t1" and "t2" are called prerequisites for
 "first". Try it out:
     % rant first
@@ -164,7 +164,8 @@ FileUtils module:
     sys.safe_ln "src", "dest"	 # create a hardlink or fall back to
 				 # copying
 If you're tired of typing <tt>sys.</tt> all the time, you can include
-the +Sys+ module in your Rantfile:
+the +Sys+ module in your Rantfile (though it is not recommended to do
+this):
     include Sys
     task :clean do
 	rm_f "myprog"
