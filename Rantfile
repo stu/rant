@@ -97,7 +97,7 @@ end
 #plugin :Configure
 
 # mainly for rant testing
-source 'rantmethods.rb'
+#source 'rantmethods.rb'
 
 if $0 == __FILE__
     Rant.run

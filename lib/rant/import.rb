@@ -275,7 +275,7 @@ EOF
 		    if line =~ /^=end/
 			in_ml_comment = false
 		    end
-		    next
+		    next if @skip_comments
 		end
 		# skip shebang line
 		next if line =~ /^#! ?(\/|\\)?\w/
@@ -283,7 +283,7 @@ EOF
 		next if line =~ /^\s*#/ if @skip_comments
 		if line =~ /^=begin\s/
 		    in_ml_comment = true
-		    next
+		    next if @skip_comments
 		end
 		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
 		    name = $3

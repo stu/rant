@@ -47,4 +47,12 @@ The unit tests contain many assertions of the form
 which are wrong, because the first argument should be the expected
 result!
 
+== <tt>FileList < Array</tt> problems
+There arise some severe problems. E.g. the Array#flatten method:
+    [FileList["*.rb"]].flatten
+The +flatten+ method doesn't call *any* method of our FileList but
+it recognizes that it is an Array and copies the elements directly.
+So there is *no* way to resolve the glob pattern and there will never
+any Ruby file be selected!
+
 # vim:tw=70:

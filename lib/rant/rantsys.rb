@@ -63,7 +63,7 @@ module Rant
 	
 	# override Array methods
 	ml = Array.instance_methods - Object.instance_methods
-	%w(to_a inspect dup clone is_a?).each {
+	%w(to_a inspect dup clone is_a? to_ary).each {
 	    |m| ml << m unless ml.include? m
 	}
 	ml.each { |m|
