@@ -70,6 +70,12 @@ task :cov do
     end
 end
 
+desc "Test project with subdirs."
+gen RubyTest, :tsubdirs do |t|
+    t.libs << "test"
+    t.test_files = FileList["test/subdirs/test_*.rb"]
+end
+
 desc "Run all tests."
 gen RubyTest, :tall do |g|
     g.libs << "test"

@@ -30,7 +30,7 @@ class TestPluginConfigure < Test::Unit::TestCase
     end
     def test_configure
 	capture_std do
-	    assert_equal(Rant.run("configure"), 0)
+	    assert_equal(0, Rant.run("configure"))
 	end
 	assert(File.exist?("config"),
 	    "config should have been created by `configure'")

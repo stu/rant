@@ -22,7 +22,7 @@ class TestProject2 < Test::Unit::TestCase
     end
     def teardown
 	capture_std do
-	    assert_equal(app(%w(-f rantfile.rb -f buildfile clean)).run, 0)
+	    assert_equal(app(%w(-f rantfile.rb -f buildfile clean sub1/clean)).run, 0)
 	end
 	assert(Dir["r_f*"].empty?,
 	    "r_f* files should have been removed by `clean'")
@@ -50,6 +50,7 @@ class TestProject2 < Test::Unit::TestCase
     def test_load_rantfile
 	capture_std do
 	    app("b_f2")
+	    @app.rootdir = $testProject2Dir
 	    assert(@app.source("buildfile"),
 		"source should return a true value on success")
 	    assert_equal(@app.run, 0)
@@ -58,7 +59,7 @@ class TestProject2 < Test::Unit::TestCase
     end
     def test_subdirs
 	capture_std do
-	    assert_equal(app(%w(-f buildfile create_s1f1)).run, 0)
+	    assert_equal(0, app(%w(-f buildfile sub1/create_s1f1)).run)
 	end
 	assert(File.exist?("sub1/s1f1"))
     end

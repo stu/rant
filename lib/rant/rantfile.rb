@@ -18,10 +18,12 @@ module Rant
     class Rantfile < Path
 
 	attr_reader :tasks
+	attr_accessor :project_subdir
 	
 	def initialize(*args)
 	    super
 	    @tasks = []
+	    @project_subdir = nil
 	end
     end	# class Rantfile
 
@@ -54,6 +56,19 @@ module Rant
 	    name
 	end
 
+	def project_subdir
+	    @rantfile.nil? ? "" : @rantfile.project_subdir
+	end
+
+	def full_name
+	    sd = project_subdir
+	    sd.empty? ? name : File.join(sd, name)
+	end
+
+	def goto_task_home
+	    @app.goto_project_dir project_subdir
+	end
+
 	def done?
 	    @done
 	end
@@ -71,6 +86,7 @@ module Rant
 	# <tt>:force</tt>::
 	#	Run task action even if needed? is false.
 	def invoke(opt = INVOKE_OPT)
+	    goto_task_home
 	    return needed? if opt[:needed?]
 	    self.run if opt[:force] || self.needed?
 	end
@@ -81,6 +97,7 @@ module Rant
 
 	def run
 	    return unless @block
+	    goto_task_home
 	    @block.arity == 0 ? @block.call : @block[self]
 	end
 	private :run
@@ -100,16 +117,16 @@ module Rant
 
 	class << self
 	    def for_task t
-		mt = self.new(t.name)
+		mt = self.new(t.full_name)
 		mt << t
 	    end
 	    def for_tasks *tasks
-		mt = self.new(tasks.first.name)
+		mt = self.new(tasks.first.full_name)
 		mt.concat tasks
 		mt
 	    end
 	    def for_task_list tasks
-		mt = self.new(tasks.first.name)
+		mt = self.new(tasks.first.full_name)
 		mt.concat tasks
 		mt
 	    end
@@ -200,7 +217,7 @@ module Rant
 	end
 
 	def app
-	    @app || Rant.rantapp
+	    @app
 	end
 
 	def needed &block
@@ -220,6 +237,7 @@ module Rant
 	def needed?
 	    return false if done?
 	    return true if @needed.nil?
+	    goto_task_home
 	    if @needed.arity == 0
 		@needed.call
 	    else
@@ -229,6 +247,7 @@ module Rant
 
 	def invoke(opt = INVOKE_OPT)
 	    return needed? if opt[:needed?]
+	    goto_task_home
 	    if opt[:force] && !@done
 		self.run
 		@done = true
@@ -343,6 +362,7 @@ module Rant
 	end
 
 	def internal_invoke opt, ud_init = true
+	    goto_task_home
 	    update = ud_init || opt[:force]
 	    dep = nil
 	    uf = false
@@ -425,10 +445,11 @@ module Rant
 	    if @pre_resolved
 		return @pre.each { |t| yield(t) }
 	    end
+	    my_full_name = full_name
 	    @pre.map! { |t|
 		if Worker === t
 		    # Remove references to self from prerequisites!
-		    if t.name == @name
+		    if t.full_name == my_full_name
 			nil
 		    else
 			yield(t)
@@ -436,15 +457,13 @@ module Rant
 		    end
 		else
 		    t = t.to_s if Symbol === t
-		    if t == @name
+		    if t == my_full_name
 			nil
 		    else
-			# Pre 0.2.6 task selection scheme ###########
-			# Take care: selection is an array of tasks
-			#selection = @app.select_tasks { |st| st.name == t }
-			#############################################
-
-			selection = @app.select_tasks_by_name t
+			#STDERR.puts "selecting `#{t}'"
+			selection = @app.select_tasks_by_name t,
+					project_subdir
+			#STDERR.puts selection.size
 			if selection.empty?
 			    # use return value of yield
 			    yield(t)
@@ -507,6 +526,7 @@ module Rant
 	private
 	def ud_init_by_needed
 	    if @needed
+		goto_task_home
 		@needed.arity == 0 ? @needed.call : @needed[self]
 	    end
 	end
@@ -536,6 +556,7 @@ module Rant
 
 	def invoke(opt = INVOKE_OPT)
 	    return if done?
+	    goto_task_home
 	    if @path.exist?
 		@ts = @path.mtime
 		internal_invoke opt, false
@@ -568,6 +589,8 @@ module Rant
     # An instance of this class is a task to create a _single_
     # directory.
     class DirTask < Task
+
+	# TODO: subdir support
 
 	class << self
 

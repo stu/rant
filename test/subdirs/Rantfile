@@ -1,0 +1,26 @@
+
+file "t" => "sub1/t" do |t|
+    sys.touch t.name
+end
+
+file "2t" => "sub2/t" do |t|
+    sys.touch t.name
+end
+
+file "subdep.t" do |t|
+    sys.touch t.name
+end
+
+task :sub_sub => "sub2/sub/rootref.t" do |t|
+    test(?f, "sub2/sub/rootref.t") or t.fail
+    sys.touch "sub_sub.t"
+end
+
+#task :clean => ["sub1/clean", "sub2/clean"] do
+task :clean => ["sub2/clean", "sub1/clean", "sub2/sub/clean"] do
+    sys.rm_f Dir["*t"]
+end
+
+subdirs FileList["sub*"].exclude("*.*")
+
+# vim:ft=ruby

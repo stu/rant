@@ -1,0 +1,15 @@
+
+file "t" do |t|
+    sys.touch t.name
+end
+
+file "rootdep.t" => "#subdep.t" do |t|
+    test(?f, "../subdep.t") || t.fail
+    sys.touch t.name
+end
+
+task :clean do
+    sys.rm_f Dir["*t"]
+end
+
+# vim:ft=ruby
