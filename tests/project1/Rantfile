@@ -31,6 +31,31 @@ file "dep2" do |t|
     touch t.name
 end
 
+file "duplicate" do |t|
+    touch t.name
+    touch t.name + "1"
+end
+
+file "duplicate" do |t|
+    touch t.name
+    touch t.name + "2"
+end
+
+file "fallback" do
+    # doesn't create our target...
+    # so the next task with the same
+    # name should be run
+    touch "fallback_"
+end
+
+file "fallback" do |t|
+    touch t.name
+end
+
 task :force_clean do
-    rm_f %w(test_touch target dep dep1 dep2 t2)
+    rm_f %w(
+	test_touch target dep dep1 dep2 t2
+	duplicate duplicate1 duplicate2
+	fallback fallback_
+	)
 end

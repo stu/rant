@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.0'
+    VERSION	= '0.1.1'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -101,7 +101,6 @@ module Rant
     # Rant has the same state as immediately after startup.
     def reset
 	@@rantapp = nil
-	Task.all.clear
     end
 
     def ensure_rantapp
@@ -122,6 +121,15 @@ module Rant
 	ensure_rantapp
 	@@rantapp.file(targ, &block)
     end
+
+    # Create a path.
+    # TODO:
+=begin
+    def directory targ
+	ensure_rantapp
+	@@rantapp.directory(targ)
+    end
+=end
 
     # Look in the subdirectories, given by args,
     # for rantfiles.
@@ -183,6 +191,12 @@ class Rant::RantApp
     #
     # Forced targets will be run before other targets.
     attr_reader :force_targets
+    # A list with all tasks.
+    attr_reader :tasks
+
+    @@block_task_mkpath = lambda { |task|
+	::Rant::FileUtils.mkpath task.name
+    }
 
     def initialize *args
 	@args = args.flatten
@@ -199,6 +213,8 @@ class Rant::RantApp
 	@ran = false
 	@done = false
 	@rootdir = nil		# root directory for this app
+	@tasks = []
+
     end
 
     def rootdir
@@ -248,19 +264,25 @@ class Rant::RantApp
 
     def task targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
-	    Rant::Task.new(name, pre, &blk)
+	    Rant::Task.new(self, name, pre, &blk)
 	}
     end
 
     def file targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
-	    Rant::FileTask.new(name, pre, &blk)
+	    Rant::FileTask.new(self, name, pre, &blk)
+	}
+    end
+
+    def directory targ
+	prepare_task(targ, @@block_task_mkpath) { |name,pre,blk|
+	    Rant::Task.new(self, name, pre, &blk)
 	}
     end
 
     # Search the given directories for Rantfiles.
     def subdirs *args
-	args = args.flatten
+	args.flatten!
 	cinf = Rant::Lib::parse_caller_elem(caller[1])
 	ln = cinf[:ln] || 0
 	file = cinf[:file]
@@ -378,18 +400,29 @@ class Rant::RantApp
 	    else
 		force = false
 	    end
-	    rev_files.each { |f|
-		(f.tasks.select { |st| st.name == target }).each { |t|
-		    begin
-			t.run if force || t.needed?
-		    rescue Rant::TaskFail => e
-			# TODO: Report failed dependancy.
-			abort("Task `#{e.message}' fail.")
-		    end
-		}
+	    (select_tasks { |t| t.name == target }).each { |t|
+		begin
+		    t.run if force || t.needed?
+		rescue Rant::TaskFail => e
+		    # TODO: Report failed dependancy.
+		    abort("Task `#{e.message}' fail.")
+		end
 	    }
 	end
     end
+
+    # Returns a list with all tasks for which yield
+    # returns true.
+    def select_tasks
+	selection = []
+	@rantfiles.reverse.each { |rf|
+	    rf.tasks.each { |t|
+		selection << t if yield t
+	    }
+	}
+	selection
+    end
+    public :select_tasks
 
     def load_rantfiles
 	# Take care: When rant isn't invoked from commandline,

@@ -1,0 +1,8 @@
+
+task :create_s1f1 do
+    touch "sub1/s1f1"
+end
+
+task :clean do
+    rm_f "sub1/s1f1"
+end

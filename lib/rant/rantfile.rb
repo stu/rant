@@ -17,24 +17,18 @@ end	# class Rant::Rantfile
 class Rant::Task
     include Rant::Console
     
-    # This is the only state held by this class.
-    @@all = {}
-
-    class << self
-	def all
-	    @@all
-	end
-	
-	def [](task_name)
-	    @@all[task_name]
-	end
-    end
-
+    # Name of the task, this is always a string.
     attr_reader :name
+    # A reference to the application this task belongs to.
+    attr_reader :app
+    # The rantfile this task was defined in.
+    # Should be a Rant::Rantfile instance.
     attr_accessor :rantfile
+    # The linenumber in rantfile where this task was defined.
     attr_accessor :line_number
     
-    def initialize(name, prerequisites = [], &block)
+    def initialize(app, name, prerequisites = [], &block)
+	@app = app || Rant.rantapp
 	@name = name or raise ArgumentError, "name not given"
 	@pre = prerequisites || []
 	@block = block
@@ -43,7 +37,7 @@ class Rant::Task
 	@rantfile = nil
 	@line_number = 0
 
-	@@all[@name] = self
+	#	@@all[@name] = self
     end
 
     def prerequisites
@@ -111,9 +105,12 @@ class Rant::Task
 		t
 	    else
 		t = t.to_s if t.is_a? Symbol
-		self.class[t] || t
+		# Take care: selection is an array of tasks
+		selection = @app.select_tasks { |st| st.name == t }
+		selection.empty? ? t : selection
 	    end
 	}
+	@pre.flatten!
     end
 
     def each_task

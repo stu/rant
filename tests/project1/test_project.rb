@@ -51,4 +51,21 @@ class TestProject1 < Test::Unit::TestCase
 	assert(File.exist?("dep2"),
 	    "depandancy `dep2' should have been build")
     end
+    def test_duplicate
+	assert_equal(Rant.run("duplicate"), 0)
+	assert(File.exist?("duplicate"))
+	assert(File.exist?("duplicate1"),
+	    "duplicate1 should have been created as side effect " +
+	    "of running first task to build duplicate")
+	assert(!File.exist?("duplicate2"),
+	    "the second task to build duplicate should have " +
+	    "been run, duplicate was already built")
+    end
+    def test_fallback
+	assert_equal(Rant.run("fallback"), 0)
+	assert(File.exist?("fallback_"),
+	    "should have been created as side-effect by fallback")
+	assert(File.exist?("fallback"),
+	    "second task for `fallback' should have been run")
+    end
 end

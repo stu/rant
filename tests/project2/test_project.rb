@@ -24,6 +24,8 @@ class TestProject2 < Test::Unit::TestCase
 	    "r_f* files should have been removed by `clean'")
 	assert(Dir["b_f*"].empty?,
 	    "b_f* files should have been removed by `clean'")
+	assert(Dir["sub1/s*f*"].empty?,
+	    "sub1/s*f* files should have been removed by `clean'")
     end
     def test_use_first_task
 	assert_equal(app.run, 0,
@@ -43,5 +45,9 @@ class TestProject2 < Test::Unit::TestCase
 	    "load_rantfile should return a true value on success")
 	assert_equal(@app.run, 0)
 	assert(File.exist?("b_f2"))
+    end
+    def test_subdirs
+	assert_equal(app(%w(-f buildfile create_s1f1)).run, 0)
+	assert(File.exist?("sub1/s1f1"))
     end
 end
