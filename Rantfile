@@ -28,7 +28,7 @@ end
 
 desc "Generate documentation."
 gen RubyDoc do |g|
-    g.op_dir = "doc/html"
+    g.dir = "doc/html"
     g.files.concat FileList["**/README"].no_dir("pkg").no_dir("test")
     g.files.concat FileList["doc/**/*.rdoc"]
     g.opts = %w(-S -c UTF-8 --title Rant --main README)

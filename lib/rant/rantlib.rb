@@ -672,7 +672,7 @@ class Rant::RantApp
     end
 
     def help
-	puts "rant [-f RANTFILE] [OPTIONS] targets..."
+	puts "rant [-f RANTFILE] [OPTIONS] tasks..."
 	puts
 	puts "Options are:"
 	print option_listing(OPTIONS)

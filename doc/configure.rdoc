@@ -1,0 +1,40 @@
+
+== The Configure plugin
+
+The Configure plugin lets you define a list of checks and generates
+tasks to run them. I'll show an Rantfile using the Configure plugin
+and explain it afterwards.
+
+    conf = plugin :Configure do |conf|
+	conf.task           # define a task named :configure
+	conf.check "a" do |c|
+	    c.default "value_a"
+	    c.guess { "value_a_guess" }
+	    c.react { |val|
+		p val
+	    }
+	end
+	conf.check "b" do |c|
+	    c.default "value_b"
+	end
+	conf.check "c" do |c|
+	end
+	conf.check "d" do |c|
+	    c.react {
+	    }
+	end
+	conf.check "e" do |c|
+	    c.guess { false }
+	end
+    end
+
+    file conf["a"] do |t|
+	sys.touch t.name
+    end
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]
+Writing an Rantfile::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]

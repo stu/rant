@@ -1,0 +1,32 @@
+
+== The rant-import command
+
+The rant-import command creates a monolithic rant script tailored to
+the needs of your project and thus removes the dependency on an Rant
+installation (but of course one person needs an Rant installation to
+run rant-import).
+
+Just run the command with the <tt>--help</tt> option to get a brief
+help message:
+    % rant-import --help
+
+Probably the easiest way to create your monolithic rant script is with
+the <tt>--auto</tt> option:
+    % rant-import --auto ant
+This will write a monolithic rant script to the file +ant+ in the
+current directory. To determine which plugins and imports your project
+is using, it performs step 2 of the rant command as described in
+doc/rant.rdoc[link:files/doc/rant_rdoc.html], which means that it
+loads the Rantfile in the current directory.
+
+That one command should be enough, try it out:
+    % ruby ant
+This script has the same behaviour as the rant command. Distribute it
+with your project and nobody else but you needs an Rant installation.
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]
+Writing an Rantfile::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]

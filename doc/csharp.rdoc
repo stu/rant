@@ -1,0 +1,74 @@
+
+== Compiling C# sources
+
+Support for C# is currently implemented as plugin. But expect that to
+change in the near future. Also note that support for C# wasn't
+heavily tested (but it works because I'm using it).
+
+It is convinient to use the C# plugin in combination with the
+Configure plugin. I'll show a short Rantfile first and explain it
+afterwards.
+
+    conf = plugin :Configure do |conf|
+	desc "Configure build."
+	conf.task
+	desc "Interactive configure."
+	conf.task "ask-config", [:interact]
+	conf.init_modes = [:guess, :interact]
+    end
+
+    plugin :Csharp do |cs|
+	cs.config = conf
+    end
+
+    gen Assembly, "myprog.exe" do |t|
+	t.libs = %w(System.Drawing.dll System.Windows.Forms.dll)
+	t.sources = Dir["src/*.cs"]
+	t.resources = Dir["res/*.*"]
+    end
+
+First we instantiate the Configure plugin and let it define two tasks
+for us:
+<tt>conf.task</tt>::	Creates a task with the name "configure" which
+			will first guess values and ask the user as
+			fallback if it can't guess the value.
+<tt>conf.task "ask-config", [:interact]</tt>::
+    This task interactively asks the user for all values.
+Afterwards we set the +init_modes+. Those decide what will be done on
+a regular rant startup if the +config+ file doesn't exist. We tell it
+to first guess configure values and to fall back to interactive mode
+if necessary.
+
+Then we instantiate the Csharp plugin and connect it with the
+Configure plugin. As a result of this operation, the Csharp plugin
+will define three configure _checks_:
+1. The command to invoke the C# compiler.
+2. If optimization should be turned on.
+3. If debug information should be generated.
+
+And last but not least we let generate a task to compile our program
+<tt>myprog.exe</tt>. The +Assembly+ generator takes the same argument
+as a normal task, meaning you could also add prerequisites:
+    gen Assembly, "myprog.exe" => :pre do |t|
+	.
+	.
+	.
+The +libs+ attribute is a list of libraries the assembly will be
+linked against, the +sources+ attribute should be clear and the
++resources+ attribute is a list of resources to be embedded in the
+assembly.
+
+Now let's see what is actually done by rant when we feed it this
+Rantfile. Because we have only one task defined, there is no need to
+specify a task on the commandline:
+    % rant
+    cscc -o myprog.exe -Wall -O2 -l System.Drawing.dll -l System.Windows.Forms.dll -fresources=res/MyProg.legend.png src/MyProg.cs src/Util.cs
+This was on a Linux system, on Windows you'll probably see a command
+with csc.
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]
+Writing an Rantfile::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]

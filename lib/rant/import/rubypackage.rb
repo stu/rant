@@ -68,13 +68,14 @@ class Rant::RubyPackage
 	"rdoc_options",
 	"requires",
 	"test_files",
-	"test_suites",
+	"test_suite",
     ]
 
     PACKAGE_ATTRS = PACKAGE_SINGLE_ATTRS + PACKAGE_TO_LIST_ATTRS
 
     EXPLICIT_GEM_MAPPING = {
 	"executable" => "executables"
+	# add requires => requirements ?
     }
 
     PACKAGE_NO_VAL = Object.new

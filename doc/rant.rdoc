@@ -1,3 +1,24 @@
 
 == The *rant* program
 
+For a short usage message and a list of options invoke rant with the
+<tt>--help</tt> option:
+    % rant --help
+
+When you invoke rant on the commandline it performs the following
+steps (roughly):
+
+1. Process commandline options and arguments.
+   An option starts with two dashes or one for the single letter
+   equivalent. Arguments of the form <tt>VAR=VAL</tt> set environment
+   variables. All other arguments are names of tasks to be invoked.
+2. Load Rantfiles in working directory. Rantfiles with the following
+   names are recognized:
+	Rantfile
+	rantfile
+	Rantfile.rb
+	rantfile.rb
+3. Calculate task dependencies and invoke required tasks. If no task
+   was given on the commandline, a task called "default" will be
+   invoked. If the "default" task doesn't exist, the first task will
+   be invoked.

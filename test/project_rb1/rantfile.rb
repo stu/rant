@@ -1,26 +1,28 @@
+import %w(rubytest rubydoc rubypackage)
 
-import 'rubydoc', 'rubypackage'
+lib_files = Dir["lib/**/*.rb"]
+dist_files = lib_files + %w(rantfile.rb README test_project_rb1.rb) + Dir["{test,bin}/*"]
 
-lib_files = FileList["lib/**/*.rb"]
-
-gen RubyDoc do |g|
-    g.files = lib_files + ["README"]
+desc "Run unit tests."
+gen RubyTest do |t|
+    t.test_dir = "test"
+    t.pattern = "tc_*.rb"
 end
 
-desc "Create packages for distribution."
-gen RubyPackage, "wgrep" do |g|
-    g.version "1.0.0"
-    g.files FileList["{bin,lib,test}/**/*"] +
-    	FileList["*"].no_dir.no_file("test_project.rb")
-    g.summary "wgrep searches for a word in files"
-    g.pkg_dir = "packages"
-    g.package_task "pkg"
+desc "Generate html documentation."
+gen RubyDoc do |t|
+    t.opts = %w(--title wgrep --main README README)
 end
 
-task :test do
-    sys.cd "test" do
-	sys.ruby "-I ../lib -S testrb tc_*.rb"
-    end
+desc "Create packages."
+gen RubyPackage, :wgrep do |t|
+    t.version = "1.0.0"
+    t.summary = "Simple grep program."
+    t.files = dist_files
+    t.bindir = "bin"
+    t.executable = "wgrep"
+    t.pkg_dir = "packages"
+    t.package_task "pkg"
 end
 
 task :clean do

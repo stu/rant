@@ -27,6 +27,8 @@ module Rant
 	attr_accessor :test_dirs
 	attr_accessor :pattern
 	attr_accessor :test_files
+	# Directory where to run unit tests.
+	attr_accessor :test_dir
 
 	def initialize(app, cinf, name = :test, prerequisites = [], &block)
 	    @name = name
@@ -42,12 +44,8 @@ module Rant
 	    @test_dirs = []
 	    @pattern = nil
 	    @test_files = nil
+	    @test_dir = nil
 	    yield self if block_given?
-	    if test(?d, "test")
-		@test_dirs << "test" 
-	    elsif test(?d, "tests")
-		@test_dirs << "tests"
-	    end
 	    @pattern = "test*.rb" if @pattern.nil? && @test_files.nil?
 
 	    @pre ||= []
@@ -59,9 +57,21 @@ module Rant
 		if libpath
 		    arg << "-I " << Env.shell_path(libpath) << " "
 		end
-		arg << "-S testrb " << filelist.arglist
-		arg << optlist
-		app.context.instance_eval { sys.ruby arg }
+		arg << "-S testrb " << optlist
+		if @test_dir
+		    app.context.sys.cd(@test_dir) {
+			arg << filelist.arglist
+			app.context.sys.ruby arg
+		    }
+		else
+		    if test(?d, "test")
+			@test_dirs << "test" 
+		    elsif test(?d, "tests")
+			@test_dirs << "tests"
+		    end
+		    arg << filelist.arglist
+		    app.context.sys.ruby arg
+		end
 	    }
 	end
 	def optlist
@@ -78,7 +88,7 @@ module Rant
 			filelist.concat(Dir[File.join(dir, @pattern)])
 		    }
 		else
-		    filelist.concat(Dir[@pattern])
+		    filelist.concat(Dir[@pattern]) if @pattern
 		end
 	    end
 	    filelist

@@ -23,6 +23,8 @@ module Rant
 	# Directory where (html) output goes to.
 	# Defaults to "doc".
 	attr_accessor :op_dir
+	alias dir op_dir
+	alias dir= op_dir=
 	# Files and directories to document. Initialized to an array
 	# with the single entry "lib" if a directory of this name
 	# exists, or to an empty array otherwise.

@@ -19,6 +19,23 @@ Rant currently features:
 * The <em>rant-import</em> command creates a monolithic rant script,
   so you don't depend on an rant installation anymore.
 
+As programmers usually want to see code, here is a short and very
+basic example of rant usage:
+
+A file called +Rantfile+ contains the code:
+
+    file "backup/data" => "data" do |t|
+	sys.cp "data", t.name
+    end
+
+Running rant in the directory of this file:
+
+    % rant
+    cp data backup/data
+
+will ensure that the "data" file in the "backup" directory is up to
+date.
+
 == Support
 
 The newest version of this document can be found at
@@ -41,6 +58,14 @@ Invoking *rant*::
     read doc/rant.rdoc[link:files/doc/rant_rdoc.html]
 Writing an *Rantfile*::
     read doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Automation for your Ruby library/application::
+    read doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
+Independent from Rant? The <tt>rant-import</tt> command::
+    read doc/rant-import.rdoc[link:files/doc/rant-import_rdoc.html]
+Using the Configure plugin::
+    read doc/configure.rdoc[link:files/doc/configure_rdoc.html]
+Compiling C#::
+    read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html]
 
 == Installation
 
@@ -85,6 +110,11 @@ After performing the steps listed above, try to run
     % rant --version
 to verify Rant was installed correctly.
 
+If you aren't already reading this documentation in html format, you
+can generate it with:
+    % rant doc
+The output will be in doc/html.
+
 == Copying
 
 Copyright (C) 2005  Stefan Lang
@@ -108,3 +138,66 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 The file COPYING[link:../../COPYING] in the Rant package contains a
 copy of the LGPL. Of course your Rantfiles don't need to be licenced
 under the terms of the LGPL.
+
+== Other info
+
+Rant was started in February 2005. It has been written and is
+maintained by Stefan Lang (mailto:langstefan@gmx.at).
+
+=== Why did you write another build tool?
+
+Because I wasn't satisfied by any other build tool. Before I started
+Rant, I had to write a program in C#. The program had to run under
+Windows, but I wanted to develop under Linux. Also I decided to write
+the documentation in Docbook.
+
+So there where quite a few problems arising:
+* I had to compile with cscc on Linux.
+* compile with csc on Windows.
+* automate PDF and HTML generation from Docbook
+
+_Nant_ would have been ok to compile the C# sources. But it isn't
+suited for more general tasks as clueing togheter other programs
+(needed for Docbook processing).
+
+Then I tried to use _Rake_ and it was the other way round. I liked the
+basic concept and syntax of Rake and of course I could have written
+code for Rake (e.g. with a so called _Tasklib_) to support portable C#
+compilation. But it was a bit quirky and because I like to work with
+Ruby, I decided to write my own build tool.
+
+Rant has taken the basic syntax of a _task_ and some other concepts
+from Rake.
+So thanks to Jim Weirich, the author of
+Rake[http://rubyforge.org/projects/rake].
+
+=== Goals of Rant
+
+* Most important is to be a very *flexible* build tool. This currently
+  means that you can run/use Rant in many different ways. E.g. you can
+  invoke it the conventional way like _make_, define tasks and run
+  Rant from _irb_ (the interactive Ruby shell), create an independent
+  script with <em>rant-import</em>, or simply use Rant as a library to
+  automate tasks for your application.
+* *Extensible*: currently through _plugins_ and _generators_. (Think
+  of the +plugin+ and +import+ functions.)
+* Portability: see _Platforms_ below for details
+* Well scaling: Rant should work acceptable for bigger projects (from
+  a performance POV and for the writer of the Rantfiles).
+
+=== Platforms
+
+Rant was tested on:
+
+    System		Ruby version
+    =======================================================
+    Linux		1.8.2
+			1.9
+    MacOS X		1.8.2
+    WindowsXP		1.8.2 (OneClick Installer)
+
+It *should* run on most platforms where Ruby runs, but you never
+know...
+
+If you encounter problems with Rant on any platform (with Ruby 1.8.1
+or higher) please write a bugreport!
