@@ -78,12 +78,12 @@ enhance :nothing
 
 task :order do |t|
     touch t.name + "1"
-    sleep 1
+    sleep 2
 end
 
 task :order do |t|
     touch t.name + "2"
-    sleep 1
+    sleep 2
 end
 
 task :force_clean do

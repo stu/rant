@@ -29,6 +29,8 @@ class TestProject1 < Test::Unit::TestCase
 	sleep 2
 	assert_equal(Rant.run("create_dep"), 0)
 	assert(File.exist?("dep"))
+	assert(uptodate?("dep", "target"),
+	    "`create_target' was run before `create_dep'")
 	sleep 2
 	assert_equal(Rant.run("target"), 0)
 	assert(File.exist?("target"))

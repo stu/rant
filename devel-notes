@@ -1,0 +1,9 @@
+
+== Running RDoc programmatically
+    require 'rdoc/rdoc'
+    rdoc = RDoc::RDoc.new
+    begin
+        rdoc.document(%w(like args from commandline))
+    rescue RDoc::RDocError
+        $stderr.puts "Error when running rdoc: " + $!.message
+    end

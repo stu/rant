@@ -2,7 +2,7 @@
 require 'test/unit'
 require 'rant'
 
-$testDir = File.expand_path(File.dirname(__FILE__))
+$testDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestRantInterface < Test::Unit::TestCase
     def setup

@@ -39,7 +39,7 @@ module Rant::Env
     RUBY	= ::Config::CONFIG['ruby_install_name']
 
     def on_windows?
-        OS =~ /^win/i
+        OS =~ /mswin/i
     end
 
     def on_linux?
