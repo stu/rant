@@ -1,6 +1,7 @@
 
 require 'test/unit'
 require 'rant/rantlib'
+require 'tutil'
 
 class TestFileUtils < Test::Unit::TestCase
     include Rant::Sys
@@ -11,10 +12,14 @@ class TestFileUtils < Test::Unit::TestCase
     end
 
     def test_ruby
-	ruby('-e ""') { |succ, stat|
-	    assert(succ)
-	    assert_equal(stat, 0)
-	}
+	op = capture_stdout do
+	    ruby('-e ""') { |succ, stat|
+		assert(succ)
+		assert_equal(stat, 0)
+	    }
+	end
+	assert(op =~ /\-e/i,
+	    "Sys should print command with arguments to $stdout")
     end
     def test_split_path
 	pl = split_path("/home/stefan")

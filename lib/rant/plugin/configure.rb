@@ -292,7 +292,7 @@ module Rant::Plugin
 
 	attr_reader :key
 	attr_accessor :value
-	attr_accessor :default
+	attr_writer :default
 	attr_accessor :guess_block
 	attr_accessor :interact_block
 	attr_accessor :react_block

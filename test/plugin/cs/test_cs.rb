@@ -2,6 +2,7 @@
 require 'test/unit'
 require 'rant'
 require 'rant/plugin/cs'
+require 'tutil'
 
 $testPluginCsDir = File.expand_path(File.dirname(__FILE__))
 $have_csc = Env.find_bin("csc") || Env.find_bin("cscc") || Env.find_bin("mcs")
@@ -9,18 +10,22 @@ $have_csc = Env.find_bin("csc") || Env.find_bin("cscc") || Env.find_bin("mcs")
 class TestPluginCs < Test::Unit::TestCase
     def setup
 	# Ensure we run in test directory.
-	sys.cd($testPluginCsDir) unless Dir.pwd == $testPluginCsDir
+	Dir.chdir($testPluginCsDir) unless Dir.pwd == $testPluginCsDir
     end
     def teardown
-	assert(Rant.run("clean"), 0)
+	capture_std do
+	    assert(Rant.run("clean"), 0)
+	end
     end
 if $have_csc
     # Try to compile the "hello world" program. Requires cscc, csc
     # or mcs to be on your PATH.
     def test_hello
 	puts "Making hello.exe"
-	assert_equal(Rant.run([]), 0,
-	    "first target, `hello.exe', should be compiled")
+	capture_std do
+	    assert_equal(Rant.run([]), 0,
+		"first target, `hello.exe', should be compiled")
+	end
 	puts "made hello.exe"
 	assert(File.exist?("hello.exe"),
 	    "hello.exe is the first target in Rantfile")
@@ -38,7 +43,9 @@ if $have_csc
 	end
     end
     def test_opts
-	assert_equal(Rant.run("AB.dll"), 0)
+	capture_std do
+	    assert_equal(Rant.run("AB.dll"), 0)
+	end
 	assert(File.exist?("hello.exe"),
 	    "AB.dll depends on hello.exe")
 	assert(File.exist?("AB.dll"))

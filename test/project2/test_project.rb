@@ -1,5 +1,6 @@
 
 require 'test/unit'
+require 'tutil'
 
 # We require 'rant/rantlib' instead of 'rant',
 # which would cause the rant.rb (which is ment as a Rantfile)
@@ -19,7 +20,9 @@ class TestProject2 < Test::Unit::TestCase
 	Dir.chdir($testProject2Dir) unless Dir.pwd == $testProject2Dir
     end
     def teardown
-	assert_equal(app(%w(-f rantfile.rb -f buildfile clean)).run, 0)
+	capture_std do
+	    assert_equal(app(%w(-f rantfile.rb -f buildfile clean)).run, 0)
+	end
 	assert(Dir["r_f*"].empty?,
 	    "r_f* files should have been removed by `clean'")
 	assert(Dir["b_f*"].empty?,
@@ -28,31 +31,41 @@ class TestProject2 < Test::Unit::TestCase
 	    "sub1/s*f* files should have been removed by `clean'")
     end
     def test_use_first_task
-	assert_equal(app.run, 0,
-	    "run method of RantApp should return 0 on success")
+	capture_std do
+	    assert_equal(app.run, 0,
+		"run method of RantApp should return 0 on success")
+	end
 	assert(File.exist?("r_f1"))
     end
     def test_deps
-	assert_equal(app("r_f4").run, 0)
+	capture_std do
+	    assert_equal(app("r_f4").run, 0)
+	end
 	assert(File.exist?("r_f4"))
 	assert(File.exist?("r_f2"))
 	assert(File.exist?("r_f1"))
 	assert(!File.exist?("r_f3"))
     end
     def test_load_rantfile
-	app("b_f2")
-	assert(@app.load_rantfile("buildfile"),
-	    "load_rantfile should return a true value on success")
-	assert_equal(@app.run, 0)
+	capture_std do
+	    app("b_f2")
+	    assert(@app.load_rantfile("buildfile"),
+		"load_rantfile should return a true value on success")
+	    assert_equal(@app.run, 0)
+	end
 	assert(File.exist?("b_f2"))
     end
     def test_subdirs
-	assert_equal(app(%w(-f buildfile create_s1f1)).run, 0)
+	capture_std do
+	    assert_equal(app(%w(-f buildfile create_s1f1)).run, 0)
+	end
 	assert(File.exist?("sub1/s1f1"))
     end
     def test_opt_directory
 	app %w(insub1_s1f1 -C sub1)
-	assert_equal(@app.run, 0)
+	capture_std do
+	    assert_equal(@app.run, 0)
+	end
 	assert(Dir.pwd !~ /sub1$/,
 	    "rant should cd to original dir before returning from `run'")
 	assert(test(?f, "sub1/s1f1"),
@@ -63,7 +76,9 @@ class TestProject2 < Test::Unit::TestCase
 	#Rant[:directory] = "sub1"
 	@app[:verbose] = 2
 	@app[:directory] = "sub1"
-	assert_equal(@app.run, 0)
+	capture_std do
+	    assert_equal(@app.run, 0)
+	end
 	assert(Dir.pwd !~ /sub1$/,
 	    "rant should cd to original dir before returning from `run'")
 	assert(test(?f, "sub1/s1f1"),

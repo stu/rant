@@ -677,7 +677,7 @@ class Rant::RantApp
     # Print a command message as would be done from a call to a
     # Sys method.
     def cmd_msg cmd
-	$stderr.puts cmd unless quiet?
+	$stdout.puts cmd unless quiet?
     end
 
     ###### public methods regarding plugins ##########################

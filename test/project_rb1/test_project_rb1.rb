@@ -1,6 +1,7 @@
 
 require 'test/unit'
 require 'rant/rantlib'
+require 'tutil'
 
 $testProjectRb1Dir = File.expand_path(File.dirname(__FILE__))
 
@@ -13,7 +14,9 @@ class TestProjectRb1 < Test::Unit::TestCase
 	Dir.chdir($testProjectRb1Dir) unless Dir.pwd == $testProjectRb1Dir
     end
     def teardown
-	assert_equal(Rant.run(%w(clean)), 0)
+	capture_std do
+	    assert_equal(Rant.run(%w(clean)), 0)
+	end
 	manifest = @manifest.dup
 	check_manifest "after clean: "
     end
@@ -28,7 +31,9 @@ class TestProjectRb1 < Test::Unit::TestCase
 	}
     end
     def test_doc
-	assert_equal(Rant.run(%w(doc)), 0)
+	capture_std do
+	    assert_equal(Rant.run(%w(doc)), 0)
+	end
 	assert(test(?d, "doc"),
 	    "RDoc task should generate dir `doc'")
 	assert(test(?f, "doc/index.html"),
@@ -40,10 +45,14 @@ class TestProjectRb1 < Test::Unit::TestCase
 	    "README should be in html docs")
     end
     def test_test
-	assert_equal(Rant.run(%w(test)), 0)
+	capture_std do
+	    assert_equal(Rant.run(%w(test)), 0)
+	end
     end
     def test_package
-	assert_equal(Rant.run(%w(pkg)), 0)
+	capture_std do
+	    assert_equal(Rant.run(%w(pkg)), 0)
+	end
 	assert(test(?d, "packages"),
 	    "task `pkg' should create dir `packages'")
 	begin
