@@ -5,14 +5,14 @@ require 'rant/rantfile'
 require 'rant/rantsys'
 
 module Rant
-    VERSION	= '0.2.2'
+    VERSION	= '0.2.3'
 
     # Those are the filenames for rantfiles.
-    # Case doens't matter!
-    RANTFILES	= [	"rantfile",
+    # Case matters!
+    RANTFILES	= [	"Rantfile",
+			"rantfile",
+			"Rantfile.rb",
 			"rantfile.rb",
-			"rant",
-			"rant.rb"
 		  ]
     
     class RantAbortException < StandardError
@@ -757,7 +757,7 @@ class Rant::RantApp
 	if @rantfiles.empty?
 	    abort("No Rantfile in current directory (" + Dir.pwd + ")",
 		"looking for " + Rant::RANTFILES.join(", ") +
-		"; case doesn't matter.")
+		"; case matters!")
 	end
     end
 
@@ -788,6 +788,12 @@ class Rant::RantApp
     # to the rantfiles.
     def rantfiles_in_dir dir=nil
 	files = []
+	::Rant::RANTFILES.each { |rfn|
+	    path = dir ? File.join(dir, rfn) : rfn
+	    files << path if test(?f, path)
+	}
+=begin
+	# pre 0.2.3 loading Rantfile search mechanism
 	Dir.entries(dir || Dir.pwd).each { |entry|
 	    path = (dir ? File.join(dir, entry) : entry)
 	    if test(?f, path)
@@ -799,6 +805,7 @@ class Rant::RantApp
 		}
 	    end
 	}
+=end
 	files
     end
 

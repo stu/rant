@@ -159,15 +159,21 @@ class Rant::Task
     def resolve_tasks
 	@pre.map! { |t|
 	    if t.is_a? Rant::Task
-		t
+		# Remove references to self from prerequisites!
+		t.name == @name ? nil : t
 	    else
 		t = t.to_s if t.is_a? Symbol
-		# Take care: selection is an array of tasks
-		selection = @app.select_tasks { |st| st.name == t }
-		selection.empty? ? t : selection
+		if t == @name
+		    nil
+		else
+		    # Take care: selection is an array of tasks
+		    selection = @app.select_tasks { |st| st.name == t }
+		    selection.empty? ? t : selection
+		end
 	    end
 	}
 	@pre.flatten!
+	@pre.compact!
     end
 
     # Yield for each Rant::Task in prerequisites.

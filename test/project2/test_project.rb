@@ -19,7 +19,7 @@ class TestProject2 < Test::Unit::TestCase
     def setup
     end
     def teardown
-	assert_equal(app(%w(-f rant.rb -f buildfile clean)).run, 0)
+	assert_equal(app(%w(-f rantfile.rb -f buildfile clean)).run, 0)
 	assert(Dir["r_f*"].empty?,
 	    "r_f* files should have been removed by `clean'")
 	assert(Dir["b_f*"].empty?,

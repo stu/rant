@@ -38,8 +38,25 @@ module Rant::Env
     OS		= ::Config::CONFIG['target']
     RUBY	= ::Config::CONFIG['ruby_install_name']
 
+    @@zip_bin = false
+    @@tar_bin = false
+
     def on_windows?
         OS =~ /mswin/i
+    end
+
+    def have_zip?
+	if @@zip_bin == false
+	    @@zip_bin = find_bin "zip"
+	end
+	!@@zip_bin.nil?
+    end
+
+    def have_tar?
+	if @@tar_bin == false
+	    @@tar_bin = find_bin "tar"
+	end
+	!@@tar_bin.nil?
     end
 
     # Get an array with all pathes in the PATH
@@ -102,7 +119,7 @@ module Rant::Env
 	end
     end
 
-    module_function :on_windows?, :pathes, :find_bin, :shell_path
+    extend self
 end    # module Rant::Env
 
 module Rant::Console

@@ -29,9 +29,10 @@ GEM_SPEC = Gem::Specification.new do |s|
     	Rant a build tool for small to midsized C# projects
 	and Ruby projects. It was inspired by Rake and Ant.
         EOD
-    s.files		=    Dir.glob("{bin,lib,tests}/**/*").delete_if { |path|
-                            path.include?(".svn")
-                        }
+	s.files		=    Dir.glob("{bin,lib,tests,pkg}/**/*").delete_if { |path|
+	                        path.include?(".svn")
+	                }
+			#s.files = Dir["**/*"]
     s.require_path	=    "lib"
     s.autorequire	=    "rant/rantlib"
     # currently we don't include unit tests
