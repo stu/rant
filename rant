@@ -1,0 +1,7 @@
+#!/usr/bin/ruby
+# Run rant in current development directory.
+
+$:.unshift "lib"
+require 'rant'
+
+exit Rant.run

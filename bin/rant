@@ -1,0 +1,9 @@
+
+begin
+  require 'rant'
+rescue LoadError
+  require 'rubygems'
+  require_gem 'rant'
+end
+
+exit Rant.run
