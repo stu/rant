@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.6'
+    VERSION	= '0.1.7'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -132,9 +132,9 @@ module Rant
     end
 
     # Create a path.
-    def directory targ
+    def directory targ, &block
 	ensure_rantapp
-	@@rantapp.directory(targ)
+	@@rantapp.directory(targ, &block)
     end
 
     # Look in the subdirectories, given by args,
@@ -224,8 +224,8 @@ class Rant::RantApp
 
 	@orig_pwd = nil
 
-	@block_task_mkdir = lambda { |task|
-	    ::Rant::FileUtils.mkdir task.name
+	@block_task_mkdir = lambda { |t|
+	    ::Rant::FileUtils.mkdir t.name
 	}
 
     end
@@ -327,7 +327,9 @@ class Rant::RantApp
 	}
     end
 
-    def directory path
+    # An eventuelly given block will be called after creation of the
+    # last directory element.
+    def directory path, &block
 	cinf = Rant::Lib.parse_caller_elem(caller[1])
 	path = normalize_task_arg(path, cinf[:file], cinf[:ln])
 	dirs = ::Rant::FileUtils.split_path(path)
@@ -337,10 +339,17 @@ class Rant::RantApp
 	end
 	ld = nil
 	path = nil
+	task_block = @block_task_mkdir
 	dirs.each { |dir|
+	    if block && dir.equal?(dirs.last)
+		task_block = lambda { |t|
+		    @block_task_mkdir[t]
+		    block[t]
+		}
+	    end
 	    path = path.nil? ? dir : File.join(path, dir)
 	    prepare_task({path => (ld || [])},
-		    @block_task_mkdir) { |name,pre,blk|
+		    task_block) { |name,pre,blk|
 		Rant::FileTask.new(self, name, pre, &blk)
 	    }
 	    ld = dir

@@ -24,10 +24,10 @@ class TestTask < Test::Unit::TestCase
     end
 
     def test_fail
-	block = lambda { false }
+	block = lambda { |t| t.fail "this task abortet itself" }
 	task = Rant::Task.new(nil, :test_fail, &block)
 	assert_raise(Rant::TaskFail,
-	    "run should throw Rant::TaskFail if block returns false") {
+	    "run should throw Rant::TaskFail if block raises Exception") {
 	    task.run
 	}
 	assert(task.fail?)
@@ -48,7 +48,7 @@ class TestTask < Test::Unit::TestCase
 
     def test_dependance_fails
 	t1 = Rant::Task.new(nil, :t1) { true }
-	t2 = Rant::Task.new(nil, :t2) { false }
+	t2 = Rant::Task.new(nil, :t2) { Rant::Task.fail }
 	t1 << t2
 	assert_raise(Rant::TaskFail,
 	    "dependency t2 failed, so t1 should fail too") {

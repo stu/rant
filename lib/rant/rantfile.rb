@@ -16,6 +16,13 @@ end	# class Rant::Rantfile
 
 class Rant::Task
     include Rant::Console
+
+    class << self
+	def fail msg = nil, clr = nil
+	    clr ||= caller
+	    raise Rant::TaskFail, msg, clr
+	end
+    end
     
     # Name of the task, this is always a string.
     attr_reader :name
@@ -58,6 +65,11 @@ class Rant::Task
 	@pre << pre
     end
 
+    # Cause task to fail. Equivalent to calling Task.fail.
+    def fail msg = nil
+	self.class.fail msg, caller
+    end
+
     def ran?
 	@ran
     end
@@ -82,16 +94,20 @@ class Rant::Task
 	resolve_prerequisites
 	ensure_tasks
 	if @block
+	    @fail = true
 	    begin
-		@fail = !@block[self]
+		# A task run is considered as failed, if the called
+		# block raises an exception.
+		@block[self]
+		@fail = false
+	    rescue ::Rant::TaskFail => e
+		m = e.message
+		err_msg m if m && m != "Rant::TaskFail"
 	    rescue ::Rant::CommandError => e
-		@fail = true
 		err_msg e.message
 	    rescue SystemCallError => e
-		@fail = true
 		err_msg e.message
 	    rescue
-		@fail = true
 		err_msg $!.message, $!.backtrace
 	    end
 	    if @fail

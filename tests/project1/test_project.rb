@@ -75,6 +75,21 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?d, "dir/subdir"),
 	    "dir/subdir should have been created as prerequisite of path")
     end
+    def test_directory_postprocess
+	assert_equal(Rant.run("dir/sub2"), 0)
+	assert(test(?d, "dir/sub2"),
+	    "dir/sub2 should have been created by directory task")
+	assert(test(?f, "dir/sub2/postprocess"),
+	    "dir/sub2/postprocess should have been created by block supplied to directory task")
+    end
+    def test_directory_postprocess_2
+	assert_equal(Rant.run("dir/subdir"), 0)
+	assert(test(?d, "dir/subdir"))
+	assert(!File.exist?("dir/sub2"))
+	assert_equal(Rant.run("dir/sub2"), 0)
+	assert(test(?f, "dir/sub2/postprocess"),
+	    "dir/sub2/postprocess should have been created by block supplied to directory task")
+    end
     def test_order
 	assert_equal(Rant.run("order"), 0)
 	assert(File.exist?("order1"))

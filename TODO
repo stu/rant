@@ -3,4 +3,17 @@
 
 == C# plugin
 Define the method +assembly+ for building a file with the C# compiler?
+Done.
 
+== Predefined tasks
+
+Add a 'distclean' task that removes all files and directories
+generatet by any file task.
+
+RDoc task.
+
+Gem task (+ one that interactively creates a gemspec).
+
+== Java plugin
+
+At least for the 1.0.0 release.

@@ -55,6 +55,13 @@ end
 directory "dir/subdir"
 task :path => "dir/subdir"
 
+directory "dir/sub2" do |t|
+    # This block should be called after the creation of the directory
+    # `sub2' in `dir'.
+    t.name == "dir/sub2" or t.fail
+    touch "#{t.name}/postprocess"
+end
+
 task :order do |t|
     touch t.name + "1"
     sleep 1
