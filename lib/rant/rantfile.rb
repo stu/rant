@@ -36,12 +36,23 @@ class Rant::Task
 	@fail = false
 	@rantfile = nil
 	@line_number = 0
-
-	#	@@all[@name] = self
     end
 
     def prerequisites
-	@pre
+	@pre.collect { |pre|
+	    if pre.is_a? String
+		pre
+	    elsif pre.is_a? ::Rant::Task
+		pre.name
+	    else
+		pre.to_s
+	    end
+	}
+    end
+
+    # Add a prerequisite.
+    def <<(pre)
+	@pre << pre
     end
 
     def ran?
@@ -70,7 +81,7 @@ class Rant::Task
 	if @block
 	    begin
 		@fail = !@block[self]
-	    rescue CommandError => e
+	    rescue ::Rant::CommandError => e
 		@fail = true
 		err_msg e.message
 	    rescue

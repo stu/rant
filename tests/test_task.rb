@@ -36,7 +36,7 @@ class TestTask < Test::Unit::TestCase
 	r1 = r2 = false
 	t1 = Rant::Task.new(nil, :t1) { r1 = true }
 	t2 = Rant::Task.new(nil, :t2) { r2 = true }
-	t1.prerequisites << t2
+	t1 << t2
 	t1.run
 	assert(r1)
 	assert(r2, "t1 depends on t2, so t2 should have been run")
@@ -47,7 +47,7 @@ class TestTask < Test::Unit::TestCase
     def test_dependance_fails
 	t1 = Rant::Task.new(nil, :t1) { true }
 	t2 = Rant::Task.new(nil, :t2) { false }
-	t1.prerequisites << t2
+	t1 << t2
 	assert_raise(Rant::TaskFail,
 	    "dependency t2 failed, so t1 should fail too") {
 	    t1.run

@@ -123,6 +123,9 @@ module Rant
 	@@rantapp.file(targ, &block)
     end
 
+    def desc *args
+    end
+
     # Create a path.
     # TODO:
 =begin
@@ -445,7 +448,9 @@ class Rant::RantApp
 	# rantfiles in reverse order.
 	rev_files = @rantfiles.reverse
 	force = false
+	matching_tasks = 0
 	target_list.each do |target|
+	    matching_tasks = 0
 	    if @force_targets.include?(target)
 		force = true
 		@force_targets.delete(target)
@@ -453,6 +458,7 @@ class Rant::RantApp
 		force = false
 	    end
 	    (select_tasks { |t| t.name == target }).each { |t|
+		matching_tasks += 1
 		begin
 		    t.run if force || t.needed?
 		rescue Rant::TaskFail => e
@@ -460,6 +466,9 @@ class Rant::RantApp
 		    abort("Task `#{e.message}' fail.")
 		end
 	    }
+	    if matching_tasks == 0
+		abort("Don't know how to build `#{target}'.")
+	    end
 	end
     end
 
@@ -509,7 +518,7 @@ class Rant::RantApp
     end
 
     def load_file rantfile
-	msg "loading #{rantfile.path}" if verbose
+	msg 1, "loading #{rantfile.path}"
 	begin
 	    # load with absolute path to avoid require problems
 	    load rantfile.absolute_path
