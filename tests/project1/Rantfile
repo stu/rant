@@ -1,0 +1,36 @@
+
+file "test_touch" do |t|
+    touch t.name
+end
+
+task :clean do
+    rm "test_touch"
+end
+
+task :create_target do
+    touch "target"
+end
+
+task :create_dep do
+    touch "dep"
+end
+
+file "target" => "dep" do |t|
+    touch t.name
+end
+
+file "t2" => ["dep1", "dep2"] do |t|
+    touch t.name
+end
+
+file "dep1" do |t|
+    touch t.name
+end
+
+file "dep2" do |t|
+    touch t.name
+end
+
+task :force_clean do
+    rm_f %w(test_touch target dep dep1 dep2 t2)
+end

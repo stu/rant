@@ -74,9 +74,12 @@ class Rant::Task
 	if @block
 	    begin
 		@fail = !@block[self]
+	    rescue CommandError => e
+		@fail = true
+		err_msg e.message
 	    rescue
 		@fail = true
-		err_msg $!.message
+		err_msg $!.message, $!.backtrace
 	    end
 	    if @fail
 		raise Rant::TaskFail, @name.to_s
@@ -135,16 +138,25 @@ end	# class Rant::Task
 class Rant::FileTask < Rant::Task
     def initialize *args
 	super
-	unless @name.is_a? Rant::Path
-	    @name = Rant::Path.new @name
+	if @name.is_a? Rant::Path
+	    @path = @name
+	    @name = @path.to_s
+	else
+	    @path = Rant::Path.new @name
 	end
     end
+    def path
+	@path
+    end
     def needed?
-	return true if super
-	resolve_pathes
-	ts = @name.mtime
-	each_non_task { |path|
-	    return true if t.mtime > ts
+	return true unless @path.exist?
+	resolve_prerequisites
+	each_task { |t|
+	    return true if t.needed?
+	}
+	ts = @path.mtime
+	each_non_task { |ft|
+	    return true if ft.mtime > ts
 	}
 	false
     end

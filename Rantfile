@@ -1,0 +1,25 @@
+#!/usr/bin/env ruby
+
+# Rantfile for Rant :)
+
+require 'rant'
+require 'rant/testtask'
+
+task :default => :test
+
+lib_files = Dir["lib/**/*.rb"]
+doc_files = lib_files.dup
+rdoc_opts = %w(-c UTF-8 --title Rant --main lib/rant.rb)
+
+file "doc" => doc_files do
+    touch "doc" if test(?d, "doc")
+    sh "rdoc #{rdoc_opts.join(' ')} lib"
+end
+
+TestTask.new do |t|
+    t.pattern = '**/test_*.rb'
+end
+
+if $0 == __FILE__
+    Rant.run
+end

@@ -1,6 +1,7 @@
 # Rakefile for the rant project.
 
-$:.unshift "lib"
+$:.unshift(File.join(Dir.pwd, "lib"))
+
 require 'rubygems'
 require 'rant'	# contains VERSION
 Gem::manage_gems
@@ -49,10 +50,16 @@ Rake::GemPackageTask.new(GEM_SPEC) do |pkg|
     pkg.need_zip = false
 end
 
-Rake::TestTask.new do |t|
-    #t.libs        # managed in the individual test files
-    t.test_files = all_tests
-    #t.verbose = true
+task :test do
+    libdir = File.join(pwd, "lib")
+    cd("tests") {
+	#rm_rf "testdata"
+	#mkdir "testdata"
+	ruby "-I#{libdir} -S testrb " + Dir["test_*.rb"].join(' ')
+	cd("project1") {
+	    ruby "-I#{libdir} -S testrb test_project.rb"
+	}
+    }
 end
 
 desc "Generate RDoc documentation."

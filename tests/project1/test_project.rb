@@ -1,0 +1,54 @@
+
+require 'test/unit'
+require 'rant'
+
+# Ensure we run in testproject directory.
+dir = File.dirname(__FILE__)
+cd(dir) unless Dir.pwd == dir
+
+class TestProject1 < Test::Unit::TestCase
+    def setup
+	Rant.reset
+    end
+    def teardown
+	assert_equal(Rant.run("force_clean"), 0)
+    end
+    def test_run
+	assert_equal(Rant.run("test_touch"), 0,
+	    "Exit code of rant should be 0.")
+	Rant.reset
+	assert(File.exist?("test_touch"),
+	    "file test_touch should have been created")
+	assert_equal(Rant.run("clean"), 0)
+	assert(!File.exist?("test_touch"))
+    end
+    def test_timedep
+	assert_equal(Rant.run("create_target"), 0)
+	assert(File.exist?("target"))
+	Rant.reset
+	sleep 1
+	assert_equal(Rant.run("create_dep"), 0)
+	assert(File.exist?("dep"))
+	sleep 1
+	assert_equal(Rant.run("target"), 0)
+	assert(File.exist?("target"))
+	assert(File.exist?("dep"))
+	assert(uptodate?("target", "dep"),
+	    "`target' should be newer than `dep'")
+	t1 = File.mtime "target"
+	Rant.reset
+	sleep 1
+	assert_equal(Rant.run("target"), 0)
+	assert_equal(t1, File.mtime("target"),
+	    "`target' was already up to date")
+    end
+    def test_two_deps
+	assert_equal(Rant.run("t2"), 0)
+	assert(File.exist?("t2"),
+	    "file `t2' should have been built")
+	assert(File.exist?("dep1"),
+	    "dependancy `dep1' should have been built")
+	assert(File.exist?("dep2"),
+	    "depandancy `dep2' should have been build")
+    end
+end

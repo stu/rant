@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.0.1'
+    VERSION	= '0.1.0'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -111,19 +111,28 @@ module Rant
     end
     private :ensure_rantapp
 
+    # Define a basic task.
     def task targ, &block
 	ensure_rantapp
 	@@rantapp.task(targ, &block)
     end
 
+    # Define a file task.
     def file targ, &block
 	ensure_rantapp
 	@@rantapp.file(targ, &block)
     end
 
+    # Look in the subdirectories, given by args,
+    # for rantfiles.
     def subdirs *args
 	ensure_rantapp
 	@@rantapp.subdirs(*args)
+    end
+
+    def load_rantfile rantfile
+	ensure_rantapp
+	@@rantapp.load_rantfile(rantfile)
     end
 
     def abort_rant
@@ -291,6 +300,13 @@ class Rant::RantApp
 	raise Rant::RantDoneException
     end
 		
+    def load_rantfile rantfile
+	rf, is_new = rantfile_for_path(rantfile)
+	return false unless is_new
+	load_file rf
+	true
+    end
+
     private
     def have_any_task?
 	not @rantfiles.all? { |f| f.tasks.empty? }
@@ -304,7 +320,7 @@ class Rant::RantApp
 	# Run tasks specified on commandline, if not given:
 	# run default task, if not given:
 	# run first defined task.
-	target_list = @arg_targets
+	target_list = @arg_targets.dup
 	# The target list is a list of strings, not Task objects!
 	if target_list.empty?
 	    have_default = @rantfiles.any? { |f|
@@ -389,6 +405,7 @@ class Rant::RantApp
 	    @rantfiles << rantfile
 	end
     end
+    private :load_file
 
     # Get all rantfiles in dir.
     # If dir is nil, look in current directory.
@@ -437,8 +454,15 @@ class Rant::RantApp
     rescue GetoptLong::Error => e
 	abort(e.message)
     ensure
-	@arg_targets.concat ARGV
+	rem_args = ARGV.dup
 	ARGV.replace(old_argv)
+	rem_args.each { |ra|
+	    if ra =~ /(^[^=]+)=([^=]+)$/
+		ENV[$1] = $2
+	    else
+		@arg_targets << ra
+	    end
+	}
     end
 
     def more_verbose
@@ -461,11 +485,24 @@ class Rant::RantApp
     end
 
     def prepare_task targ, block
-	ch = Rant::Lib::parse_caller_elem(caller[2])
+	clr = caller[2]
+	if targ.is_a? Hash
+	    targ.reject! { |k, v|
+		case k
+		when :__caller__
+		    clr = v
+		    true
+		else
+		    false
+		end
+	    }
+	end
+	ch = Rant::Lib::parse_caller_elem(clr)
 	name = nil
 	pre = []
 	ln = ch[:ln] || 0
 	file = ch[:file]
+	
 	if targ.is_a?(String) || targ.is_a?(Symbol)
 	    name = targ.to_s
 	elsif targ.respond_to? :to_str
@@ -482,18 +519,16 @@ class Rant::RantApp
 		    "should only be one.")
 	    end
 	    targ.each_pair { |k,v|
-		if k.is_a?(String) || k.is_a?(Symbol)
-		    name = k.to_s
-		elsif k.respond_to? :to_str
-		    name = k.to_str
-		else
-		    abort(pos_text(file, ln),
-			"Task name has to be a string or symbol.")
-		end
+		name = normalize_task_arg(k, file, ln)
 		pre = v
 	    }
-	    pre = [pre] unless pre.is_a? Enumerable
-	    # TODO: Validate prerequisites?
+	    if pre.is_a? Array
+		pre.map! { |elem|
+		    normalize_task_arg(elem, file, ln)
+		}
+	    else
+		pre = [normalize_task_arg(pre, file, ln)]
+	    end
 	end
 	file, is_new = rantfile_for_path(file)
 	nt = yield(name, pre, block)
@@ -501,6 +536,22 @@ class Rant::RantApp
 	nt.line_number = ln
 	file.tasks << nt
 	nt
+    end
+
+    # Tries to make a task name out of arg and returns
+    # the valid task name. If not possible, calls abort
+    # with an appropriate error message using file and ln.
+    def normalize_task_arg(arg, file, ln)
+	return arg if arg.is_a? String
+	if arg.respond_to? :to_str
+	    arg = arg.to_str
+	elsif arg.is_a? Symbol
+	    arg = arg.to_s
+	else
+	    abort(pos_text(file, ln),
+		"Task name has to be a string or symbol.")
+	end
+	arg
     end
 
     # Returns a Rant::Rantfile object as first value
