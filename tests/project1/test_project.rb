@@ -97,4 +97,19 @@ class TestProject1 < Test::Unit::TestCase
 	assert(File.mtime("order1") < File.mtime("order2"),
 	    "tasks from same file should be run in definition order")
     end
+    def test_enhance
+	assert_equal(Rant.run("tbe"), 0)
+	assert(File.exist?("dep1"))
+	assert(File.exist?("dep2"),
+	    "dep2 was added as prerequisite to tbe by enhance")
+	assert(File.exist?("tbe"))
+	assert(File.exist?("tbe2"),
+	    "tbe2 should be created by enhance for tbe")
+	assert(test(?<, "tbe", "tbe2"),
+	    "block added by enhance should run after \"normal\" block")
+    end
+    def test_enhance_nothing
+	assert_equal(Rant.run("nothing"), 0,
+	    "enhance should create new task if no task with given name exists")
+    end
 end

@@ -62,6 +62,20 @@ directory "dir/sub2" do |t|
     touch "#{t.name}/postprocess"
 end
 
+file "tbe" => :dep1 do |t|
+    touch t.name
+    sleep 2
+end
+
+enhance :tbe => "dep2" do |t|
+    touch "tbe2"
+    sleep 2
+end
+
+# should generate warning because there is no existing task called
+# "nothing" and create the task "nothing"
+enhance :nothing
+
 task :order do |t|
     touch t.name + "1"
     sleep 1
@@ -77,6 +91,7 @@ task :force_clean do
 	test_touch target dep dep1 dep2 t2
 	duplicate duplicate1 duplicate2
 	fallback fallback_ order1 order2
+	tbe tbe2
 	)
     rm_rf %w(dir)
 end

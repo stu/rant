@@ -88,6 +88,16 @@ class Rant::Task
 	!done?
     end
 
+    # Enhance this task with the given dependencies and blk.
+    def enhance(deps = [], &blk)
+	@pre.concat deps if deps
+	first_block = @block
+	@block = lambda { |t|
+	    first_block[t]
+	    blk[t]
+	}
+    end
+
     # Raises a Rant::TaskFail exception on failure.
     def run
 	@ran = true

@@ -32,7 +32,7 @@ module Rant::Lib
 end
 
 module Rant
-    VERSION	= '0.1.7'
+    VERSION	= '0.1.8'
 
     # Those are the filenames for rantfiles.
     # Case doens't matter!
@@ -121,6 +121,11 @@ module Rant
     def file targ, &block
 	ensure_rantapp
 	@@rantapp.file(targ, &block)
+    end
+
+    # Add code and/or prerequisites to existing task.
+    def enhance targ, &block
+	Rant.rantapp.enhance(targ, &block)
     end
 
     def show(*args)
@@ -323,6 +328,23 @@ class Rant::RantApp
 
     def file targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
+	    Rant::FileTask.new(self, name, pre, &blk)
+	}
+    end
+
+    # Add block and prerequisites to the task specified by the
+    # name given as only key in targ.
+    # If there is no task with the given name, generate a warning
+    # and a new file task.
+    def enhance targ, &block
+	prepare_task(targ, block) { |name,pre,blk|
+	    t = select_task { |t| t.name == name }
+	    if t
+		t.enhance(pre, &blk)
+		return t
+	    end
+	    warn_msg "enhance \"#{name}\": no such task",
+		"Generating a new file task with the given name."
 	    Rant::FileTask.new(self, name, pre, &blk)
 	}
     end
@@ -601,6 +623,17 @@ class Rant::RantApp
 	selection
     end
     public :select_tasks
+
+    # Get the first task for which yield returns true. Returns nil if
+    # yield never returned true.
+    def select_task
+	@rantfiles.reverse.each { |rf|
+	    rf.tasks.each { |t|
+		return t if yield t
+	    }
+	}
+	nil
+    end
 
     def load_rantfiles
 	# Take care: When rant isn't invoked from commandline,
