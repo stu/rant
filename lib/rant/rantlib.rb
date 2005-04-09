@@ -338,6 +338,7 @@ class Rant::RantApp
 	@done = false
 	@plugins = []
 	@var = Rant::RantVar::Space.new
+	@var[:ignore] = []
 	@imports = []
 
 	@task_show = nil
@@ -463,6 +464,7 @@ class Rant::RantApp
 	end
 	# run tasks
 	run_tasks
+	goto "#"
 	raise Rant::RantDoneException
     rescue Rant::RantDoneException
 	@done = true

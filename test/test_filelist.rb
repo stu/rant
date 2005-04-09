@@ -200,4 +200,21 @@ class TestFileList < Test::Unit::TestCase
     ensure
 	FileUtils.rm_rf "fl.t"
     end
+    def test_sys_glob_late_ignore
+	rac = Rant::RantApp.new
+	cx = rac.context
+	FileUtils.mkdir "fl.t"
+	l = cx.sys["fl.t/*", "fl.t", "*.t"]
+	touch_temp %w(a.t fl.t/CVS fl.t/a~) do
+	    cx.var["ignore"] = ["CVS", /\~$/]
+	    assert(l.include?("fl.t"))
+	    assert(l.include?("a.t"))
+	    assert(!l.include?("fl.t/a~"))
+	    assert(!l.include?("fl.t/CVS"))
+	end
+	l[0] = "CVS"
+	assert(!l.include?("CVS"))
+    ensure
+	FileUtils.rm_rf "fl.t"
+    end
 end

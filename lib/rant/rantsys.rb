@@ -4,15 +4,6 @@ require 'rant/rantenv'
 
 module Rant
 
-    class Glob < String
-	class << self
-	    # A synonym for +new+.
-	    def [](pattern)
-		new(pattern)
-	    end
-	end
-    end
-
     class FileList
 	include Enumerable
 
@@ -23,6 +14,8 @@ module Rant
 	# Flags for the File::fnmatch method.
 	# Initialized to 0.
 	attr_accessor :glob_flags
+	
+	attr_reader :ignore_rx
 
 	class << self
 	    def [](*patterns)
@@ -76,13 +69,14 @@ module Rant
 	end
 
 	def <<(file)
-	    @files << file unless file =~ @ignore_rx
+	    @files << file unless file =~ ignore_rx
 	    self
 	end
 
 	def concat(ary)
 	    resolve if @pending
-	    @files.concat(ary.to_ary.reject { |f| f =~ @ignore_rx })
+	    ix = ignore_rx
+	    @files.concat(ary.to_ary.reject { |f| f =~ ix })
 	    self
 	end
 
@@ -94,7 +88,9 @@ module Rant
 	def method_missing(sym, *args, &block)
 	    if @files.respond_to? sym
 		resolve if @pending
+		fh = @files.hash
 		@files.send(sym, *args, &block)
+		@pending = true unless @files.hash == fh
 	    else
 		super
 	    end
@@ -107,8 +103,9 @@ module Rant
 		self.send(*action)
 	    }
 	    @actions.clear
-	    if @ignore_rx
-		@files.reject! { |f| f =~ @ignore_rx }
+	    ix = ignore_rx
+	    if ix
+		@files.reject! { |f| f =~ ix }
 	    end
 	end
 
@@ -300,6 +297,34 @@ module Rant
 	end
     end	# class FileList
 
+    class RacFileList < FileList
+
+	def initialize(rac, *patterns)
+	    @rac = rac
+	    super(*patterns)
+	    @ignore_hash = nil
+	    update_ignore_rx
+	end
+
+	private :ignore
+
+	def ignore_rx
+	    update_ignore_rx
+	    @ignore_rx
+	end
+
+	private
+	def update_ignore_rx
+	    ri = @rac.var[:ignore]
+	    rh = ri.hash
+	    unless rh == @ignore_hash
+		@ignore_rx = nil
+		ignore(*ri) if ri
+		@ignore_hash = rh
+	    end
+	end
+    end
+
     class CommandError < StandardError
 	attr_reader :cmd
 	attr_reader :status
@@ -406,10 +431,13 @@ module Rant
 	end
 
 	def glob(*args, &block)
-	    fl = FileList.new(*args, &block)
-	    ignore_pats = @rac.var :ignore
-	    fl.ignore(*ignore_pats) if ignore_pats
+	    fl = RacFileList.new(@rac, *args)
+	    fl.instance_eval &block if block
 	    fl
+	end
+
+	def [](*patterns)
+	    RacFileList.new(@rac, *patterns)
 	end
 
 	private
