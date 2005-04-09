@@ -41,6 +41,7 @@ end
 module Rant::Env
     OS		= ::Config::CONFIG['target']
     RUBY	= ::Config::CONFIG['ruby_install_name']
+    RUBY_BINDIR	= ::Config::CONFIG['bindir']
 
     @@zip_bin = false
     @@tar_bin = false

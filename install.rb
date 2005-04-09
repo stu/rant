@@ -1,7 +1,6 @@
-#!/usr/local/bin/ruby
-# Run rant in current development directory.
 
+# Install Rant with Rant :)
 $:.unshift File.expand_path(File.join(File.dirname(__FILE__), "lib"))
 require 'rant/rantlib'
 
-exit Rant.run
+exit Rant.run("install")
