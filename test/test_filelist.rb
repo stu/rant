@@ -54,7 +54,8 @@ class TestFileList < Test::Unit::TestCase
     end
     def test_ignore
 	l = fl
-	l.ignore "CVS"
+	r = l.ignore "CVS"
+	assert_same(l, r)
 	inc_list = %w(
 	    CVS_ a/b a
 	    ).map! { |f| f.tr "/", File::SEPARATOR }
@@ -73,7 +74,7 @@ class TestFileList < Test::Unit::TestCase
 	FileUtils.mkdir "fl.t"
 	l = fl "fl.t/*", "fl.t", "*.t"
 	touch_temp %w(a.t fl.t/CVS fl.t/a~) do
-	    l.ignore /\~$/, "CVS"
+	    l.ignore(/\~$/, "CVS")
 	    assert(l.include?("fl.t"))
 	    assert(l.include?("a.t"))
 	    assert(!l.include?("fl.t/a~"))
@@ -169,5 +170,34 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(1, l.size)
 	    assert(l.include?("t.t2"))
 	end
+    end
+    def test_rac_sys_glob
+	rac = Rant::RantApp.new
+	cx = rac.context
+	FileUtils.mkdir "fl.t"
+	l = cx.sys.glob "fl.t/*", "fl.t", "*.t"
+	touch_temp %w(a.t fl.t/CVS fl.t/a~) do
+	    assert(l.include?("fl.t"))
+	    assert(l.include?("a.t"))
+	    assert(l.include?("fl.t/a~"))
+	    assert(l.include?("fl.t/CVS"))
+	end
+    ensure
+	FileUtils.rm_rf "fl.t"
+    end
+    def test_rac_sys_glob_ignore
+	rac = Rant::RantApp.new
+	cx = rac.context
+	cx.var["ignore"] = ["CVS", /\~$/]
+	FileUtils.mkdir "fl.t"
+	l = cx.sys.glob "fl.t/*", "fl.t", "*.t"
+	touch_temp %w(a.t fl.t/CVS fl.t/a~) do
+	    assert(l.include?("fl.t"))
+	    assert(l.include?("a.t"))
+	    assert(!l.include?("fl.t/a~"))
+	    assert(!l.include?("fl.t/CVS"))
+	end
+    ensure
+	FileUtils.rm_rf "fl.t"
     end
 end

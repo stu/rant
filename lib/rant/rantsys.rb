@@ -83,6 +83,7 @@ module Rant
 	def concat(ary)
 	    resolve if @pending
 	    @files.concat(ary.to_ary.reject { |f| f =~ @ignore_rx })
+	    self
 	end
 
 	def size
@@ -297,33 +298,6 @@ module Rant
 	def arglist
 	    to_ary.arglist
 	end
-=begin
-	def arglist
-	    self.list.join(' ')
-	end
-
-	def list
-	    if ::Rant::Env.on_windows?
-		self.collect { |entry|
-		    entry = entry.tr("/", "\\")
-		    if entry.include? ' '
-			'"' + entry + '"'
-		    else
-			entry
-		    end
-		}
-	    else
-		self.collect { |entry|
-		    if entry.include? ' '
-			"'" + entry + "'"
-		    else
-			entry
-		    end
-		}
-	    end
-	end
-=end
-
     end	# class FileList
 
     class CommandError < StandardError
@@ -423,18 +397,24 @@ module Rant
     class SysObject
 	include Sys
 
-	# This could be an Rant application. It has to respond to
-	# +:cmd_msg+.
-	attr_reader :controller
+	# The controlling Rant compiler.
+	attr_reader :rac
 
-	def initialize(controller)
-	    @controller = controller or
+	def initialize(rac)
+	    @rac = rac or
 		raise ArgumentError, "controller required"
+	end
+
+	def glob(*args, &block)
+	    fl = FileList.new(*args, &block)
+	    ignore_pats = @rac.var :ignore
+	    fl.ignore(*ignore_pats) if ignore_pats
+	    fl
 	end
 
 	private
 	def fu_output_message(cmd)
-	    @controller.cmd_msg cmd
+	    @rac.cmd_msg cmd
 	end
     end
 end	# module Rant
