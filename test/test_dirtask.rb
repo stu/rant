@@ -12,6 +12,7 @@ class TestDirTask < Test::Unit::TestCase
     def setup
 	Dir.chdir($testDir) unless Dir.pwd == $testDir
 	@rac = Rant::RantApp.new
+	@cx = @rac.context
     end
     def teardown
 	FileUtils.rm_rf Dir["*.t"]
@@ -20,7 +21,7 @@ class TestDirTask < Test::Unit::TestCase
 	@rac.args.replace(args.flatten)
     end
     def test_return
-	dt = @rac.gen Directory, "a.t/b.t"
+	dt = @cx.gen Directory, "a.t/b.t"
 	assert(Rant::Worker === dt)
 	assert_equal("a.t/b.t", dt.name,
 	    "`gen Directory' should return task for last directory")

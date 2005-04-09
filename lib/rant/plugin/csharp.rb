@@ -145,27 +145,23 @@ module Rant
     end	# class Generators::Assembly
 
     class AssemblyTask < FileTask
+
 	def initialize(app, assembly)
 	    @assembly = assembly
 	    super(app, @assembly.out) { |t|
 		app.context.sys assembly.send("cmd_" + assembly.target)
 	    }
 	end
-=begin
-	def resolve_prerequisites
-	    @assembly.init
-	    @pre.concat(@assembly.sources)
-	    @pre.concat(@assembly.resources) if @assembly.resources
-	    super
-	end
-=end
+
 	def invoke(force = false)
+	    goto_task_home
 	    @assembly.init
 	    @pre.concat(@assembly.sources)
 	    @pre.concat(@assembly.resources) if @assembly.resources
 	    super
 	end
-    end
+
+    end	# class AssemblyTask
 end	# module Rant
 
 module Rant::Plugin

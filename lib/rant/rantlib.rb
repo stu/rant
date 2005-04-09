@@ -150,8 +150,12 @@ module RantContext
 	rac.source(rantfile)
     end
 
-    def sys *args
+    def sys(*args, &block)
 	rac.sys(*args)
+    end
+
+    def var(*args, &block)
+	rac.var(*args, &block)
     end
 end	# module RantContext
 
@@ -685,11 +689,19 @@ class Rant::RantApp
 	abort(pos_text(file, ln), "subdirs: " + e.message)
     end
 
-    def sys(*args)
+    def sys(*args, &block)
 	if args.empty?
 	    @sys
 	else
 	    @sys.sh(*args)
+	end
+    end
+
+    def var(*args, &block)
+	if args.empty?
+	    @var
+	else
+	    @var.query(*args, &block)
 	end
     end
     ##################################################################
@@ -891,6 +903,7 @@ class Rant::RantApp
 		opt[:force] = true
 		@force_targets.delete(target)
 	    end
+	    goto "#"
 	    resolve(target).each { |t|
 		matching_tasks += 1
 		begin

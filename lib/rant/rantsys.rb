@@ -34,6 +34,7 @@ module Rant
 	    @glob_flags = 0
 	    @files = []
 	    @actions = patterns.map { |pat| [:apply_include, pat] }
+	    @ignore_rx = nil
 	    @pending = true
 	    yield self if block_given?
 	end
@@ -75,8 +76,13 @@ module Rant
 	end
 
 	def <<(file)
-	    @files << file
+	    @files << file unless file =~ @ignore_rx
 	    self
+	end
+
+	def concat(ary)
+	    resolve if @pending
+	    @files.concat(ary.to_ary.reject { |f| f =~ @ignore_rx })
 	end
 
 	def size
@@ -100,6 +106,9 @@ module Rant
 		self.send(*action)
 	    }
 	    @actions.clear
+	    if @ignore_rx
+		@files.reject! { |f| f =~ @ignore_rx }
+	    end
 	end
 
 	def include(*patterns)
@@ -127,6 +136,24 @@ module Rant
 	    @pending = true
 	    self
 	end
+
+	def ignore(*patterns)
+	    patterns.each { |pat|
+		add_ignore_rx(Regexp === pat ? pat : mk_all_rx(pat))
+	    }
+	    @pending = true
+	    self
+	end
+
+	def add_ignore_rx(rx)
+	    @ignore_rx =
+	    if @ignore_rx
+		Regexp.union(@ignore_rx, rx)
+	    else
+		rx
+	    end
+	end
+	private :add_ignore_rx
 
 	def apply_exclude(pattern)
 	    @files.reject! { |elem|

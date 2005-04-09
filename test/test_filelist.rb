@@ -52,6 +52,36 @@ class TestFileList < Test::Unit::TestCase
 	    assert(!l.include?(f))
 	}
     end
+    def test_ignore
+	l = fl
+	l.ignore "CVS"
+	inc_list = %w(
+	    CVS_ a/b a
+	    ).map! { |f| f.tr "/", File::SEPARATOR }
+	not_inc_list = %w(
+	    CVS a/CVS a/CVS/b CVS/CVS //CVS /CVS/ /a/b/CVS/c
+	    ).map! { |f| f.tr "/", File::SEPARATOR }
+	l.concat(not_inc_list + inc_list)
+	inc_list.each { |f|
+	    assert(l.include?(f))
+	}
+	not_inc_list.each { |f|
+	    assert(!l.include?(f))
+	}
+    end
+    def test_ignore_more
+	FileUtils.mkdir "fl.t"
+	l = fl "fl.t/*", "fl.t", "*.t"
+	touch_temp %w(a.t fl.t/CVS fl.t/a~) do
+	    l.ignore /\~$/, "CVS"
+	    assert(l.include?("fl.t"))
+	    assert(l.include?("a.t"))
+	    assert(!l.include?("fl.t/a~"))
+	    assert(!l.include?("fl.t/CVS"))
+	end
+    ensure
+	FileUtils.rm_rf "fl.t"
+    end
     def test_initialize
 	touch_temp %w(1.t 2.tt) do
 	    assert(fl("*.t").include?("1.t"),

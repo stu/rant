@@ -266,7 +266,7 @@ class Rant::Generators::RubyPackage
 	    end
 	    Gem.manage_gems
 	    # map rdoc options from application vars
-	    @data["rdoc_options"] ||= @app.var["gen-rubydoc-rdoc_opts"]
+	    @data["rdoc_options"] ||= @app.var[:rubydoc_opts]
 	    if @data["rdoc_options"]
 		# remove the --op option, otherwise rubygems will
 		# install the rdoc in the wrong directory (at least as

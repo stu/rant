@@ -47,7 +47,7 @@ module Rant
 	    @verbose = false
 
 	    yield self if block_given?
-	    app.var["gen-rubydoc-rdoc_opts"] = self.rdoc_opts.dup
+	    app.var[:rubydoc_opts] = self.rdoc_opts.dup
 
 	    @pre ||= []
 	    @pre.concat(self.rdoc_source_deps)
