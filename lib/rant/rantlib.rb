@@ -13,38 +13,6 @@ require 'rant/rantenv'
 require 'rant/rantfile'
 require 'rant/rantsys'
 
-module Rant
-    VERSION	= '0.3.3'
-
-    # Those are the filenames for rantfiles.
-    # Case matters!
-    RANTFILES	= [	"Rantfile",
-			"rantfile",
-			"Rantfile.rb",
-			"rantfile.rb",
-		  ]
-    
-    # Names of plugins and imports for which code was loaded.
-    # Files that where loaded with the `import' commant are directly
-    # added; files loaded with the `plugin' command are prefixed with
-    # "plugin/".
-    CODE_IMPORTS = []
-    
-    class RantAbortException < StandardError
-    end
-
-    class RantDoneException < StandardError
-    end
-
-    class RantfileException < StandardError
-    end
-
-    # This module is a namespace for generator classes.
-    module Generators
-    end
-
-end
-
 # There is one problem with executing Rantfiles in a special context:
 # In the top-level execution environment, there are some methods
 # available which are not available to all objects. One example is the
@@ -306,10 +274,6 @@ class Rant::RantApp
     # may be called through an instance_eval on this object (e.g. from
     # plugins).
     attr_reader :context
-    # The [] and []= operators may be used to set/get values from this
-    # object (like a hash). It is intended to let the different
-    # modules, plugins and tasks to communicate with each other.
-    attr_reader :var
     # A hash with all tasks. For fast task lookup use this hash with
     # the taskname as key.
     attr_reader :tasks
@@ -338,7 +302,7 @@ class Rant::RantApp
 	@done = false
 	@plugins = []
 	@var = Rant::RantVar::Space.new
-	@var[:ignore] = []
+	@var.query :ignore, :AutoList, []
 	@imports = []
 
 	@task_show = nil
@@ -475,6 +439,10 @@ class Rant::RantApp
 	err_msg "Invalid Rantfile: " + $!.message
 	$stderr.puts "rant aborted!"
 	return 1
+    rescue Rant::RantError
+	err_msg $!.message, $!.backtrace[0..4]
+	$stderr.puts "rant aborted!"
+	return 1
     rescue Rant::RantAbortException
 	$stderr.puts "rant aborted!"
 	return 1
@@ -526,14 +494,6 @@ class Rant::RantApp
 	file = ch[:file]
 	# validate args
 	generator = args.shift
-	# Let modules/classes from the Generator namespace override
-	# other generators.
-	begin
-	    if generator.is_a? Module
-		generator = ::Rant::Generators.const_get(generator.to_s)
-	    end
-	rescue NameError, ArgumentError
-	end
 	unless generator.respond_to? :rant_generate
 	    abort(pos_text(file, ln),
 		"First argument to `gen' has to be a task-generator.")
@@ -699,6 +659,9 @@ class Rant::RantApp
 	end
     end
 
+    # The [] and []= operators may be used to set/get values from this
+    # object (like a hash). It is intended to let the different
+    # modules, plugins and tasks to communicate with each other.
     def var(*args, &block)
 	if args.empty?
 	    @var
@@ -1192,13 +1155,15 @@ class Rant::RantApp
 		name = normalize_task_name(k, file, ln)
 		pre = v
 	    }
-	    if pre.respond_to? :to_ary
-		pre = pre.to_ary.dup
-		pre.map! { |elem|
-		    normalize_task_name(elem, file, ln)
-		}
-	    else
-		pre = [normalize_task_name(pre, file, ln)]
+	    unless ::Rant::FileList === pre
+		if pre.respond_to? :to_ary
+		    pre = pre.to_ary.dup
+		    pre.map! { |elem|
+			normalize_task_name(elem, file, ln)
+		    }
+		else
+		    pre = [normalize_task_name(pre, file, ln)]
+		end
 	    end
 	else
 	    name = normalize_task_name(targ, file, ln)

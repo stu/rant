@@ -432,7 +432,7 @@ module Rant
 
 	def glob(*args, &block)
 	    fl = RacFileList.new(@rac, *args)
-	    fl.instance_eval &block if block
+	    fl.instance_eval(&block) if block
 	    fl
 	end
 

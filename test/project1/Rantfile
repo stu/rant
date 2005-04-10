@@ -1,4 +1,6 @@
 
+require 'tutil'
+
 file "test_touch" do |t|
     sys.touch t.name
 end
@@ -68,12 +70,12 @@ end
 
 file "tbe" => :dep1 do |t|
     sys.touch t.name
-    sleep 2
+    timeout
 end
 
 enhance :tbe => "dep2" do |t|
     sys.touch "tbe2"
-    sleep 2
+    timeout
 end
 
 # should generate warning because there is no existing task called
@@ -82,12 +84,12 @@ enhance :nothing
 
 task :order do |t|
     sys.touch t.name + "1"
-    sleep 2
+    timeout
 end
 
 task :order do |t|
     sys.touch t.name + "2"
-    sleep 2
+    timeout
 end
 
 file "incdep" do |t|
@@ -129,3 +131,5 @@ task :force_clean do
 	).find_all { |e| test(?e, e) }
     sys.rm_rf %w(dir)
 end
+
+# vim:ft=ruby
