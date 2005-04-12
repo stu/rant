@@ -1,4 +1,5 @@
 
+var.env "csc", "target"
 conf = plugin :Configure do |conf|
     conf.init_modes = [:explicit]
     conf.override_modes = [:env]

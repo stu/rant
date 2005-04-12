@@ -20,6 +20,10 @@ gen LightTask, "lt" do |lt|
     lt.act { sys.touch lt.name }
 end
 
+task :create_param do
+    sys.touch var[:param]
+end
+
 task :clean do
     sys.rm_rf %w(dt)
     sys.rm_f Dir["*t"]

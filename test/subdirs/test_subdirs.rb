@@ -13,7 +13,7 @@ class TestSubdirs < Test::Unit::TestCase
     end
     def teardown
 	capture_std do
-	    assert_equal(Rant.run("clean"), 0)
+	    assert_equal(0, Rant.run("clean"))
 	end
 	created = Dir["**/*t"]
 	assert(created.empty?)
@@ -123,5 +123,18 @@ class TestSubdirs < Test::Unit::TestCase
 	    assert_equal(0, Rant.run("sub2/sub/gt"))
 	end
 	assert(!test(?d, "sub2/sub/dt/dt"))
+    end
+    def test_param_default
+	capture_std do
+	    assert_equal(0, Rant.run("sub2/sub/create_param"))
+	end
+	assert(test(?f, "sub2/sub/param_default.t"))
+    end
+    def test_param_override
+	capture_std do
+	    assert_equal(0, Rant.run(
+		%w(sub2/sub/create_param param=param.t)))
+	end
+	assert(test(?f, "sub2/sub/param.t"))
     end
 end

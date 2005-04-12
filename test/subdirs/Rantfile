@@ -1,4 +1,6 @@
 
+var "param" => "param_default.t"
+
 file "t" => "sub1/t" do |t|
     sys.touch t.name
 end

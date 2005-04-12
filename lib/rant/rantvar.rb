@@ -60,6 +60,7 @@ module Rant
 	    end
 
 	    def message
+		# TODO: handle @msg
 		val_desc = @val.inspect
 		val_desc[7..-1] = "..." if val_desc.length > 10
 		"#{val_desc} doesn't match constraint: #@constraint"
@@ -67,6 +68,16 @@ module Rant
 	end
 
 	class InvalidVidError < Error
+	    def initialize(vid, msg = nil)
+		@msg = msg
+		@vid = vid
+	    end
+	    def message
+		# TODO: handle @msg
+		vid_desc = @vid.inspect
+		vid_desc[7..-1] = "..." if vid_desc.length > 10
+		"#{vid_desc} is not a valid var identifier"
+	    end
 	end
 
 	class InvalidConstraintError < Error
@@ -76,6 +87,8 @@ module Rant
 	end
 
 	class Space
+
+	    @@env_ref = Object.new
 
 	    def initialize
 		# holds all values
@@ -92,7 +105,7 @@ module Rant
 		when 1
 		    arg = args.first
 		    if Hash === arg
-			set_all arg
+			init_all arg
 		    else
 			self[arg]
 		    end
@@ -114,7 +127,9 @@ module Rant
 
 	    # Get var with name +vid+.
 	    def [](vid)
-		@store[RantVar.valid_vid(vid)]
+		vid = RantVar.valid_vid vid
+		val = @store[vid]
+		val.equal?(@@env_ref) ? ENV[vid] : val
 	    end
 
 	    # Set var with name +vid+ to val. Throws a ConstraintError
@@ -123,7 +138,23 @@ module Rant
 	    def []=(vid, val)
 		vid = RantVar.valid_vid(vid)
 		c = @constraints[vid]
-		@store[vid] = c ? c.filter(val) : val
+		if @store[vid] == @@env_ref
+		    ENV[vid] = c ? c.filter(val) : val
+		else
+		    @store[vid] = c ? c.filter(val) : val
+		end
+	    end
+
+	    # Use ENV instead of internal store for given vars.
+	    # Probably useful for vars like CC, CFLAGS, etc.
+	    def env *vars
+		vars.flatten.each { |var|
+		    vid = RantVar.valid_vid(var)
+		    cur_val = @store[vid]
+		    ENV[vid] = cur_val unless cur_val.nil?
+		    @store[vid] = @@env_ref
+		}
+		nil
 	    end
 
 	    def set_all hash
@@ -133,6 +164,16 @@ module Rant
 		end
 		hash.each_pair { |k, v|
 		    self[k] = v
+		}
+	    end
+
+	    def init_all hash
+		unless Hash === hash
+		    raise QueryError,
+			"init_all argument has to be a hash"
+		end
+		hash.each_pair { |k, v|
+		    self[k] = v if self[k].nil?
 		}
 	    end
 
@@ -236,7 +277,7 @@ module Rant
 		if obj.respond_to? :to_str
 		    obj.to_str
 		else
-		    raise InvalidVidError, obj
+		    raise InvalidVidError.new(obj)
 		end
 	    end
 	end

@@ -1064,8 +1064,8 @@ class Rant::RantApp
 	ARGV.replace(old_argv)
 	rem_args.each { |ra|
 	    if ra =~ /(^[^=]+)=([^=]+)$/
-		msg 2, "Environment: #$1=#$2"
-		ENV[$1] = $2
+		msg 2, "var: #$1=#$2"
+		@var[$1] = $2
 	    else
 		@arg_targets << ra
 	    end

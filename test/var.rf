@@ -1,0 +1,19 @@
+
+var "v1" => "default_1.t"
+var["v2"] = "default_2.t"
+
+task :default => [var[:v1], var[:v2]]
+
+file var[:v1] do |t|
+    sys.touch t.name
+end
+
+file var[:v2] do |t|
+    sys.touch t.name
+end
+
+task :clean do
+    sys.rm_f sys["*.t"]
+end
+
+# vim:ft=ruby

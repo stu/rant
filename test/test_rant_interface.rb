@@ -29,15 +29,16 @@ class TestRantInterface < Test::Unit::TestCase
     end
     def test_envvar_on_cmdline
 	@app = Rant::RantApp.new("VAR=VAL")
+	@app.context.var.env "VAR"
 	assert_equal(@app.run, 0)
 	assert_equal(ENV["VAR"], "VAL",
-	    "rant should set arguments of form VAR=VAL in ENV")
+	    "rant should set arguments of form VAR=VAL in var")
     end
     def test_envvar_on_cmdline_lc
 	@app = Rant::RantApp.new("var2=val2")
 	assert_equal(@app.run, 0)
-	assert_equal(ENV["var2"], "val2",
-	    "rant should set arguments of form var2=val2 in ENV")
+	assert_equal(@app.context.var["var2"], "val2",
+	    "rant should set arguments of form var2=val2 in var")
     end
     def test_opt_targets
 	@app = Rant::RantApp.new("--tasks")
