@@ -52,9 +52,9 @@ module Rant
 	    @run = false
 	end
 
-	# Returns the +name+ attribute.
+	# Returns the full name of this task.
 	def to_s
-	    name
+	    full_name
 	end
 
 	def project_subdir
@@ -757,15 +757,24 @@ module Rant
 		    rac.abort_at(ch, "Rule takes only one argument.")
 		end
 		arg = args.first
-		unless Hash === arg && arg.size == 1
-		    rac.abort_at(ch, "Rule argument " +
-			"has to be a hash with one argument.")
-		end
 		target = nil
 		src_arg = nil
-		arg.each_pair { |target, src_arg| }
-		src_arg = src_arg.to_str if src_arg.respond_to? :to_str
-		target = target.to_str if target.respond_to? :to_str
+		if Symbol === arg
+		    target = ".#{arg}"
+		elsif arg.respond_to? :to_str
+		    target = arg.to_str
+		elsif Regexp === arg
+		    target = arg
+		elsif Hash === arg && arg.size == 1
+		    arg.each_pair { |target, src_arg| }
+		    src_arg = src_arg.to_str if src_arg.respond_to? :to_str
+		    target = target.to_str if target.respond_to? :to_str
+		    src_arg = ".#{src_arg}" if Symbol === src_arg
+		    target = ".#{target}" if Symbol === target
+		else
+		    rac.abort_at(ch, "Rule argument " +
+			"has to be a hash with one key-value pair.")
+		end
 		esc_target = nil
 		target_rx = case target
 		when String
@@ -785,6 +794,7 @@ module Rant
 		    end
 		    lambda { |name| name.sub(/#{esc_target}$/, src_arg) }
 		when Proc: src_arg
+		when nil: lambda { |name| [] }
 		else
 		    rac.abort_at(ch, "rule source has to be " +
 			"String or Proc")

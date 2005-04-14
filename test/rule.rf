@@ -1,3 +1,13 @@
 gen Rule, '.o' => '.c' do |t|
     sys "cc -c -o #{t.name} #{t.source}"
 end
+
+gen Rule, :tt => :t do |t|
+    t.source =~ /\.t$/ or t.fail
+    sys.touch t.name
+end
+
+gen Rule, :t do |t|
+    test(?e, t.name) && t.fail
+    sys.touch t.name
+end

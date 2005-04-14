@@ -151,6 +151,7 @@ module Rant
 		vars.flatten.each { |var|
 		    vid = RantVar.valid_vid(var)
 		    cur_val = @store[vid]
+		    next if cur_val == @@env_ref
 		    ENV[vid] = cur_val unless cur_val.nil?
 		    @store[vid] = @@env_ref
 		}

@@ -14,6 +14,22 @@ class TestRule < Test::Unit::TestCase
     def teardown
 	FileUtils.rm_rf Dir["*.t*"]
     end
+    def test_target_and_source_as_symbol
+	FileUtils.touch "r.t"
+	FileUtils.touch "r2.t"
+	capture_std do
+	    assert_equal(0, Rant.run("-frule.rf", "r.tt", "r2.tt"))
+	end
+	assert(test(?f, "r.t"))
+	assert(test(?f, "r2.t"))
+    end
+    def test_rule_depends_on_rule
+	capture_std do
+	    assert_equal(0, Rant.run("-frule.rf", "r.tt", "r2.tt"))
+	end
+	assert(test(?f, "r.t"))
+	assert(test(?f, "r2.t"))
+    end
 if Rant::Env.find_bin("cc") && Rant::Env.find_bin("gcc")
     # Note: we are assuming that "cc" invokes "gcc"!
     def test_cc
