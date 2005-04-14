@@ -274,6 +274,7 @@ class Rant::RantApp
     # may be called through an instance_eval on this object (e.g. from
     # plugins).
     attr_reader :context
+    alias cx context
     # A hash with all tasks. For fast task lookup use this hash with
     # the taskname as key.
     attr_reader :tasks

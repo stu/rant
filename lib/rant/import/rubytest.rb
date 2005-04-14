@@ -31,6 +31,7 @@ module Rant
 	attr_accessor :test_dir
 
 	def initialize(app, cinf, name = :test, prerequisites = [], &block)
+	    @rac = app
 	    @name = name
 	    @pre = prerequisites
 	    @block = block
@@ -77,10 +78,10 @@ module Rant
 	def optlist
 	    options = (@options.is_a? Array) ?
 		@options.arglist : @options 
-	    ENV["TESTOPTS"] || options || ""
+	    @rac.cx.var["TESTOPTS"] || options || ""
 	end
 	def filelist
-	    return Dir[ENV['TEST']] if ENV['TEST']
+	    return Dir[@rac.cx.var['TEST']] if @rac.cx.var['TEST']
 	    filelist = @test_files || []
 	    if filelist.empty?
 		if @test_dirs && !@test_dirs.empty?
