@@ -32,8 +32,16 @@ module Rant
 	    yield self if block_given?
 	end
 
+	def dup
+	    c = super
+	    c.files = @files.dup
+	    c.actions = @actions.dup
+	    c.ignore_rx = @ignore_rx.dup if @ignore_rx
+	    c
+	end
+
 	protected
-	attr_reader :actions, :files
+	attr_accessor :actions, :files
 	attr_accessor :pending
 
 	public

@@ -152,6 +152,10 @@ class TestFileList < Test::Unit::TestCase
 	    l = l1 + l2
 	    assert(l.include?("1.ta"))
 	    assert_equal(3, l.size)
+	    assert(!l1.include?("1.tb"))
+	    assert_equal(2, l1.size)
+	    assert(!l2.include?("2.t"))
+	    assert_equal(1, l2.size)
 	end
     end
     def test_glob
