@@ -11,3 +11,17 @@ gen Rule, :t do |t|
     test(?e, t.name) && t.fail
     sys.touch t.name
 end
+
+src = lambda { |target| [target.sub_ext("t"), target.sub_ext("tt")] }
+gen Rule, :lt => src do |t|
+    t.prerequisites[0] =~ /\.t$/ or t.fail
+    t.prerequisites[1] =~ /\.tt$/ or t.fail
+    sys.touch t.name
+end
+
+src = lambda { |target| target + "t" }
+gen Rule, :rt => src do |t|
+    t.prerequisites[0] =~ /\.rtt$/ or t.fail
+    t.source =~ /\.rtt$/ or t.fail
+    sys.touch t.name
+end

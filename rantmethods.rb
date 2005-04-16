@@ -29,8 +29,8 @@ end
 
 file "bench-rant" do |t|
     c = 500
-    if ENV["TC"]
-	c = Integer(ENV["TC"])
+    if var["TC"]
+	c = Integer(var["TC"])
     end
     File.open(t.name, "w") { |f|
 	f.puts "$tc_run = 0"
@@ -54,8 +54,8 @@ end
 
 file "bench-depsearch" do |t|
     c = 500
-    if ENV["TC"]
-	c = Integer ENV["TC"]
+    if var["TC"]
+	c = Integer var["TC"]
     end
     File.open(t.name, "w") { |f|
 	f.puts "$tc_run = 0"

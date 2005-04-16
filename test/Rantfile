@@ -1,2 +1,18 @@
 
 task :do_nothing
+
+file "auto.rf" do |t|
+    open(t.name, "w") { |f|
+	f << <<-EOF
+	    task "auto.t" do |t|
+		sys.touch t.name
+	    end
+	EOF
+    }
+end
+
+source "auto.rf"
+
+task :clean do
+    sys.rm_f %w(auto.t auto.rf)
+end

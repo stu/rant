@@ -53,6 +53,16 @@ class Array
     end
 end
 
+class String
+    def sub_ext(ext, new_ext = nil)
+	if new_ext
+	    self.sub(/#{Regexp.escape ext}$/, new_ext)
+	else
+	    self.sub(/\.[^.]+$/, ".#{ext}")
+	end
+    end
+end
+
 module Rant::Lib
 
     # Parses one string (elem) as it occurs in the array
@@ -600,9 +610,11 @@ class Rant::RantApp
     def source rantfile
 	rf, is_new = rantfile_for_path(rantfile)
 	return false unless is_new
+	build rantfile
 	unless rf.exist?
-	    abort("source: No such file to load - #{rantfile}")
+	    abort("source: No such file - #{rantfile}")
 	end
+
 	load_file rf
 	true
     end
@@ -864,25 +876,28 @@ class Rant::RantApp
 	opt = {}
 	matching_tasks = 0
 	target_list.each do |target|
-	    matching_tasks = 0
-	    if @force_targets.include?(target)
-		opt[:force] = true
-		@force_targets.delete(target)
-	    end
 	    goto "#"
-	    resolve(target).each { |t|
-		matching_tasks += 1
-		begin
-		    t.invoke(opt)
-		rescue Rant::TaskFail => e
-		    # TODO: Report failed dependancy.
-		    abort("Task `#{e.tname}' fail.")
-		end
-	    }
-	    if matching_tasks == 0
+	    if build(target) == 0
 		abort("Don't know how to build `#{target}'.")
 	    end
 	end
+    end
+
+    # Invoke all tasks necessary to build +target+. Returns the number
+    # of tasks invoked.
+    def build target, opt = {}
+	opt[:force] = true if @force_targets.delete(target)
+	matching_tasks = 0
+	resolve(target).each { |t|
+	    matching_tasks += 1
+	    begin
+		t.invoke(opt)
+	    rescue Rant::TaskFail => e
+		# TODO: Report failed dependancy.
+		abort("Task `#{e.tname}' fail.")
+	    end
+	}
+	matching_tasks
     end
 
     def resolve task_name, rel_project_dir = @current_subdir
