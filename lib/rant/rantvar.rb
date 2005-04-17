@@ -11,7 +11,7 @@
 # application (Rant::RantApp#var).
 
 module Rant
-    VERSION	= '0.3.3'
+    VERSION	= '0.3.4'
 
     # Those are the filenames for rantfiles.
     # Case matters!

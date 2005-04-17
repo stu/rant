@@ -1,0 +1,55 @@
+
+== Advanced Rantfiles
+
+=== Sharing variables
+
+The +var+ command allows you to share variables between Rantfiles and
+to set variables from the commandline. Just use +var+ like a hash to
+set/get variables:
+    var[:manifest] = %w(README Rantfile myprog.rb lib)
+In this example, :manifest is the variable name, which has to be a
+string or symbol. Symbols as variable names are converted to strings.
+Now you can access the "manifest" variable in every Rantfile of your
+project:
+    file "MANIFEST" do |t|
+	open(t.name, "w") { |f|
+	    var[:manifest].each { |str| f.puts(str) }
+	}
+    end
+
+Arguments of the form VAR=VAL to the rant command are also available
+through +var+:
+    % cat Rantfile
+    task :show_test do
+	puts var[:test]
+    end
+    % rant
+    nil
+    % rant test=hello
+    hello
+
+For some variables it is necessary to make them available for
+subprocesses, like CC or CFLAGS:
+    var.env %w(CC CFLAGS)
+The variables CC and CFLAGS are available through +var+ as always and
+are mapped to environment variables.
+
+=== The "ignore" variable
+
+The "ignore" variable is a list of files/regular expressions which are
+ignored when selecting files with the +sys+ command:
+    var[:ignore] = ["CVS", /~$/]
+If you select files with <tt>sys[]</tt> now, the lists won't contain
+any directory/file named "CVS" or ending in ~. Examples would be:
+    CVS
+    src/CVS
+    src/CVS/xy
+    xy~
+    src/util.c~
+
+== See also
+
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

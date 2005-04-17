@@ -36,10 +36,10 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.3.2 of Rant. Most things
+This document was written for version 0.3.4 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
-documentation for your Rant version.
+documentation of your Rant version.
 
 == Support
 
@@ -103,18 +103,14 @@ is done, you have successfully installed Rant. Congratulations!
 First download the latest version of Rant from
 http://rubyforge.org/frs/?group_id=615. Choose the .zip or .tar.gz
 file, whatever you like, with the highest version number. Then unpack
-the archive, cd to the new directory and run the setup.rb script. This
-could look like:
+the archive, cd to the new directory and run the install.rb script.
+This could look like:
     % tar -xzf rant-<version>.tar.gz
     % cd rant-<version>
-    % ruby setup.rb
+    % ruby install.rb
 Depending on your Ruby installation, you'll probably need superuser
-privileges for the last command. If you wan't to install Rant in
-another location than the default, run
-    % ruby setup.rb --help
-which will show you a bunch of options for the installation.
-
-After performing the steps listed above, try to run
+privileges for the last command.
+Finally try to run
     % rant --version
 to verify Rant was installed correctly.
 
@@ -202,7 +198,8 @@ Rant was tested on:
     Linux		1.8.2
 			1.9
     MacOS X		1.8.2
-    WindowsXP		1.8.2 (OneClick Installer)
+    Windows XP		1.8.2 (OneClick Installer)
+    Windows 2000	1.8.2 (OneClick Installer)
 
 It *should* run on most platforms where Ruby runs, but you never
 know...

@@ -47,7 +47,7 @@ anything. To associate an action with the task, add a block:
 Put these 3 lines of code into a file called +Rantfile+ and run rant:
     % rant mytask
     Hello, mytask running.
-Note: you could have ommited the mytask argument to rant because it is
+Note: you could have omited the mytask argument to rant because it is
 the only task in the Rantfile.
 
 You can add a block parameter which will be a reference to the created
@@ -149,29 +149,31 @@ Only the tasks which have a description are listed.
 === The +sys+ function
 
 After using the +sys+ function quite often in the examples, I should
-explain it a little bit. The +sys+ function can be used in two ways:
+explain it a little bit. The +sys+ function can be used in three ways:
 
-The first form is with no arguments. It returns an object on which you
-can invoke the methods of the +FileUtils+ module that comes with ruby.
-Examples are:
-    sys.rm "file1", "file2", ... # remove files
-    sys.cp "src", "dest"	 # copy from "src" do "dest"
-    sys.mkdir "dir"		 # create directory "dir"
-For a list of all available methods invoke ri:
-    % ri FileUtils
-which will also show documentation for them.
-Additionally you have the following methos which are not in the
-FileUtils module:
-    sys.ruby "arg1", "arg2", ... # invoke the ruby interpreter
-    sys.safe_ln "src", "dest"	 # create a hardlink or fall back to
-				 # copying
-If you're tired of typing <tt>sys.</tt> all the time, you can include
-the Rant::Sys module in your Rantfile (though it is not recommended
-to do this):
-    include Rant::Sys
-    task :clean do
-	rm_f "myprog"
-    end
+1. <b>File system operations</b>
+
+   The first form is with no arguments. It returns an object on which you
+   can invoke the methods of the +FileUtils+ module that comes with ruby.
+   Examples are:
+	sys.rm "file1", "file2", ...	# remove files
+	sys.cp "src", "dest"	 	# copy from "src" do "dest"
+	sys.mkdir "dir"		 	# create directory "dir"
+   For a list of all available methods invoke ri:
+	% ri FileUtils
+   which will also show documentation for them.
+   Additionally you have the following methos which are not in the
+   FileUtils module:
+	sys.ruby "arg1", "arg2", ... # invoke the ruby interpreter
+	sys.safe_ln "src", "dest"    # create a hardlink or fall back to
+				     # copying
+   If you're tired of typing <tt>sys.</tt> all the time, you can include
+   the Rant::Sys module in your Rantfile (though it is not recommended
+   to do this):
+	include Rant::Sys
+	task :clean do
+	    rm_f "myprog"
+	end
 Then you can invoke these methods without the <tt>sys</tt> function.
 Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
 	into your Rantfile as this introduces many methods in the
@@ -179,6 +181,38 @@ Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
 	libraries.  Of course if you have just some tasks to remove
 	backup files in your home directory and do not use other Ruby
 	libraries in your Rantfile, it is no problem.
+
+2. <b>Running external commands</b>
+
+   Invoke the +sys+ function with a string as argument to run a shell:
+	sys "echo *.c"
+   will print a list of C files to stdout.
+
+   When given multiple arguments, +sys+ invokes the program named with
+   the first argument giving it the remaining arguments as arguments:
+	sys "echo", "*.c"
+   will print "*.c" to stdout.
+
+3. <b>Selecting files</b>
+
+   To select files with the help of glob patterns use +sys+ with the
+   <tt>[]</tt> operator:
+	file "program" => sys["*.o"]
+   The task "program" depends on all files ending in ".o". Rant uses
+   the Dir::glob method internally to resolve patterns, so you can
+   read the ri docs to get an overview:
+	ri Dir::glob
+
+   You can give more patterns:
+	c_files = sys["**/*.h", "**/*.c"]
+   gives a list of all files ending in ".h" or ".c" in the current
+   directory and all subdirectories.
+
+   The object returned by sys#[] _behaves_ like a list of string, so
+   it is possible to pass it to methods expecting an array. If you're
+   getting errors or experience strange behaviour convert the list
+   explicetely to an array:
+	sys.touch c_files.to_a
 
 === Generators
 
@@ -217,6 +251,44 @@ action needs to be run:
 The +act+ block of the "install" task will only be run if
 "InstalledFiles" doesn't exist. Of course you can add prerequisites
 like with any other task.
+
+=== Rules
+
+A Rule allows you to tell Rant how it should build files matching a
+common pattern, e.g. how to build files ending in ".o". A standard
+rule usage is to create C object files:
+    gen Rule, '.o' => '.c' do |t|
+	sys "cc -c -o #{t.name} #{t.source}"
+    end
+Assuming that we have the C source file util.c in the current
+directory:
+    % rant util.o
+    cc -c -o util.o util.c
+Because Rant didn't find a task for util.o, it looked for a matching
+rule and created a task for util.o.
+
+The first line above could also be written as:
+    gen Rule, :o => :c do |t|
+
+The +source+ method of the task object gives us the first dependency.
+So the following line has the same effect:
+	sys "cc -c -o #{t.name} #{t.prerequisites.first}"
+
+You can also refine the rule pattern by using a regular expression. To
+refine dependency selection give a block as source argument:
+    src = lambda { |target| [target.sub_ext("c"), target.sub_ext("h")] }
+    gen Rule, /^my_[^.]+\.o$/ => src do |t|
+	sys "cc -c -o #{t.name} #{t.source}"
+    end
+This rule generates a task for files beginning with "my_" and ending
+in ".o" (like "my_program.o"). The task has a file ending in ".c" and
+one ending in ".h" as dependencies (like "my_program.c" and
+"my_program.h") . Since <tt>t.source</tt> gives us the *first*
+dependency, the ".c" file will appear as argument to cc, but not the
+".h" file.
+
+The +sub_ext+ method of the +String+ class replaces anything after the
+last dot with the given string.
 
 === Importing additional generators
 
@@ -326,6 +398,8 @@ because it refers to a main Rantfile.
 
 == See also
 
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
 Rant Overview::
     README[link:files/README.html]
 Ruby project howto::

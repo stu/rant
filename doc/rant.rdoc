@@ -27,8 +27,9 @@ steps (roughly):
 
 1. Process commandline options and arguments.
    An option starts with two dashes or one for the single letter
-   equivalent. Arguments of the form <tt>VAR=VAL</tt> set environment
-   variables. All other arguments are names of tasks to be invoked.
+   equivalent. Arguments of the form <tt>VAR=VAL</tt> set variables
+   available in the Rantfile(s). All other arguments are names of
+   tasks to be invoked.
 2. Load Rantfiles in working directory. Rantfiles with the following
    names are recognized:
 	Rantfile
@@ -39,3 +40,10 @@ steps (roughly):
    was given on the commandline, a task called "default" will be
    invoked. If the "default" task doesn't exist, the first task will
    be invoked.
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]
+Independent from Rant? The <tt>rant-import</tt> command::
+    doc/rant-import.rdoc[link:files/doc/rant-import_rdoc.html]

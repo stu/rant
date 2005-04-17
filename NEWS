@@ -4,11 +4,23 @@
 == Rant 0.3.4
 
 Incompatible changes:
-* Replace
+* Arguments of the form VAR=VAL to rant no longer set environment
+  variables directly, they are available through +var+ now. Read
+  doc/advanced.rdoc[link:files/doc/advanced_rdoc.html] for more info.
+* Replace any
     include Sys
   with
     include Rant::Sys
-  in Rantfiles.
+  in Rantfiles. Or even better: don't include the +Sys+ module.
+
+New features:
+* Installation with install.rb installs .cmd files on Windows.
+  Read README[link:files/README.html]
+* Sharing variables between Rantfiles. Read 
+  doc/advanced.rdoc[link:files/doc/advanced_rdoc.html] for more info.
+* Selecting files with the +sys+ command.
+* Rules
+Read doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html] for docu.
 
 == Rant 0.3.2
 
@@ -18,7 +30,7 @@ New features:
 * Support splitting your buildfiles up and placing them into multiple
   directories with the +subdirs+ command. Please read
   doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html] for usage.
-  This is especially usefull for bigger projects.
+  This is especially useful for bigger projects.
 
 == Rant 0.3.0
 
