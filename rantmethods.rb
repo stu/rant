@@ -28,7 +28,7 @@ task :gem_attrs do
 end
 
 file "bench-rant" do |t|
-    c = 500
+    c = 2000
     if var["TC"]
 	c = Integer(var["TC"])
     end
@@ -53,7 +53,7 @@ file "bench-rant" do |t|
 end
 
 file "bench-depsearch" do |t|
-    c = 500
+    c = 2000
     if var["TC"]
 	c = Integer var["TC"]
     end

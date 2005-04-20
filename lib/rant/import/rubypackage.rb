@@ -437,4 +437,4 @@ class Rant::Generators::RubyPackage
 	}
     end
 
-end	# class Rant::RubyPackage
+end	# class Rant::Generators::RubyPackage

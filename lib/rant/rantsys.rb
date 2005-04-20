@@ -65,7 +65,7 @@ module Rant
 	    case other
 	    when Array
 		dup.files.concat(other)
-	    when self.class
+	    when FileList
 		c = other.dup
 		c.actions.concat(@actions)
 		c.files.concat(@files)
@@ -97,8 +97,9 @@ module Rant
 	    if @files.respond_to? sym
 		resolve if @pending
 		fh = @files.hash
-		@files.send(sym, *args, &block)
+		rv = @files.send(sym, *args, &block)
 		@pending = true unless @files.hash == fh
+		rv.equal?(@files) ? self : rv
 	    else
 		super
 	    end

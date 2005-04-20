@@ -195,7 +195,7 @@ module Rant
 	def run(first_arg=nil, *other_args)
 	    other_args = other_args.flatten
 	    args = first_arg.nil? ? ARGV.dup : ([first_arg] + other_args)
-	    if @@rac && !@@rac.ran?
+	    if @@rac && !@@rac.run?
 		@@rac.args.replace(args.flatten)
 		@@rac.run
 	    else
@@ -305,11 +305,12 @@ class Rant::RantApp
 	@opts = {
 	    :verbose	=> 0,
 	    :quiet	=> false,
+	    :directory	=> "",
 	}
 	@arg_rantfiles = []	# rantfiles given in args
 	@arg_targets = []	# targets given in args
 	@force_targets = []
-	@ran = false
+	@run = false
 	@done = false
 	@plugins = []
 	@var = Rant::RantVar::Space.new
@@ -338,14 +339,18 @@ class Rant::RantApp
     end
 
     def rootdir
-	od = @opts[:directory]
-	od ? od.dup : ""
+	#od = @opts[:directory]
+	#od ? od.dup : ""
+	@opts[:directory]
     end
 
     def rootdir=(newdir)
-	if @ran
+	if @run
 	    raise "rootdir of rant application can't " +
 		"be changed after calling `run'"
+	end
+	unless String === newdir
+	    raise "rootdir has to be a String"
 	end
 	@opts[:directory] = newdir.dup
     end
@@ -399,8 +404,8 @@ class Rant::RantApp
     end
     ##################################################################
 
-    def ran?
-	@ran
+    def run?
+	@run
     end
 
     def done?
@@ -409,14 +414,14 @@ class Rant::RantApp
 
     # Returns 0 on success and 1 on failure.
     def run
-	@ran = true
+	@run = true
 	# remind pwd
 	@orig_pwd = Dir.pwd
 	# Process commandline.
 	process_args
 	# Set pwd.
 	opts_dir = @opts[:directory]
-	if opts_dir
+	if !(opts_dir.empty? || opts_dir.nil?)
 	    opts_dir = File.expand_path(opts_dir)
 	    unless test(?d, opts_dir)
 		abort("No such directory - #{opts_dir}")
@@ -704,12 +709,11 @@ class Rant::RantApp
 	raise Rant::RantAbortException
     end
 
-    def help
+    def show_help
 	puts "rant [-f RANTFILE] [OPTIONS] tasks..."
 	puts
 	puts "Options are:"
 	print option_listing(OPTIONS)
-	raise Rant::RantDoneException
     end
 
     def show_descriptions
@@ -899,6 +903,7 @@ class Rant::RantApp
 	}
 	matching_tasks
     end
+    public :build
 
     def resolve task_name, rel_project_dir = @current_subdir
 	#select_tasks_by_name task_name, rel_project_dir
@@ -1058,8 +1063,11 @@ class Rant::RantApp
 		$stdout.puts "rant #{Rant::VERSION}"
 		raise Rant::RantDoneException
 	    when "--help"
-		help
+		show_help
+		raise Rant::RantDoneException
 	    when "--directory"
+		# take care: we bypass the checks of self.rootdir=
+		# because @run is true
 		@opts[:directory] = value
 	    when "--rantfile"
 		@arg_rantfiles << value

@@ -221,4 +221,21 @@ class TestFileList < Test::Unit::TestCase
     ensure
 	FileUtils.rm_rf "fl.t"
     end
+    def test_return_from_array_method
+	touch_temp "a.t" do
+	    l = fl("a.t", "a.t")
+	    ul = l.uniq
+	    assert(Array === ul)
+	    assert_equal(1, ul.size)
+	end
+    end
+    def test_return_self_from_array_method
+	touch_temp "a.t", "b.t" do
+	    l = fl("*.t")
+	    sl = l.sort!
+	    assert_same(l, sl)
+	    assert_equal("a.t", l.first)
+	    assert_equal("b.t", l[1])
+	end
+    end
 end
