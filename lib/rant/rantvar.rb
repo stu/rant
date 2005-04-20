@@ -10,8 +10,13 @@
 # This file provides support for the +var+ attribute of the Rant
 # application (Rant::RantApp#var).
 
+# Most constants (classes, modules etc.) of Rant live in this module,
+# thus it acts as a namespace.
+#
+# If you're looking for general info about Rant, read the
+# README[link:files/README.html].
 module Rant
-    VERSION	= '0.3.4'
+    VERSION	= '0.3.5'
 
     # Those are the filenames for rantfiles.
     # Case matters!

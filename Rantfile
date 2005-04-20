@@ -9,6 +9,7 @@ lib_files = sys["lib/**/*.rb"]
 dist_files = sys["{bin,lib,test,doc}/**/*"].shun("html", "coverage") +
 	sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
 bin_files = sys["bin/*"]
+rdoc_opts = %w(-S -c UTF-8 --title Rant --main README)
 
 gen RubyPackage, "rant" do |t|
     t.version = `#{Env::RUBY} run_rant --version`.split[1]
@@ -19,18 +20,20 @@ gen RubyPackage, "rant" do |t|
     t.author = "Stefan Lang"
     t.email = "langstefan@gmx.at"
     t.rubyforge_project = "make"
-    t.gem_extra_rdoc_files = sys["**/README", "NEWS"].no_dir("pkg").no_dir("test") + sys["doc/**/*.rdoc"]
     t.homepage = "http://make.rubyforge.org"
+    t.gem_extra_rdoc_files = sys["**/README", "NEWS"].no_dir("pkg").no_dir("test") + sys["doc/**/*.rdoc"]
+    t.gem_rdoc_options = rdoc_opts
     desc "Create packages for distribution."
     t.package_task
 end
 
 desc "Generate documentation."
 gen RubyDoc do |g|
+    g.verbose = true
     g.dir = "doc/html"
-    g.files.concat FileList["NEWS", "**/README"].no_dir("pkg").no_dir("test")
-    g.files.concat FileList["doc/**/*.rdoc"]
-    g.opts = %w(-S -c UTF-8 --title Rant --main README)
+    g.files.concat sys["NEWS", "**/README"].no_dir("pkg").no_dir("test")
+    g.files.concat sys["doc/**/*.rdoc"]
+    g.opts = rdoc_opts + %w(-T doc/jamis.rb)
 end
 
 desc "Run basic tests."
