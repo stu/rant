@@ -99,4 +99,107 @@ class TestVar < Test::Unit::TestCase
 	    assert_equal(0, Rant::RantApp.new(%w(-fvar.rf clean)).run)
 	end
     end
+    def test_is_string
+	@rac.var :s, :String
+	assert_equal("", @rac.var["s"])
+	@rac.var[:s] = "abc"
+	assert_equal("abc", @rac.var["s"])
+	obj = Object.new
+	def obj.to_str
+	    "obj"
+	end
+	assert_nothing_raised { @rac.var[:s] = obj }
+	assert_equal("obj", @rac.var[:s])
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:s] = 3
+	}
+	assert_equal("obj", @rac.var[:s])
+    end
+    def test_is_integer
+	@rac.var(:count => 10).is :Integer
+	assert_equal(10, @rac.var[:count])
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:count] = "no_integer"
+	}
+	assert_equal(10, @rac.var[:count])
+    end
+    def test_is_integer_in_range
+	@rac.var(:count => 10).is 0..20
+	assert_equal(10, @rac.var[:count])
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:count] = "no_integer"
+	}
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:count] = 21
+	}
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:count] = -1
+	}
+	assert_equal(10, @rac.var[:count])
+	@rac.var[:count] = "15"
+	assert_equal(15, @rac.var(:count))
+    end
+    def test_restrict
+	assert_equal(nil, @rac.var[:num])
+	@rac.var.restrict :num, :Float, -1.1..2.0
+	assert_equal(-1.1, @rac.var[:num])
+	@rac.var[:num] = "1.5"
+	assert_equal(1.5, @rac.var[:num])
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:num] = -1.2
+	}
+	assert_equal(1.5, @rac.var[:num])
+    end
+    def test_restrict_cmd
+	@rac.args.replace %w(-fvar.rf show_count)
+	out, err = capture_std { @rac.run }
+	assert_match(/count 1/, out)
+    end
+    def test_restrict_cmd_change
+	@rac.args.replace %w(-fvar.rf count=5 show_count)
+	out, err = capture_std { @rac.run }
+	assert_match(/count 5/, out)
+    end
+    def test_restrict_cmd_error
+	@rac.args.replace %w(-fvar.rf count=0 show_count)
+	out, err = capture_std {
+	    assert_equal(1, @rac.run)
+	}
+	assert_match(/[ERROR]/, err)
+    end
+    def test_float_range_cmd
+	@rac.args.replace %w(-fvar.rf num=5.0 show_num)
+	out, err = capture_std do
+	    assert_equal(0, @rac.run)
+	end
+	assert_match(/num 5.0/, out)
+    end
+    def test_float_range_cmd_invalid
+	@rac.args.replace %w(-fvar.rf num=0.0 show_num)
+	out, err = capture_std do
+	    assert_equal(1, @rac.run)
+	end
+	assert_match(/[ERROR]/, err)
+    end
+    def test_float_range_default
+	@rac.args.replace %w(-fvar.rf show_num)
+	out, err = capture_std do
+	    assert_equal(0, @rac.run)
+	end
+	assert_match(/num 1.1/, out)
+    end
+    def test_env_to_string
+	@rac.var "RT_TO_S", :ToString
+	@rac.var.env "RT_TO_S"
+	assert_equal(ENV["RT_TO_S"], "")
+	assert_equal(@rac.var["RT_TO_S"], "")
+	assert_nothing_raised {
+	    @rac.var[:RT_TO_S] = "abc"
+	    assert_equal("abc", ENV["RT_TO_S"])
+	    obj = Object.new
+	    def obj.to_s; "obj"; end
+	    @rac.var[:RT_TO_S] = obj
+	    assert_equal("obj", ENV["RT_TO_S"])
+	}
+    end
 end

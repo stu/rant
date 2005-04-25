@@ -1,6 +1,8 @@
 
 var "v1" => "default_1.t"
 var["v2"] = "default_2.t"
+var.restrict :count, :Integer, 1..10
+var :num, 1.1 .. 11.11
 
 task :default => [var[:v1], var[:v2]]
 
@@ -10,6 +12,14 @@ end
 
 file var[:v2] do |t|
     sys.touch t.name
+end
+
+task :show_count do |t|
+    puts "count #{var :count}"
+end
+
+task :show_num do
+    puts "num #{var :num}"
 end
 
 task :clean do

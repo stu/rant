@@ -72,6 +72,20 @@ module Rant
 	    end
 	end
 
+	class NotAConstraintFactoryError < Error
+	    attr_reader :obj
+	    def initialize(obj, msg = nil)
+		@msg = msg
+		@obj = obj
+	    end
+	    def message
+		# TODO: handle @msg
+		obj_desc = @obj.inspect
+		obj_desc[7..-1] = "..." if obj_desc.length > 10
+		"#{obj_desc} is not a valid constraint factory"
+	    end
+	end
+
 	class InvalidVidError < Error
 	    def initialize(vid, msg = nil)
 		@msg = msg
@@ -100,6 +114,8 @@ module Rant
 		@store = {}
 		# holds constraints for values in @store
 		@constraints = {}
+		# set by default query
+		@current_var = nil
 	    end
 
 	    def query(*args, &block)
@@ -110,25 +126,57 @@ module Rant
 		when 1
 		    arg = args.first
 		    if Hash === arg
-			init_all arg
+			if arg.size == 1
+			    arg.each { |k,v|
+				@current_var = k
+				self[k] = v if self[k].nil?
+			    }
+			    self
+			else
+			    init_all arg
+			end
 		    else
 			self[arg]
 		    end
 		when 2..3
-		    vid, constraint, val = *args
-		    begin
-			constraint =
-			    Constraints.const_get(constraint).new
-		    rescue
-			raise QueryError,
-			    "no such constraint: #{constraint}", caller
-		    end
-		    constrain vid, constraint
-		    self[vid] = val if val
+		    @current_var, cf, val = *args
+		    self.is cf
+		    self[@current_var] = val if val
 		else
 		    raise QueryError, "to many arguments"
 		end
 	    end
+
+	    def is ct, *ct_args
+		constrain @current_var,
+		    get_factory(ct).rant_constraint(*ct_args)
+		self
+	    end
+
+	    def restrict vid, ct, *ct_args
+		if vid.respond_to? :to_ary
+		    vid.to_ary.each { |v| restrict(v, ct, *ct_args) }
+		else
+		    constrain vid,
+			get_factory(ct).rant_constraint(*ct_args)
+		end
+		self
+	    end
+
+	    def get_factory id
+		if String === id || Symbol === id
+		    begin
+			id = Constraints.const_get(id)
+		    rescue
+			raise NotAConstraintFactoryError.new(ct), caller
+		    end
+		end
+		unless id.respond_to? :rant_constraint
+		    raise NotAConstraintFactoryError.new(id), caller
+		end
+		id
+	    end
+	    private :get_factory
 
 	    # Get var with name +vid+.
 	    def [](vid)
@@ -216,8 +264,64 @@ module Rant
 
 	module Constraints
 
+	    class String
+		include Constraint
+
+		class << self
+		    alias rant_constraint new
+		end
+
+		def filter(val)
+		    if val.respond_to? :to_str
+			val.to_str
+		    elsif Symbol === val
+			val.to_s
+		    else
+			raise ConstraintError.new(self, val)
+		    end
+		end
+		def default
+		    ""
+		end
+		def to_s
+		    "string"
+		end
+	    end
+
+	    class ToString < String
+		class << self
+		    alias rant_constraint new
+		end
+		def filter(val)
+		    val.to_s
+		end
+	    end
+
+	    class ::Range
+		def rant_constraint
+		    case first
+		    when ::Integer
+			IntegerInRange.new(self)
+		    when ::Float
+			FloatInRange.new(self)
+		    else
+			raise NotAConstraintFactoryError.new(self)
+		    end
+		end
+	    end
+
 	    class Integer
 		include Constraint
+
+		class << self
+		    def rant_constraint(range = nil)
+			if range
+			    IntegerInRange.new(range)
+			else
+			    self.new
+			end
+		    end
+		end
 
 		def filter(val)
 		    Kernel::Integer(val)
@@ -232,8 +336,78 @@ module Rant
 		end
 	    end
 
+	    class IntegerInRange < Integer
+		def initialize(range)
+		    @range = range
+		end
+		def filter(val)
+		    i = super
+		    if @range === i
+			i
+		    else
+			raise ConstraintError.new(self, val)
+		    end
+		end
+		def default
+		    @range.min
+		end
+		def to_s
+		    super + " #{@range}"
+		end
+	    end
+
+	    class Float
+		include Constraint
+
+		class << self
+		    def rant_constraint(range = nil)
+			if range
+			    FloatInRange.new(range)
+			else
+			    self.new
+			end
+		    end
+		end
+
+		def filter(val)
+		    Kernel::Float(val)
+		rescue
+		    raise ConstraintError.new(self, val)
+		end
+		def default
+		    0.0
+		end
+		def to_s
+		    "float"
+		end
+	    end
+
+	    class FloatInRange < Float
+		def initialize(range)
+		    @range = range
+		end
+		def filter(val)
+		    i = super
+		    if @range === i
+			i
+		    else
+			raise ConstraintError.new(self, val)
+		    end
+		end
+		def default
+		    @range.first
+		end
+		def to_s
+		    super + " #{@range}"
+		end
+	    end
+
 	    class AutoList
 		include Constraint
+
+		class << self
+		    alias rant_constraint new
+		end
 
 		def filter(val)
 		    if val.respond_to? :to_ary
@@ -254,6 +428,10 @@ module Rant
 
 	    class List
 		include Constraint
+
+		class << self
+		    alias rant_constraint new
+		end
 
 		def filter(val)
 		    if val.respond_to? :to_ary

@@ -135,10 +135,4 @@ if Env.on_windows?
     }
 end
 
-# for quich rant testing
-#plugin :Configure
-
-# mainly for rant testing
-#source 'rantmethods.rb'
-
 # vim:ft=ruby:
