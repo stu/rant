@@ -22,6 +22,19 @@ task :show_num do
     puts "num #{var :num}"
 end
 
+task :source_err do
+    source "source_err.rf.t"
+end
+
+file "source_err.rf.t" do |t|
+    open(t.name, "w") { |f|
+	f << <<-EOF
+
+	var[:count] = 11
+	EOF
+    }
+end
+
 task :clean do
     sys.rm_f sys["*.t"]
 end

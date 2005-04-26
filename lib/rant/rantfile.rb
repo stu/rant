@@ -5,13 +5,18 @@ module Rant
     class TaskFail < StandardError
 	def initialize(*args)
 	    @task = args.shift
-	    super(args.shift)
+	    #super(args.shift)
+	    @orig = args.shift
 	end
 	def task
 	    @task
 	end
 	def tname
 	    @task ? @task.name : nil
+	end
+	# the exception which caused the task to fail
+	def orig
+	    @orig
 	end
     end
 
@@ -103,8 +108,10 @@ module Rant
 	    end
 	end
 
-	def fail msg = nil
-	    raise TaskFail.new(self), msg, caller
+	# Cause task to fail. Usually called from inside the block
+	# given to +act+.
+	def fail msg = nil, orig = nil
+	    raise TaskFail.new(self, orig), msg, caller
 	end
 
 	def run
@@ -246,12 +253,6 @@ module Rant
 	    @block = block
 	end
 
-	# Cause task to fail. Usually called from inside the block
-	# given to +act+.
-	def fail msg = nil
-	    raise TaskFail.new(self), msg, caller
-	end
-
 	def needed?
 	    return false if done?
 	    return true if @needed.nil?
@@ -279,10 +280,10 @@ module Rant
 		end
 	    rescue CommandError => e
 		err_msg e.message if app[:err_commands]
-		self.fail
+		self.fail(nil, e)
 	    rescue SystemCallError => e
 		err_msg e.message
-		self.fail
+		self.fail(nil, e)
 	    ensure
 		@run = false
 	    end
@@ -421,16 +422,7 @@ module Rant
 	    update
 	rescue StandardError => e
 	    @success = false
-	    case e
-	    when TaskFail: raise
-	    when CommandError
-		err_msg e.message if app[:err_commands]
-	    when SystemCallError
-		err_msg e.message
-	    else
-		err_msg e.message, e.backtrace
-	    end
-	    self.fail
+	    self.fail(nil, e)
 	end
 	private :internal_invoke
 

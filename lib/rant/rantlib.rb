@@ -32,9 +32,10 @@ class Array
     end
 
     def shell_pathes
+	entry = nil
 	if ::Rant::Env.on_windows?
 	    self.collect { |entry|
-		entry = entry.tr("/", "\\")
+		entry = entry.to_s.tr("/", "\\")
 		if entry.include? ' '
 		    '"' + entry + '"'
 		else
@@ -43,6 +44,7 @@ class Array
 	    }
 	else
 	    self.collect { |entry|
+		entry = entry.to_s
 		if entry.include? ' '
 		    "'" + entry + "'"
 		else
@@ -456,7 +458,12 @@ class Rant::RantApp
 	$stderr.puts "rant aborted!"
 	return 1
     rescue Rant::RantError
-	err_msg $!.message, $!.backtrace[0..4]
+	ch = get_ch_from_backtrace($!.backtrace)
+	if ch
+	    err_msg(pos_text(ch[:file], ch[:ln]), $!.message)
+	else
+	    err_msg $!.message, $!.backtrace[0..4]
+	end
 	$stderr.puts "rant aborted!"
 	return 1
     rescue Rant::RantAbortException
@@ -897,8 +904,8 @@ class Rant::RantApp
 	    begin
 		t.invoke(opt)
 	    rescue Rant::TaskFail => e
-		# TODO: Report failed dependancy.
-		abort("Task `#{e.tname}' fail.")
+		err_task_fail(e)
+		abort
 	    end
 	}
 	matching_tasks
@@ -1230,6 +1237,44 @@ class Rant::RantApp
 	    @rantfiles << file
 	    [file, true]
 	end
+    end
+
+    # Returns the usual hash with :file and :ln as keys for the first
+    # element in backtrace which comes from an Rantfile, or nil if no
+    # Rantfile is involved.
+    #
+    # Note that this method is very time consuming!
+    def get_ch_from_backtrace(backtrace)
+	backtrace.each { |clr|
+	    ch = ::Rant::Lib.parse_caller_elem(clr)
+	    return ch if @rantfiles.any? { |rf| rf.path == ch[:file] }
+	}
+	nil
+    end
+
+    def err_task_fail(e)
+	#("Task `#{e.tname}' fail.")
+	msg = []
+	t_msg = ["Task `#{e.tname}' fail."]
+	orig = e
+	loop { orig = orig.orig; break unless Rant::TaskFail === orig }
+	unless orig == e
+	    if Rant::RantError === orig
+		ch = get_ch_from_backtrace(orig.backtrace)
+		if ch
+		    msg << pos_text(ch[:file], ch[:ln])
+		    msg << orig.message
+		else
+		    msg << orig.message << orig.backtrace[0..4]
+		end
+	    elsif Rant::CommandError === orig
+		msg << orig.message if @opts[:err_commands]
+	    else
+		msg << orig.message
+	    end
+	end
+	err_msg msg unless msg.empty?
+	err_msg t_msg
     end
 
     # Just ensure that Rant.rac holds an RantApp after loading

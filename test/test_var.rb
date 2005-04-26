@@ -202,4 +202,70 @@ class TestVar < Test::Unit::TestCase
 	    assert_equal("obj", ENV["RT_TO_S"])
 	}
     end
+    def test_bool
+	@rac.var "true?", :Bool
+	assert_equal(false, @rac.var[:true?])
+	assert_nothing_raised {
+	    @rac.var[:true?] = true
+	    assert_equal(true, @rac.var[:true?])
+	    @rac.var[:true?] = false
+	    assert_equal(false, @rac.var[:true?])
+	    @rac.var[:true?] = 1
+	    assert_equal(true, @rac.var[:true?])
+	    @rac.var[:true?] = 0
+	    assert_equal(false, @rac.var[:true?])
+	    @rac.var[:true?] = :on
+	    assert_equal(true, @rac.var[:true?])
+	    @rac.var[:true?] = :off
+	    assert_equal(false, @rac.var[:true?])
+	    @rac.var[:true?] = "yes"
+	    assert_equal(true, @rac.var[:true?])
+	    @rac.var[:true?] = "no"
+	    assert_equal(false, @rac.var[:true?])
+	    @rac.var[:true?] = "true"
+	    assert_equal(true, @rac.var[:true?])
+	    @rac.var[:true?] = "false"
+	    assert_equal(false, @rac.var[:true?])
+	    @rac.var[:true?] = "y"
+	    assert_equal(true, @rac.var[:true?])
+	    @rac.var[:true?] = "n"
+	    assert_equal(false, @rac.var[:true?])
+	    @rac.var[:true?] = nil
+	    assert_equal(false, @rac.var[:true?])
+	}
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:true?] = "abc"
+	}
+	assert_equal(false, @rac.var[:true?])
+    end
+    def test_bool_shortcut_true
+	@rac.var :bs, true
+	assert_equal(true, @rac.var[:bs])
+	@rac.var[:bs] = false
+	assert_equal(false, @rac.var[:bs])
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:bs] = "abc"
+	}
+	assert_equal(false, @rac.var[:bs])
+    end
+    def test_bool_shortcut_false
+	@rac.var :bs, false
+	assert_equal(false, @rac.var[:bs])
+	@rac.var[:bs] = "1"
+	assert_equal(true, @rac.var[:bs])
+	assert_raise(::Rant::RantVar::ConstraintError) {
+	    @rac.var[:bs] = "abc"
+	}
+	assert_equal(true, @rac.var[:bs])
+    end
+    def test_violation_message
+	@rac.args.replace %w(-fvar.rf source_err)
+	out, err = capture_std do
+	    assert_equal(1, @rac.run)
+	end
+	assert_match(
+	    /source_err\.rf\.t.+2.*\n.*11.+constraint.+integer/i, err)
+    ensure
+	assert_equal(0, Rant::RantApp.new("-fvar.rf", "clean", "-q").run)
+    end
 end
