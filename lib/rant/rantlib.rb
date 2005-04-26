@@ -357,7 +357,7 @@ class Rant::RantApp
 	@opts[:directory] = newdir.dup
     end
 
-    ### experimental support for subdirectories ######################
+    ### support for subdirectories ###################################
     def expand_project_path(path)
 	expand_path(@current_subdir, path)
     end
@@ -403,6 +403,14 @@ class Rant::RantApp
     def goto_project_dir(dir)
 	# TODO: optimize
 	goto "##{dir}"
+    end
+    # Execute the give block in project directory dir.
+    def in_project_dir(dir)
+	prev_subdir = @current_subdir
+	goto_project_dir(dir)
+	yield
+    ensure
+	goto_project_dir(prev_subdir)
     end
     ##################################################################
 
@@ -540,6 +548,7 @@ class Rant::RantApp
 	    unless @imports.include? arg
 		unless Rant::CODE_IMPORTS.include? arg
 		    begin
+			msg 2, "import #{arg}"
 			require "rant/import/#{arg}"
 		    rescue LoadError => e
 			abort(pos_text(ch[:file], ch[:ln]),

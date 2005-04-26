@@ -251,6 +251,10 @@ module Rant
 		end
 	    end
 
+	    def has_var?(vid)
+		!self[vid].nil?
+	    end
+
 	end	# class Space
 
 	module Constraint

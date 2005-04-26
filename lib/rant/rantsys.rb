@@ -119,7 +119,7 @@ module Rant
 	end
 
 	def include(*patterns)
-	    patterns.each { |pat|
+	    patterns.flatten.each { |pat|
 		@actions << [:apply_include, pat]
 	    }
 	    @pending = true
@@ -308,8 +308,11 @@ module Rant
 
     class RacFileList < FileList
 
+	attr_reader :subdir
+
 	def initialize(rac, *patterns)
 	    @rac = rac
+	    @subdir = @rac.current_subdir
 	    super(*patterns)
 	    @ignore_hash = nil
 	    update_ignore_rx
@@ -322,6 +325,19 @@ module Rant
 	    @ignore_rx
 	end
 
+	alias filelist_resolve resolve
+	def resolve
+	    @rac.in_project_dir(@subdir) { filelist_resolve }
+	end
+
+	def each &block
+	    resolve if @pending
+	    @rac.in_project_dir(@subdir) {
+		filelist_resolve
+		@files.each(&block)
+	    }
+	end
+
 	private
 	def update_ignore_rx
 	    ri = @rac.var[:ignore]
@@ -332,7 +348,44 @@ module Rant
 		@ignore_hash = rh
 	    end
 	end
-    end
+    end	# class RacFileList
+
+    class MultiFileList
+
+	attr_reader :cur_list
+	
+	def initialize(rac)
+	    @rac = rac
+	    @cur_list = RacFileList.new(@rac)
+	    @lists = [@cur_list]
+	end
+
+	def each_entry &block
+	    @lists.each { |list|
+		list.each &block
+	    }
+	end
+
+	def add(filelist)
+	    # TODO: validate filelist
+	    @cur_list = filelist
+	    @lists << filelist
+	    self
+	end
+
+	def method_missing(sym, *args, &block)
+	    if @cur_list && @cur_list.respond_to?(sym)
+		if @cur_list.subdir == @rac.current_subdir
+		    @cur_list.send(sym, *args, &block)
+		else
+		    add(RacFileList.new(@rac))
+		    @cur_list.send(sym, *args, &block)
+		end
+	    else
+		super
+	    end
+	end
+    end	# class MultiFileList
 
     class CommandError < StandardError
 	attr_reader :cmd
