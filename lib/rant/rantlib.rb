@@ -459,6 +459,7 @@ class Rant::RantApp
     rescue Rant::RantDoneException
 	@done = true
 	# Notify plugins
+	goto "#"
 	@plugins.each { |plugin| plugin.rant_done }
 	return 0
     rescue Rant::RantfileException

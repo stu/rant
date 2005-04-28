@@ -733,6 +733,7 @@ module Rant
 	    @app.sys.mkdir @name unless @isdir
 	    if @block
 		@block.arity == 0 ? @block.call : @block[self]
+		goto_task_home
 		@app.sys.touch @name
 	    end
 	end

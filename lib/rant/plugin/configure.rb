@@ -208,6 +208,7 @@ module Rant::Plugin
 		modes = [:guess]
 	    end
 	    @no_action = @no_action_list.include? @app.cmd_targets.first
+	    @no_action ||= @app[:targets]
 	    unless @no_action
 		init_config modes
 		@configured = true

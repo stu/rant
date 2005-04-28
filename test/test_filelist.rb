@@ -238,4 +238,33 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal("b.t", l[1])
 	end
     end
+    def test_sys_with_cd
+	FileUtils.mkdir "sub.t"
+	open("sys_cd.rf.t", "w") { |f|
+	    f << <<-EOF
+	    file "sub.t/a.t" => "sub.t/b.t" do |t|
+		sys.touch t.name
+	    end
+	    file "sub.t/b.t" do |t|
+		sys.touch t.name
+	    end
+	    task :clean do
+		sys.cd "sub.t"
+		sys.rm_f sys["*.t"]
+	    end
+	    EOF
+	}
+	capture_std do
+	    Rant::RantApp.new("-fsys_cd.rf.t", "sub.t/a.t").run
+	end
+	assert(test(?f, "sub.t/a.t"))
+	assert(test(?f, "sub.t/b.t"))
+	capture_std do
+	    Rant::RantApp.new("-fsys_cd.rf.t", "clean").run
+	end
+	assert(!test(?e, "sub.t/a.t"))
+	assert(!test(?e, "sub.t/b.t"))
+    ensure
+	FileUtils.rm_rf %w(sub.t sys_cd.rf.t)
+    end
 end

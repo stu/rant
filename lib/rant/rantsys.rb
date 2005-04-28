@@ -309,10 +309,12 @@ module Rant
     class RacFileList < FileList
 
 	attr_reader :subdir
+	attr_reader :basedir
 
 	def initialize(rac, *patterns)
 	    @rac = rac
 	    @subdir = @rac.current_subdir
+	    @basedir = Dir.pwd
 	    super(*patterns)
 	    @ignore_hash = nil
 	    update_ignore_rx
@@ -327,15 +329,17 @@ module Rant
 
 	alias filelist_resolve resolve
 	def resolve
-	    @rac.in_project_dir(@subdir) { filelist_resolve }
+	    Dir.chdir(@basedir) { filelist_resolve }
 	end
 
 	def each &block
+	    old_pwd = Dir.pwd
 	    resolve if @pending
-	    @rac.in_project_dir(@subdir) {
-		filelist_resolve
-		@files.each(&block)
-	    }
+	    Dir.chdir(@basedir)
+	    filelist_resolve
+	    @files.each(&block)
+	ensure
+	    Dir.chdir(old_pwd)
 	end
 
 	private
