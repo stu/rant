@@ -267,4 +267,16 @@ class TestFileList < Test::Unit::TestCase
     ensure
 	FileUtils.rm_rf %w(sub.t sys_cd.rf.t)
     end
+    def test_sys_select
+	cx = Rant::RantApp.new.cx
+	touch_temp %w(a.t b.t) do
+	    l1 = cx.sys["*.t"]
+	    l2 = l1.select { |f| f =~ /^b/ }
+	    assert_equal(2, l1.size)
+	    assert(l1.include("a.t"))
+	    assert(l1.include("b.t"))
+	    assert_equal(1, l2.size)
+	    assert(l1.include("b.t"))
+	end
+    end
 end

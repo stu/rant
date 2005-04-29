@@ -744,7 +744,8 @@ module Rant
 	Directory = ::Rant::DirTask
 
 	class Rule
-	    # TODO
+	    # Generate a rule by installing an at_resolve hook for
+	    # +rac+.
 	    def self.rant_generate(rac, ch, args, &block)
 		unless args.size == 1
 		    rac.abort_at(ch, "Rule takes only one argument.")

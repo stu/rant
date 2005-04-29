@@ -202,6 +202,17 @@ module Rant
 	end
 	private :mk_all_rx
 
+	def select &block
+	    d = dup
+	    d.actions << [:apply_select, block]
+	    d
+	end
+
+	def apply_select blk
+	    @files = @files.select &blk
+	end
+	private :apply_select
+
 	# Remove all entries which contain a directory with the
 	# given name.
 	# If no argument or +nil+ given, remove all directories.
