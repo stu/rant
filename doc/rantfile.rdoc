@@ -26,9 +26,9 @@ methods with the Rant application:
 		"rubypackage"</tt> first.
 +plugin+::	Instantiate a plugin. Example: <tt>plugin
 		:Configure</tt> instantiates the Configure plugin.
-+sys+::		When given argument(s), runs an external program.
-		Otherwise you can call methods to interact with the OS
-		on it.
++sys+::		Run external commands or call portable file system
+		manipulation methods (copy files, unlink files,
+		install, ...).
 +source+::	Takes a filename as argument and causes Rant to read
 		it in as Rantfile.
 +subdirs+::	Takes a list of subdirectories in which Rant should
@@ -203,23 +203,31 @@ Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
    read the ri docs to get an overview:
 	ri Dir::glob
 
+   From now on we'll call <tt>sys[...]</tt> the <it>glob
+   operator</it>.
+
    You can give more patterns:
 	c_files = sys["**/*.h", "**/*.c"]
    gives a list of all files ending in ".h" or ".c" in the current
    directory and all subdirectories.
 
-   The object returned by sys#[] _behaves_ like a list of string, so
-   it is possible to pass it to methods expecting an array. If you're
-   getting errors or experience strange behaviour convert the list
-   explicetely to an array:
+   The object returned by the glob operator _behaves_ like a list of
+   string, so it is possible to pass it to methods expecting an array.
+   If you're getting errors or experience strange behaviour convert
+   the list explicetely to an array:
 	sys.touch c_files.to_a
 
 === Generators
 
 The *gen* function takes a generator which usually creates one or more
-tasks for you. Currently are two generators immediately available:
+tasks for you. The following list of generators is immediately
+available:
 +Directory+::	Create directories.
 +Task+::	Define custom task.
++Rule+::	Define a rule (a rule produces tasks on the fly).
++Action+::	Run a block of code immediately.
+		The Action generator is discussed in
+		doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
 
 === The +Directory+ generator
 
@@ -298,7 +306,8 @@ Currently the following are coming with Rant:
 +RubyDoc+::	Run RDoc.
 +RubyPackage+::	Generate tar, zip and gem packages of your Ruby
 		application/library.
-As these are all Ruby specific, please read the Ruby project howto.
+As these are all Ruby specific, please read the Ruby project howto
+doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html].
 
 === The +subdirs+ command
 

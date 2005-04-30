@@ -191,8 +191,15 @@ class TestVar < Test::Unit::TestCase
     def test_env_to_string
 	@rac.var "RT_TO_S", :ToString
 	@rac.var.env "RT_TO_S"
-	assert_equal(ENV["RT_TO_S"], "")
-	assert_equal(@rac.var["RT_TO_S"], "")
+	if Rant::Env.on_windows?
+	    # very odd on windows: when setting ENV["ABC"]="" you'll
+	    # get out ENV["ABC"] == nil
+	    assert(ENV["RT_TO_S"] == "" || ENV["RT_TO_S"] == nil)
+	    assert(@rac.var["RT_TO_S"] == "" || @rac.var["RT_TO_S"] == nil)
+	else
+	    assert_equal(ENV["RT_TO_S"], "")
+	    assert_equal(@rac.var["RT_TO_S"], "")
+	end
 	assert_nothing_raised {
 	    @rac.var[:RT_TO_S] = "abc"
 	    assert_equal("abc", ENV["RT_TO_S"])

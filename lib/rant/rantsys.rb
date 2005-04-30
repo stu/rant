@@ -1,4 +1,8 @@
 
+# rantsys.rb - Support for the +sys+ method/object.
+#
+# Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
+
 require 'fileutils'
 require 'rant/rantenv'
 
@@ -444,6 +448,13 @@ module Rant
 	    ::Rant.rac.cmd_msg msg if ::Rant.rac
 	end
 
+	# Run an external command. When given one argument, this is
+	# subject to shell interpretation. Otherwise the first
+	# argument is the program to run, following arguments are
+	# given as arguments to the program.
+	#
+	# Note: This method is called on +sys <some_string>+
+	# invocation in an Rantfile.
 	def sh(*cmd_args, &block)
 	    cmd_args.flatten!
 	    cmd = cmd_args.join(" ")
@@ -455,6 +466,8 @@ module Rant
 	    end
 	end
 
+	# Run a new Ruby interpreter with the given arguments:
+	#     sys.ruby "install.rb"
 	def ruby(*args, &block)
 	    if args.size > 1
 		sh([Env::RUBY] + args, &block)
@@ -496,6 +509,11 @@ module Rant
 
     end	# module Sys
 
+    # An instance of this class is returned from the +sys+ method in
+    # Rantfiles (when called without arguments).
+    #     sys.rm_rf "tmp"
+    # In this (Rantfile) example, the +rm_rf+ message is sent to an
+    # instance of this class.
     class SysObject
 	include Sys
 
@@ -518,6 +536,7 @@ module Rant
 	end
 
 	private
+	# Delegates FileUtils messages to +rac+.
 	def fu_output_message(cmd)
 	    @rac.cmd_msg cmd
 	end

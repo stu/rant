@@ -47,6 +47,61 @@ any directory/file named "CVS" or ending in ~. Examples would be:
     xy~
     src/util.c~
 
+=== The Action generator
+
+Consider a C project. In some C source file, let's say config.h you
+define the project version, e.g.:
+    #define VERSION 2.3
+Many of your tools use this version number, so you have decided to
+duplicate it in a file called +version+, which contains just a line
+with the program version. On solution to automate the +version+ file
+creation would be to write a file task:
+    file "version" => "config.h" do |t|
+	puts "updating version file"
+	open("w", t.name) { |f| f.puts(extract_config_version()) }
+    end
+and make all other tasks that need this version dependent on it. But
+this can get very tedious if you have many tasks that need this
+version file. Another solution is to just run the task every time the
+Rantfile is sourced. This can be achieved by placing the following
+statement after the "version" task:
+    rac.build "version"
+This tells rant to immediately invoke all tasks that are required to
+build the version file. But imagine your users just want to see the
+list of available tasks:
+    % rant --tasks
+    updating version file
+    rant foo		# build foo program
+    rant lib		# build libfoo.so
+    rant clean		# remove generated files
+Hmm, we really didn't need the version to show our users the available
+tasks. To avoid this, wrap such code in an Action:
+    file "version" => "config.h" do |t|
+	puts "updating version file"
+	open("w", t.name) { |f| f.puts(extract_config_version()) }
+    end
+
+    gen Action do
+	rac.build "version"
+    end
+And now on a clean source base:
+    % rant --tasks
+    rant foo		# build foo program
+    rant lib		# build libfoo.so
+    rant clean		# remove generated files
+OK. Didn't confuse our users! Run any task:
+    % rant foo
+    updating version file
+    cc -o foo foo.c
+This means, Action blocks are executed whenever we actually want to
+build something, not just extract information from our Rantfile. It is
+recommended to wrap any code that has effects on the environment
+(mainly the file system) inside an Action block instead of embedding
+it plain in the Rantfile.
+
+An Action block also won't be run when our Rantfile is read by
+rant-import.
+
 == See also
 
 Rantfile basics::

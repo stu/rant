@@ -1,4 +1,8 @@
 
+gen Action do
+    sys.touch "action.t"
+end
+
 desc "Print hello."
 task :hello do |t|
     puts t.name

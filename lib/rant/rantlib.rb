@@ -73,9 +73,21 @@ module Rant::Lib
     #	p parse_caller_elem "/usr/local/lib/ruby/1.8/irb/workspace.rb:52:in `irb_binding'"
     # prints:
     #   {:ln=>52, :file=>"/usr/local/lib/ruby/1.8/irb/workspace.rb"} 
+    #
+    # Note: This method splits on the pattern <tt>:(\d+)(:|$)</tt>,
+    # assuming anything before is the filename.
     def parse_caller_elem elem
-	parts = elem.split(":")
-	{ :file => parts[0], :ln => parts[1].to_i }
+	return { :file => "", :ln => 0 } if elem.nil?
+	if elem =~ /^(.+):(\d+)(:|$)/
+	    { :file => $1, :ln => $2.to_i }
+	else
+	    # should never occur
+	    $stderr.puts "parse_caller_elem: #{elem.inspect}"
+	    { :file => elem, :ln => 0 }
+	end
+	
+	#parts = elem.split(":")
+	#{ :file => parts[0], :ln => parts[1].to_i }
     end
     module_function :parse_caller_elem
 
@@ -448,7 +460,7 @@ class Rant::RantApp
 
 	# Notify plugins before running tasks
 	@plugins.each { |plugin| plugin.rant_start }
-	if @opts[:targets]
+	if @opts[:tasks]
 	    show_descriptions
 	    raise Rant::RantDoneException
 	end
@@ -1091,7 +1103,7 @@ class Rant::RantApp
 	    when "--force-run"
 		@force_targets << value
 	    when "--tasks"
-		@opts[:targets] = true
+		@opts[:tasks] = true
 	    when "--stop-after-load"
 		@opts[:stop_after_load] = true
 	    when "--trace-abort"
@@ -1257,13 +1269,24 @@ class Rant::RantApp
     def get_ch_from_backtrace(backtrace)
 	backtrace.each { |clr|
 	    ch = ::Rant::Lib.parse_caller_elem(clr)
-	    return ch if @rantfiles.any? { |rf| rf.path == ch[:file] }
+	    if ::Rant::Env.on_windows?
+		return ch if @rantfiles.any? { |rf|
+		    # sigh... a bit hackish: replace any backslash
+		    # with a slash and remove any leading drive (e.g.
+		    # C:) from the path
+		    rf.path.tr("\\", "/").sub(/^\w\:/, '') ==
+			ch[:file].tr("\\", "/").sub(/^\w\:/, '')
+		}
+	    else
+		return ch if @rantfiles.any? { |rf|
+		    rf.path == ch[:file]
+		}
+	    end
 	}
 	nil
     end
 
     def err_task_fail(e)
-	#("Task `#{e.tname}' fail.")
 	msg = []
 	t_msg = ["Task `#{e.tname}' fail."]
 	orig = e
@@ -1280,7 +1303,7 @@ class Rant::RantApp
 	    elsif Rant::CommandError === orig
 		msg << orig.message if @opts[:err_commands]
 	    else
-		msg << orig.message
+		msg << orig.message unless Rant::RantAbortException
 	    end
 	end
 	err_msg msg unless msg.empty?

@@ -1,4 +1,8 @@
 
+gen Action do
+    puts "running action" if var[:act_verbose]
+end
+
 task :do_nothing
 
 file "auto.rf" do |t|
@@ -11,8 +15,18 @@ file "auto.rf" do |t|
     }
 end
 
+file "version.t" do |t|
+    open(t.name, "w") { |f| f.puts "1.0" }
+end
+
+gen Action do
+    rac.build "version.t"
+end
+
 source "auto.rf"
 
 task :clean do
-    sys.rm_f %w(auto.t auto.rf)
+    sys.rm_f %w(auto.t auto.rf version.t)
 end
+
+# vim: ft=ruby

@@ -1,4 +1,8 @@
 
+# rantfile.rb - Define task core for rant.
+#
+# Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
+
 require 'rant/rantenv'
 
 module Rant
@@ -34,6 +38,9 @@ module Rant
 
     # Any +object+ is considered a _task_ if
     # <tt>Rant::Worker === object</tt> is true.
+    #
+    # Most important classes including this module are the Rant::Task
+    # class and the Rant::FileTask class.
     module Worker
 
 	INVOKE_OPT = {}.freeze
@@ -62,15 +69,26 @@ module Rant
 	    full_name
 	end
 
+	# The directory in which this task was defined, relative to
+	# the projects root directory.
 	def project_subdir
 	    @rantfile.nil? ? "" : @rantfile.project_subdir
 	end
 
+	# Basically project_subdir/name
+	#
+	# The Rant compiler (or application) references tasks by their
+	# full_name.
 	def full_name
 	    sd = project_subdir
 	    sd.empty? ? name : File.join(sd, name)
 	end
 
+	# Change current working directory to the directory this task
+	# was defined in.
+	#
+	# Important for subclasses: Call this method always before
+	# invoking code from Rantfiles (e.g. task action blocks).
 	def goto_task_home
 	    @app.goto_project_dir project_subdir
 	end
@@ -127,8 +145,9 @@ module Rant
 	end
 	private :circular_dep
 
+	# Tasks are hashed by their full_name.
 	def hash
-	    name.hash
+	    full_name.hash
 	end
 
 	def eql? other
@@ -136,7 +155,7 @@ module Rant
 	end
     end	# module Worker
 
-    # A list of tasks with an equal name.
+    # A list of tasks with an equal full_name.
     class MetaTask < Array
 	include Worker
 
@@ -803,5 +822,17 @@ module Rant
 		}
 	    end
 	end	# class Rule
+
+	class Action
+	    def self.rant_generate(rac, ch, args, &block)
+		unless args.empty?
+		    rac.warn_msg(rac.pos_text(ch[:file], ch[:ln]),
+			"Action doesn't take arguments.")
+		end
+		unless (rac[:tasks] || rac[:stop_after_load])
+		    yield
+		end
+	    end
+	end
     end	# module Generators
 end # module Rant

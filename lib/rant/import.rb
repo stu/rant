@@ -19,9 +19,6 @@ module Rant
     class RantImport
 	include Rant::Console
 
-	# TODO: We currently only look for imports and plugins
-	# relative to this LIB_DIR. We should also look in all pathes
-	# in $LOAD_PATH after looking in LIB_DIR.
 	LIB_DIR = File.expand_path(File.dirname(__FILE__))
 
 	OPTIONS = [

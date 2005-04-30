@@ -19,7 +19,9 @@ class TestRantImport < Test::Unit::TestCase
     def test_no_import
 	run_import("--quiet", "make.rb")
 	assert(test(?f, "make.rb"))
+	assert(!test(?f, "action.t"))
 	assert_equal(run_rant("hello"), run_ruby("make.rb", "hello"))
+	assert(test(?f, "action.t"))
     end
     def test_import_from_custom_lib
 	FileUtils.mkpath "mylib.t/rant/import"
