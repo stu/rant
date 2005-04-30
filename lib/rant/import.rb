@@ -244,8 +244,8 @@ EOF
 	    rs = ""
 	    @imports.each { |name|
 		next if @included_imports.include? name
-		path = File.join(LIB_DIR, "import", "#{name}.rb")
-		unless File.exist? path
+		path = get_lib_rant_path "import/#{name}.rb"
+		unless path
 		    abort("No such import - #{name}")
 		end
 		msg "Including import `#{name}'", path
@@ -260,7 +260,7 @@ EOF
 	    @plugins.each { |name|
 		lc_name = name.downcase
 		next if @included_plugins.include? lc_name
-		path = File.join(LIB_DIR, "plugin", "#{lc_name}.rb")
+		path = get_lib_rant_path "plugin/#{lc_name}.rb"
 		unless File.exist? path
 		    abort("No such plugin - #{name}")
 		end
@@ -275,8 +275,6 @@ EOF
 	# code by directly inserting the code.
 	def resolve_requires script
 	    rs = ""
-	    # TODO: skip multiline comments (=begin, =end) only of
-	    # @skip_comments is true
 	    in_ml_comment = false
 	    script.each { |line|
 		if in_ml_comment
@@ -296,7 +294,7 @@ EOF
 		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
 		    name = $3
 		    next if @core_imports.include? name
-		    path = File.join(LIB_DIR, "#{name}.rb")
+		    path = get_lib_rant_path "#{name}.rb"
 		    msg "Including `#{name}'", path
 		    @core_imports << name
 		    rs << resolve_requires(File.read(path))
@@ -306,6 +304,16 @@ EOF
 		end
 	    }
 	    rs
+	end
+
+	def get_lib_rant_path(fn)
+	    path = File.join(LIB_DIR, fn)
+	    return path if File.exist?(path)
+	    $:.each { |lib_dir|
+		path = File.join(lib_dir, "rant", fn)
+		return path if File.exist?(path)
+	    }
+	    nil
 	end
 
     end	# class RantImport

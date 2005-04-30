@@ -1,0 +1,11 @@
+
+desc "Print hello."
+task :hello do |t|
+    puts t.name
+end
+
+task :private do |t|
+    puts t.name
+end
+
+# vim: ft=ruby

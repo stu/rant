@@ -118,3 +118,7 @@ end
 def run_import(*args)
     `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_IMPORT_BIN)} #{args.flatten.arglist}`
 end
+
+def run_ruby(*args)
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.arglist}`
+end
