@@ -783,7 +783,7 @@ module Rant
 	LightTask = ::Rant::LightTask
 	Directory = ::Rant::DirTask
 
-	class Rule
+	class Rule < ::Proc
 	    # Generate a rule by installing an at_resolve hook for
 	    # +rac+.
 	    def self.rant_generate(rac, ch, args, &block)
@@ -833,7 +833,7 @@ module Rant
 		    rac.abort_at(ch, "rule source has to be " +
 			"String or Proc")
 		end
-		rac.at_resolve { |task_name|
+		blk = self.new { |task_name|
 		    if target_rx =~ task_name
 			[rac.file(:__caller__ => ch,
 			    task_name => src_proc[task_name], &block)]
@@ -841,7 +841,11 @@ module Rant
 			nil
 		    end
 		}
+		blk.target_rx = target_rx
+		rac.at_resolve &blk
+		nil
 	    end
+	    attr_accessor :target_rx
 	end	# class Rule
 
 	class Action

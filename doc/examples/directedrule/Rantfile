@@ -1,0 +1,23 @@
+
+import %w(directedrule autoclean)
+
+desc "Build foo."
+file :foo => "obj/libfoo.a" do |t|
+    sys "cc -o #{t.name} #{t.source}"
+end
+
+gen Directory, "obj"
+
+ro = gen DirectedRule, "obj" => sys["src_*"], :o => :c do |t|
+    rac.build "obj"
+    sys "cc -c -o #{t.name} #{t.source}"
+end
+
+file "obj/libfoo.a" => ro.candidates do |t|
+    sys "ar cr #{t.name} #{t.prerequisites.arglist}"
+    sys "ranlib #{t.name}"
+end
+
+gen AutoClean, :clean
+
+# vim: ft=ruby

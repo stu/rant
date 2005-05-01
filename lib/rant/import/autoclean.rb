@@ -32,6 +32,34 @@ class Rant::Generators::AutoClean
 		    end
 		}
 	    }
+	    target_rx = nil
+	    rac.resolve_hooks.each { |hook|
+		if hook.respond_to? :each_target
+		    hook.each_target { |entry|
+			if test ?f, entry
+			    rac.cx.sys.rm_f entry
+			else
+			    rac.cx.sys.rm_rf entry
+			end
+		    }
+		elsif hook.respond_to? :target_rx
+		    next(rx) unless (t_rx = hook.target_rx)
+		    target_rx = target_rx.nil? ? t_rx :
+			Regexp.union(target_rx, t_rx)
+		end
+	    }
+	    if target_rx
+		rac.msg 1, "searching for rule products"
+		rac.cx.sys["**/*"].each { |entry|
+		    if entry =~ target_rx
+			if test ?f, entry
+			    rac.cx.sys.rm_f entry
+			else
+			    rac.cx.sys.rm_rf entry
+			end
+		    end
+		}
+	    end
 	end
     end
 end

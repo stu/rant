@@ -307,6 +307,11 @@ class Rant::RantApp
     # Current subdirectory relative to project's root directory
     # (#rootdir).
     attr_reader :current_subdir
+    # List of proc objects used to automatically create required
+    # tasks. (Especially used for Rules.)
+    #
+    # Note: Might change before 1.0
+    attr_reader :resolve_hooks
 
     def initialize *args
 	@args = args.flatten
