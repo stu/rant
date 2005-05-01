@@ -55,6 +55,11 @@ module Rant
 	    # define task task with given name first, so that it takes
 	    # any previously set description
 	    t = app.task(:__caller__ => ch, @name => [])
+	    t.instance_variable_set(:@rdoc_op_dir, @op_dir)
+	    def t.each_target
+		super
+		yield @rdoc_op_dir if @rdoc_op_dir
+	    end
 	    # The task which will actually run rdoc.
 	    t << app.file(:__caller__ => ch, index => @pre) { |t|
 		# We delay the require of the RDoc code until it is

@@ -132,6 +132,13 @@ module Rant
 	    raise TaskFail.new(self, orig), msg, caller
 	end
 
+	# Change pwd to task home directory and yield for each created
+	# file/directory.
+	#
+	# Override in subclasses if your task instances create files.
+	def each_target
+	end
+
 	def run
 	    return unless @block
 	    goto_task_home
@@ -221,6 +228,10 @@ module Rant
 
 	def app
 	    empty? ? nil : first.app
+	end
+
+	def each_target &block
+	    self.each { |t| t.each_target &block }
 	end
     end	# class MetaTask
 
@@ -644,6 +655,11 @@ module Rant
 	    end
 	    [dep, dep.mtime > @ts]
 	end
+
+	def each_target
+	    goto_task_home
+	    yield name
+	end
     end	# class FileTask
 
     # An instance of this class is a task to create a _single_
@@ -755,6 +771,11 @@ module Rant
 		goto_task_home
 		@app.sys.touch @name
 	    end
+	end
+
+	def each_target
+	    goto_task_home
+	    yield name
 	end
     end	# class DirTask
     module Generators

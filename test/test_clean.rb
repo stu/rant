@@ -90,4 +90,45 @@ class TestClean < Test::Unit::TestCase
 	Dir.chdir $testDir
 	cleanup_project1
     end
+    def layout_project2
+	FileUtils.mkdir "p2.t"
+	Dir.chdir "p2.t"
+	open("Rantfile", "w") { |f|
+	    f << <<-EOF
+	    import "autoclean"
+	    task :mk_junk => %w(a.t b.t/c.t/d.t) do
+		sys.touch "mk_junk.t"
+	    end
+	    gen AutoClean
+	    file "a.t" do |t|
+		sys.touch t.name
+	    end
+	    gen Directory, "b.t/c.t"
+	    file "b.t/c.t/d.t" => "b.t/c.t" do |t|
+		sys.touch t.name
+	    end
+	    var[:autoclean].include "mk_junk.t"
+	    var[:autoclean].include "nix.t"
+	    EOF
+	}
+    end
+    def cleanup_project2
+	FileUtils.rm_rf "p2.t"
+    end
+    def test_project2_autoclean
+	layout_project2
+	capture_std do
+	    assert_equal(0, Rant::RantApp.new.run)
+	end
+	%w(a.t b.t/c.t/d.t mk_junk.t).each { |f| assert(test(?e, f)) }
+	capture_std do
+	    assert_equal(0, Rant::RantApp.new("autoclean").run)
+	end
+	%w(a.t b.t/c.t/d.t mk_junk.t).each { |f| assert(!test(?e, f)) }
+	capture_std do
+	    assert_equal(1, Rant::RantApp.new("clean").run)
+	end
+    ensure
+	cleanup_project2
+    end
 end
