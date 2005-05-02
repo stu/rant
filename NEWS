@@ -1,6 +1,19 @@
 
 = Rant NEWS
 
+== Rant 0.3.6
+
+This version should be fully backwards compatible to 0.3.4.
+
+New features:
+* Automatic cleanup of generated files
+* Directed rules
+* Constraining variables
+* rant-import searches $LOAD_PATH
+* Immediately build targets with <tt>rac.build "target"</tt>
+Read doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html] and
+doc/advanced.rdoc[link:files/doc/advanced_rdoc.html] for docu.
+
 == Rant 0.3.4
 
 Incompatible changes:

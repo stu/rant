@@ -358,6 +358,7 @@ module Rant
 	def prerequisites
 	    @pre.collect { |pre| pre.to_s }
 	end
+	alias deps prerequisites
 
 	# First prerequisite.
 	def source

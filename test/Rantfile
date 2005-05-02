@@ -29,4 +29,24 @@ task :clean do
     sys.rm_f %w(auto.t auto.rf version.t)
 end
 
+gen Directory, "tmp.t"
+task "tmp.t/Rantfile" => "tmp.t" do |t|
+    open(t.name, "w") { |f|
+	f << <<-EOF
+	file "test.t" do |t| sys.touch t.name end
+	EOF
+    }
+end
+
+task :subdir_tmp do
+    subdirs %w(tmp.t)
+end
+
+task :build_test_t do |t|
+    rac.build "tmp.t/test.t"
+    # just ensure we're NOT in the tmp.t directory
+    #STDERR.puts Dir.pwd
+    test(?d, "tmp.t") or t.fail
+end
+
 # vim: ft=ruby

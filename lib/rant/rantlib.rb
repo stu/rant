@@ -926,6 +926,8 @@ class Rant::RantApp
     def build target, opt = {}
 	opt[:force] = true if @force_targets.delete(target)
 	matching_tasks = 0
+	old_subdir = @current_subdir
+	old_pwd = Dir.pwd
 	resolve(target).each { |t|
 	    matching_tasks += 1
 	    begin
@@ -935,6 +937,8 @@ class Rant::RantApp
 		abort
 	    end
 	}
+	@current_subdir = old_subdir
+	Dir.chdir old_pwd
 	matching_tasks
     end
     public :build

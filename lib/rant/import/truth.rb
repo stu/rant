@@ -1,4 +1,5 @@
 
+#--
 # truth.rb - Import truth into rant ;)
 #
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>

@@ -288,8 +288,13 @@ EOF
 		    in_ml_comment = true
 		    next if @skip_comments
 		end
+		name = nil
 		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
 		    name = $3
+		elsif line =~ /\s*(require|load)\s+('|")rant\/(import\/\w+)(\.rb)?('|")/
+		    name = $3
+		end
+		if name
 		    next if @core_imports.include? name
 		    path = get_lib_rant_path "#{name}.rb"
 		    msg "Including `#{name}'", path

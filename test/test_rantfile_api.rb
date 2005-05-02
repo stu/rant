@@ -41,4 +41,7 @@ class TestRantfileAPI < Test::Unit::TestCase
 	end
 	assert_equal(old_mtime, File.mtime("version.t"))
     end
+    def test_rac_build_cd
+	assert_rant("tmp.t/Rantfile", "subdir_tmp", "build_test_t")
+    end
 end
