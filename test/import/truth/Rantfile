@@ -1,0 +1,16 @@
+
+import %w(truth)
+
+task(:hello) {
+    puts "hello"
+} % "print hello"
+
+file("rm.t") { |t|
+    sys.touch t.name
+} %
+"touch rm.t" %
+"this file is useless"
+
+drag :AutoClean, :clean
+
+# vim:ft=ruby
