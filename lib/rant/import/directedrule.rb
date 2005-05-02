@@ -21,7 +21,10 @@ class Rant::Generators::DirectedRule
 	    dir_h = { k => v } :
 	    ts_h = { k => v }
 	}
-	# TODO: check that ts_h.size and dir_h.size == 1
+	unless dir_h
+	    rac.abort_at(ch,
+		"Source directory argument has to be a list.")
+	end
 	target, source = nil, nil
 	ts_h.each { |target, source| }
 	target_dir, source_dirs = nil, nil

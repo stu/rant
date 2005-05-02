@@ -81,9 +81,15 @@ gen RubyTest, :tsubdirs do |t|
 end
 
 desc "Test rant-import command."
-gen RubyTest, :timport do |t|
+gen RubyTest, :trimport do |t|
     t.libs << "test"
     t.test_files = sys["test/rant-import/test_*.rb"]
+end
+
+desc "Test import/ libraries."
+gen RubyTest, :timport do |t|
+    t.libs << "test"
+    t.test_files = sys["test/import/**/test_*.rb"]
 end
 
 desc "Run all tests."

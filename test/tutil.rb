@@ -1,8 +1,20 @@
 
 # This file contains methods that aid in testing Rant.
 
-require 'rant/rantenv'
-require 'rant/rantsys'
+require 'rant/rantlib'
+require 'fileutils'
+
+module Test
+    module Unit
+	class TestCase
+	    def assert_rant(*args)
+		capture_std do
+		    assert_equal(0, ::Rant::RantApp.new(*args).run)
+		end
+	    end
+	end
+    end
+end
 
 RANT_BIN = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "run_rant"))

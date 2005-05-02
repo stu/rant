@@ -1,0 +1,27 @@
+
+import %w(directedrule autoclean)
+
+task :mk_src => %w(src.t/1.b src.t/2.b src.t/3.b)
+gen Directory, "src.t"
+%w(src.t/1.b src.t/2.b src.t/3.b).each { |f|
+    file f => "src.t" do |t| sys.touch t.name end
+}
+
+file "foo.t" => %w(build.t/1.a build.t/2.a) do |t|
+    t.fail unless test(?f, "build.t/1.a") && test(?f, "build.t/2.a")
+    sys.touch t.name
+end
+
+gen Directory, "build.t"
+
+gen Action do
+    rac.build "build.t"
+end
+
+ro_tt = gen DirectedRule, "build.t" => ["src.t"], :a => :b do |t|
+    sys.touch t.name
+end
+
+gen AutoClean
+
+# vim:ft=ruby
