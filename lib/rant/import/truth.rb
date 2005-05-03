@@ -15,6 +15,11 @@ module Rant
 	    self
 	end
     end
+    class RacFileList
+	def %(fu_sym)
+	    @rac.cx.sys.send(fu_sym, to_ary)
+	end
+    end
 end
 module RantContext
     def drag(name, *args, &block)

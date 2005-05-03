@@ -11,6 +11,13 @@ file("rm.t") { |t|
 "touch rm.t" %
 "this file is useless"
 
+task :sys_pipe do |t|
+    sys.touch %w(a.t b.t)
+    test(?f, "a.t") && test(?f, "b.t") or t.fail
+    sys["*.t"] % :rm
+    test(?f, "a.t") || test(?f, "b.t") and t.fail
+end
+
 drag :AutoClean, :clean
 
 # vim:ft=ruby

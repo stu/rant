@@ -20,4 +20,7 @@ class TestTruth < Test::Unit::TestCase
 	assert_rant("clean")
 	assert(!test(?e, "rm.t"))
     end
+    def test_pipe
+	assert_rant("sys_pipe")
+    end
 end

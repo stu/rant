@@ -248,7 +248,6 @@ module Rant
 		app.prepare_task({args.first => [], :__caller__ => ch},
 			block) { |name,pre,blk|
 		    # TODO: ensure pre is empty
-		    # TODO: earlier setting of app?
 		    self.new(app, name, &blk)
 		}
 	    end
@@ -257,17 +256,10 @@ module Rant
 	def initialize(app, name)
 	    super()
 	    @app = app or raise ArgumentError, "no app given"
-	    @name = case name
-	    when String: name
-	    when Symbol: name.to_s
-	    else
-		raise ArgumentError,
-		    "invalid name argument: #{name.inspect}"
-	    end
+	    @name = name
 	    @needed = nil
 	    @block = nil
 	    @done = false
-
 	    yield self if block_given?
 	end
 
@@ -694,7 +686,7 @@ module Rant
 	    def task(app, ch, name, prerequisites = [], &block)
 		dirs = ::Rant::Sys.split_path(name)
 		if dirs.empty?
-		    app.abort(app.pos_text(ch[:file], ch[:ln]),
+		    app.abort_at(ch,
 			"Not a valid directory name: `#{name}'")
 		end
 		ld = nil
@@ -719,15 +711,11 @@ module Rant
 	    end
 	end
 
-	def intialize *args
+	def initialize *args
 	    super
 	    @ts = T0
 	    @isdir = nil
 	end
-
-	#def needed?
-	#    invoke(:needed? => true)
-	#end
 
 	def invoke(opt = INVOKE_OPT)
 	    return circular_dep if @run

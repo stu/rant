@@ -1,7 +1,6 @@
 
 require 'test/unit'
-require 'rant/rantlib'
-
+require 'tutil'
 
 class TestLightTask < Test::Unit::TestCase
     def setup
@@ -14,13 +13,12 @@ class TestLightTask < Test::Unit::TestCase
 	Rant::LightTask.new(*[@app, args].flatten, &block)
     end
     def test_init
-	t = lt :tinit
+	t = lt "tinit"
 	assert(t.needed?,
 	    "needed? should be true after creation without " +
 	    "`needed' block")
 	assert(!t.done?)
-	assert_equal(t.name, "tinit",
-	    "task name should always be a string, despite creation with symbol")
+	assert_equal(t.name, "tinit")
     end
     def test_with_blocks
 	run = false

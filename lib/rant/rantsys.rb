@@ -417,7 +417,7 @@ module Rant
 	def message
 	    if !@msg && cmd
 		if status
-		    "Command failed with status #{status.to_s}:\n" +
+		    "Command failed with status #{status.exitstatus}:\n" +
 		    "[#{cmd}]"
 		else
 		    "Command failed:\n[#{cmd}]"
@@ -476,8 +476,8 @@ module Rant
 	    end
 	end
 
-	# Returns a string that can be used as a valid path argument on the
-	# shell respecting portability issues.
+	# Returns a string that can be used as a valid path argument
+	# on the shell respecting portability issues.
 	def sp path
 	    Env.shell_path path
 	end
