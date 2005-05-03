@@ -231,7 +231,7 @@ module Rant
 	end
 
 	def each_target &block
-	    self.each { |t| t.each_target &block }
+	    self.each { |t| t.each_target(&block) }
 	end
     end	# class MetaTask
 
@@ -843,7 +843,7 @@ module Rant
 		    end
 		}
 		blk.target_rx = target_rx
-		rac.at_resolve &blk
+		rac.at_resolve(&blk)
 		nil
 	    end
 	    attr_accessor :target_rx

@@ -16,7 +16,7 @@
 # If you're looking for general info about Rant, read the
 # README[link:files/README.html].
 module Rant
-    VERSION	= '0.3.6'
+    VERSION	= '0.3.7'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -39,9 +39,6 @@ module Rant
     end
 
     class RantError < StandardError
-    end
-
-    class RantfileException < RantError
     end
 
     # This module is a namespace for generator classes.

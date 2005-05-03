@@ -213,7 +213,7 @@ module Rant
 	end
 
 	def apply_select blk
-	    @files = @files.select &blk
+	    @files = @files.select(&blk)
 	end
 	private :apply_select
 
@@ -381,7 +381,7 @@ module Rant
 
 	def each_entry &block
 	    @lists.each { |list|
-		list.each &block
+		list.each(&block)
 	    }
 	end
 

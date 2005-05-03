@@ -42,7 +42,7 @@ methods with the Rant application:
 Just call the +task+ function and give it a task name as argument. The
 task name may be a string or symbol:
     task :taskname
-That's it, your first task. Not very usefull, because it doesn't do
+That's it, your first task. Not very useful, because it doesn't do
 anything. To associate an action with the task, add a block:
     task :mytask do
 	puts "Hello, mytask running."

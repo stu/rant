@@ -295,12 +295,13 @@ class Rant::RantApp
     # A list of all registered plugins.
     attr_reader :plugins
     # The context in which Rantfiles are loaded. RantContext methods
-    # may be called through an instance_eval on this object (e.g. from
-    # plugins).
+    # may be called through this object (e.g. from plugins).
     attr_reader :context
     alias cx context
     # A hash with all tasks. For fast task lookup use this hash with
     # the taskname as key.
+    #
+    # See also: #resolve, #build
     attr_reader :tasks
     # A list of all imports (code loaded with +import+).
     attr_reader :imports
@@ -336,7 +337,7 @@ class Rant::RantApp
 	@var.query :ignore, :AutoList, []
 	@imports = []
 
-	@task_show = nil
+	#@task_show = nil
 	@task_desc = nil
 
 	@orig_pwd = nil
@@ -479,10 +480,6 @@ class Rant::RantApp
 	goto "#"
 	@plugins.each { |plugin| plugin.rant_done }
 	return 0
-    rescue Rant::RantfileException
-	err_msg "Invalid Rantfile: " + $!.message
-	$stderr.puts "rant aborted!"
-	return 1
     rescue Rant::RantError
 	ch = get_ch_from_backtrace($!.backtrace)
 	if ch
@@ -509,9 +506,6 @@ class Rant::RantApp
     end
 
     ###### methods accessible through RantContext ####################
-    def show *args
-	@task_show = *args.join("\n")
-    end
 
     def desc *args
 	if args.empty? || (args.size == 1 && args.first.nil?)
@@ -704,22 +698,14 @@ class Rant::RantApp
     end
 
     def sys(*args, &block)
-	if args.empty?
-	    @sys
-	else
-	    @sys.sh(*args)
-	end
+	args.empty? ? @sys : @sys.sh(*args)
     end
 
     # The [] and []= operators may be used to set/get values from this
     # object (like a hash). It is intended to let the different
     # modules, plugins and tasks to communicate with each other.
     def var(*args, &block)
-	if args.empty?
-	    @var
-	else
-	    @var.query(*args, &block)
-	end
+	args.empty? ? @var : @var.query(*args, &block)
     end
     ##################################################################
 
@@ -771,7 +757,6 @@ class Rant::RantApp
 	}
 	name_length < 7 && name_length = 7
 	cmd_length = prefix.length + name_length
-	# TODO: show what's done if rant is invoked without argument
 	unless tlist.first.full_name == def_target
 	    defaults = list_task_names(
 		resolve(def_target)).join(', ')
@@ -802,13 +787,7 @@ class Rant::RantApp
 	rsl
     end
     private :list_task_names
-		
-    # Increase verbosity.
-    def more_verbose
-	@opts[:verbose] += 1
-	@opts[:quiet] = false
-    end
-    
+
     # This is actually an integer indicating the verbosity level.
     # Usual values range from 0 to 3.
     def verbose
@@ -839,7 +818,7 @@ class Rant::RantApp
     # Print a command message as would be done from a call to a
     # Sys method.
     def cmd_msg cmd
-	$stdout.puts cmd unless quiet?
+	puts cmd unless quiet?
     end
 
     ###### public methods regarding plugins ##########################
@@ -889,20 +868,15 @@ class Rant::RantApp
 	# The target list is a list of strings, not Task objects!
 	if target_list.empty?
 	    def_tasks = resolve "default"
-	    #have_default = @rantfiles.any? { |f|
-	    #	f.tasks.any? { |t| t.name == "default" }
-	    #}
 	    unless def_tasks.empty?
 		target_list << "default"
 	    else
-		first = nil
 		@rantfiles.each { |f|
 		    unless f.tasks.empty?
-			first = f.tasks.first.full_name
+			target_list << f.tasks.first.full_name
 			break
 		    end
 		}
-		target_list << first
 	    end
 	end
 	target_list
@@ -944,9 +918,6 @@ class Rant::RantApp
     public :build
 
     def resolve task_name, rel_project_dir = @current_subdir
-	#select_tasks_by_name task_name, rel_project_dir
-	# Note: first lines copied from +select_tasks_by_name+
-	# for efficiency reasons
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
 	when nil
@@ -972,9 +943,6 @@ class Rant::RantApp
     # returns true.
     def select_tasks
 	selection = []
-	### pre 0.2.10 ##################
-	# @rantfile.reverse.each { |rf|
-	#################################
 	@rantfiles.each { |rf|
 	    rf.tasks.each { |t|
 		selection << t if yield t
@@ -983,32 +951,6 @@ class Rant::RantApp
 	selection
     end
     public :select_tasks
-
-    # Returns an array (might be a MetaTask) with all tasks that have
-    # the given name.
-    def select_tasks_by_name name, project_dir = @current_subdir
-	# pre 0.3.1
-	#s = @tasks[name]
-	s = @tasks[expand_path(project_dir, name)]
-	case s
-	when nil: []
-	when Rant::Worker: [s]
-	else # assuming MetaTask
-	    s
-	end
-    end
-    public :select_tasks_by_name
-
-    # Get the first task for which yield returns true. Returns nil if
-    # yield never returned true.
-    def select_task
-	@rantfiles.reverse.each { |rf|
-	    rf.tasks.each { |t|
-		return t if yield t
-	    }
-	}
-	nil
-    end
 
     def load_rantfiles
 	# Take care: When rant isn't invoked from commandline,
@@ -1091,14 +1033,9 @@ class Rant::RantApp
 	cmd_opts.quiet = true
 	cmd_opts.each { |opt, value|
 	    case opt
-	    when "--verbose": more_verbose
-	    when "--quiet"
-		@opts[:quiet] = true
-		@opts[:verbose] = -1
-	    when "--err-commands"
-		@opts[:err_commands] = true
+	    when "--verbose": @opts[:verbose] += 1
 	    when "--version"
-		$stdout.puts "rant #{Rant::VERSION}"
+		puts "rant #{Rant::VERSION}"
 		raise Rant::RantDoneException
 	    when "--help"
 		show_help
@@ -1111,12 +1048,9 @@ class Rant::RantApp
 		@arg_rantfiles << value
 	    when "--force-run"
 		@force_targets << value
-	    when "--tasks"
-		@opts[:tasks] = true
-	    when "--stop-after-load"
-		@opts[:stop_after_load] = true
-	    when "--trace-abort"
-		@opts[:trace_abort] = true
+	    else
+		# simple switch
+		@opts[opt.sub(/^--/, '').tr('-', "_").to_sym] = true
 	    end
 	}
     rescue GetoptLong::Error => e
