@@ -120,6 +120,12 @@ any filetask (include those created by rules):
     # same name as the AutoClean taskname (here: clean):
     var[:clean].include "**/*.bak"
 
+TAKE CARE:: As of version 0.3.6 of Rant, AutoClean will recursively
+            remove directories for which a task exists. Meaning:
+               gen Directory, "doc/html"
+            AutoClean will recursively remove the doc directory!
+This will probably change in the next release.
+
 === The DirectedRule generator
 
 A directed rule is some sort of special rule. It searches for source

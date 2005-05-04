@@ -8,8 +8,29 @@ module Test
     module Unit
 	class TestCase
 	    def assert_rant(*args)
-		capture_std do
-		    assert_equal(0, ::Rant::RantApp.new(*args).run)
+		res = 0
+		capture = true
+		args.flatten!
+		args.reject! { |arg|
+		    if Symbol === arg
+			case arg
+			when :fail: res = 1
+			when :v: capture = false
+			when :verbose: capture = false
+			else
+			    raise "No such option -- #{arg}"
+			end
+			true
+		    else
+			false
+		    end
+		}
+		if capture
+		    capture_std do
+			assert_equal(res, ::Rant::RantApp.new(*args).run)
+		    end
+		else
+		    assert_equal(res, ::Rant::RantApp.new(*args).run)
 		end
 	    end
 	end

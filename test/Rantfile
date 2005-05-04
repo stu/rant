@@ -27,6 +27,7 @@ source "auto.rf"
 
 task :clean do
     sys.rm_f %w(auto.t auto.rf version.t)
+    sys.rm_rf %w(basedir.t)
 end
 
 gen Directory, "tmp.t"
@@ -48,5 +49,7 @@ task :build_test_t do |t|
     #STDERR.puts Dir.pwd
     test(?d, "tmp.t") or t.fail
 end
+
+gen Directory, "basedir.t", "a/b"
 
 # vim: ft=ruby

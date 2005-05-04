@@ -670,9 +670,20 @@ module Rant
 	    # After the block execution, the modification time of the
 	    # directory will be updated.
 	    def rant_generate(app, ch, args, &block)
-		if args && args.size == 1
+		case args.size
+		when 1
 		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
 		    self.task(app, ch, name, pre, &block)
+		when 2
+		    basedir = args.shift
+		    if basedir.respond_to? :to_str
+			basedir = basedir.to_str
+		    else
+			app.abort_at(ch,
+			    "Directory: basedir argument has to be a string.")
+		    end
+		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
+		    self.task(app, ch, name, pre, basedir, &block)
 		else
 		    app.abort(app.pos_text(ch[:file], ch[:ln]),
 			"Directory takes one argument, " +
@@ -683,18 +694,17 @@ module Rant
 	    # Returns the task which creates the last directory
 	    # element (and has all other necessary directories as
 	    # prerequisites).
-	    def task(app, ch, name, prerequisites = [], &block)
+	    def task(app, ch, name, prerequisites=[], basedir=nil, &block)
 		dirs = ::Rant::Sys.split_path(name)
 		if dirs.empty?
 		    app.abort_at(ch,
 			"Not a valid directory name: `#{name}'")
 		end
-		ld = nil
-		path = nil
+		path = basedir
 		last_task = nil
 		task_block = nil
 		dirs.each { |dir|
-		    pre = [ld]
+		    pre = [path]
 		    pre.compact!
 		    if dir.equal?(dirs.last)
 			pre.concat prerequisites if prerequisites
@@ -705,7 +715,6 @@ module Rant
 			    path => pre}, task_block) { |name,pre,blk|
 			self.new(app, name, pre, &blk)
 		    }
-		    ld = dir
 		}
 		last_task
 	    end
