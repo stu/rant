@@ -49,6 +49,12 @@ class TestRule < Test::Unit::TestCase
 	assert(test(?f, "r.tt"))
 	assert(test(?f, "r.lt"))
     end
+    def test_enhance_rule_task
+	out, err = assert_rant("-frule.rf", "enhance_t=1", "eh.t")
+	assert(test(?f, "eh.t"))
+	assert_match(/eh\.t created/, out)
+	assert(err !~ /\[WARNING\]|\[ERROR\]/)
+    end
 if Rant::Env.find_bin("cc") && Rant::Env.find_bin("gcc")
     # Note: we are assuming that "cc" invokes "gcc"!
     def test_cc
@@ -60,8 +66,5 @@ if Rant::Env.find_bin("cc") && Rant::Env.find_bin("gcc")
     end
 else
     $stderr.puts "*** cc/gcc not available, less rule tests ***"
-    def test_dummy
-	assert(true)
-    end
 end
 end

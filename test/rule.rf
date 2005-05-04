@@ -25,3 +25,9 @@ gen Rule, :rt => src do |t|
     t.source =~ /\.rtt$/ or t.fail
     sys.touch t.name
 end
+
+if var[:enhance_t]
+    enhance "eh.t" do
+	puts "eh.t created"
+    end
+end

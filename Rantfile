@@ -70,7 +70,7 @@ desc "Run all tests and generate coverage with rcov."
 task :cov do
     lp = File.expand_path "lib"
     sys.cd "test" do
-	sys %W(rcov -xts_*,tc_*,test_* -I#{lp} ts_all.rb)
+	sys %W(rcov -xtutil.rb,*.t,ts_*,tc_*,test_* -I#{lp} ts_all.rb)
     end
 end
 

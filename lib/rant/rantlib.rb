@@ -623,7 +623,7 @@ class Rant::RantApp
     # and a new file task.
     def enhance targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
-	    t = @tasks[name]
+	    t = resolve(name).last
 	    if Rant::MetaTask === t
 		t = t.last
 	    end
@@ -632,6 +632,8 @@ class Rant::RantApp
 		    abort("Can't enhance task `#{name}'")
 		end
 		t.enhance(pre, &blk)
+		# Important: return from method, don't break to
+		# prepare_task which would add task t again
 		return t
 	    end
 	    warn_msg "enhance \"#{name}\": no such task",
@@ -917,6 +919,8 @@ class Rant::RantApp
     end
     public :build
 
+    # Currently always returns an array (which might actually be a
+    # MetaTask or an empty array, but never nil).
     def resolve task_name, rel_project_dir = @current_subdir
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
@@ -1072,18 +1076,10 @@ class Rant::RantApp
     def prepare_task(targ, block, clr = caller[2])
 	#STDERR.puts "prepare task (#@current_subdir):\n  #{targ.inspect}"
 
-	# Allow override of caller, usefull for plugins and libraries
+	# Allow override of caller, useful for plugins and libraries
 	# that define tasks.
 	if targ.is_a? Hash
-	    targ.reject! { |k, v|
-		case k
-		when :__caller__
-		    clr = v
-		    true
-		else
-		    false
-		end
-	    }
+	    targ.reject! { |k, v| clr = v if k == :__caller__ }
 	end
 	cinf = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
 
