@@ -28,4 +28,10 @@ class TestDirectedRule < Test::Unit::TestCase
 	assert_rant("foo.t")
 	assert(test(?f, "foo.t"))
     end
+    def test_build_invoke_dir_task
+	assert_rant
+	assert_rant("build2.t/1.2a")
+	assert(test(?d, "build2.t"))
+	assert(test(?f, "build2.t/1.2a"))
+    end
 end

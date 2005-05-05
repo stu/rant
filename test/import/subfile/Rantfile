@@ -1,0 +1,8 @@
+import "subfile"
+
+gen SubFile, "sub.t/file" do |t|
+    sys.touch t.name
+end
+
+desc "some subfile"
+gen SubFile, "sub2.t/file"

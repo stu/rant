@@ -655,6 +655,18 @@ module Rant
 	end
     end	# class FileTask
 
+    class AutoSubFileTask < FileTask
+	private
+	def run
+	    dir, = File.split(name)
+	    unless dir == "."
+		dt = @app.resolve(dir, project_subdir).last
+		dt.invoke if DirTask === dt
+	    end
+	    super
+	end
+    end	# class AutoSubFileTask
+
     # An instance of this class is a task to create a _single_
     # directory.
     class DirTask < Task

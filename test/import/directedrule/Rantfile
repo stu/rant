@@ -1,9 +1,9 @@
 
 import %w(directedrule autoclean)
 
-task :mk_src => %w(src.t/1.b src.t/2.b src.t/3.b)
+task :mk_src => %w(src.t/1.b src.t/2.b src.t/3.b src.t/1.2b)
 gen Directory, "src.t"
-%w(src.t/1.b src.t/2.b src.t/3.b).each { |f|
+%w(src.t/1.b src.t/2.b src.t/3.b src.t/1.2b).each { |f|
     file f => "src.t" do |t| sys.touch t.name end
 }
 
@@ -13,9 +13,14 @@ file "foo.t" => %w(build.t/1.a build.t/2.a) do |t|
 end
 
 gen Directory, "build.t"
+gen Directory, "build2.t"
 
 gen Action do
     rac.build "build.t"
+end
+
+gen DirectedRule, "build2.t" => ["src.t"], '.2a' => '.2b' do |t|
+    sys.touch t.name
 end
 
 ro_tt = gen DirectedRule, "build.t" => ["src.t"], :a => :b do |t|

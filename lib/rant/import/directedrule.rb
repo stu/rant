@@ -67,7 +67,7 @@ class Rant::Generators::DirectedRule
 	@target_dir = target_dir
 	# target should be a string (file extension)
 	@target = target.sub(/^\./, '')
-	@target_rx = /#{Regexp.escape(target)}$/o
+	@target_rx = /#{Regexp.escape(target)}$/
 	# source should be a string (file extension)
 	@source = source.sub(/^\./, '')
 	@esc_target_dir = Regexp.escape(target_dir)
@@ -77,8 +77,8 @@ class Rant::Generators::DirectedRule
 	self[name]
     end
     def [](name)
-	#puts "rule for #{name} ?"
-	if name =~ /^#@esc_target_dir\//o && name =~ @target_rx
+	#puts "rule (#@target) for #{name} ?"
+	if name =~ /^#@esc_target_dir\// && name =~ @target_rx
 	    #puts "  matches"
 	    fn = File.basename(name)
 	    src_fn = fn.sub_ext(@source)
@@ -90,7 +90,11 @@ class Rant::Generators::DirectedRule
 		(src = path) && break if test(?e, path)
 	    }
 	    if src
-		[@rac.file(:__caller__ => @ch, name => src, &@block)]
+		# pre 0.3.7
+		#[@rac.file(:__caller__ => @ch, name => src, &@block)]
+		[@rac.prepare_task({name => src}, @block, @ch) { |name,pre,blk|
+		    ::Rant::AutoSubFileTask.new(@rac, name, pre, &blk)
+		}]
 	    else
 		nil
 	    end
