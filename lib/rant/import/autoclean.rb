@@ -22,15 +22,13 @@ class Rant::Generators::AutoClean
 	# create task
 	rac.task :__caller__ => ch, tname => [] do |t|
 	    rac.tasks.each { |n, worker|
-		worker.each_target { |entry|
-		    if test ?e, entry
-			if test ?f, entry
-			    rac.cx.sys.rm_f entry
-			else
-			    rac.cx.sys.rm_rf entry
-			end
-		    end
-		}
+		if Array === worker
+		    worker.each { |subw|
+			subw.each_target { |entry| clean rac, entry }
+		    }
+		else
+		    worker.each_target { |entry| clean rac, entry }
+		end
 	    }
 	    target_rx = nil
 	    rac.resolve_hooks.each { |hook|
@@ -59,6 +57,15 @@ class Rant::Generators::AutoClean
 			end
 		    end
 		}
+	    end
+	end
+    end
+    def self.clean(rac, entry)
+	if test ?e, entry
+	    if test ?f, entry
+		rac.cx.sys.rm_f entry
+	    else
+		rac.cx.sys.rm_rf entry
 	    end
 	end
     end

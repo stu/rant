@@ -622,9 +622,6 @@ class Rant::RantApp
     def enhance targ, &block
 	prepare_task(targ, block) { |name,pre,blk|
 	    t = resolve(name).last
-	    if Rant::MetaTask === t
-		t = t.last
-	    end
 	    if t
 		unless t.respond_to? :enhance
 		    abort("Can't enhance task `#{name}'")
@@ -919,7 +916,7 @@ class Rant::RantApp
     alias build make
 
     # Currently always returns an array (which might actually be a
-    # MetaTask or an empty array, but never nil).
+    # an empty array, but never nil).
     def resolve task_name, rel_project_dir = @current_subdir
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
@@ -931,7 +928,7 @@ class Rant::RantApp
 	    }
 	    []
 	when Rant::Worker: [s]
-	else # assuming MetaTask
+	else # assuming list of tasks
 	    s
 	end
     end
@@ -1104,10 +1101,9 @@ class Rant::RantApp
 	when nil
 	    @tasks[n] = task
 	when Rant::Worker
-	    mt = Rant::MetaTask.new n
-	    mt << et << task
+	    mt = [et, task]
 	    @tasks[n] = mt
-	else # assuming  Rant::MetaTask
+	else # assuming list of tasks
 	    et << task
 	end
     end
