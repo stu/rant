@@ -50,6 +50,7 @@ task :build_test_t do |t|
     test(?d, "tmp.t") or t.fail
 end
 
+desc "Make some path (basedir.t/a/b)."
 gen Directory, "basedir.t", "a/b"
 
 # vim: ft=ruby

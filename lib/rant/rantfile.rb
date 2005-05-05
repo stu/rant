@@ -703,10 +703,12 @@ module Rant
 		path = basedir
 		last_task = nil
 		task_block = nil
+		desc_for_last = app.pop_desc
 		dirs.each { |dir|
 		    pre = [path]
 		    pre.compact!
 		    if dir.equal?(dirs.last)
+			app.cx.desc desc_for_last
 			pre.concat prerequisites if prerequisites
 			task_block = block
 		    end

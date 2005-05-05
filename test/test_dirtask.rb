@@ -68,4 +68,10 @@ class TestDirTask < Test::Unit::TestCase
 	assert_rant(:fail, "basedir.t/b")
 	assert_rant("clean")
     end
+    def test_description
+	FileUtils.mkdir "basedir.t"
+	out, err = assert_rant("--tasks")
+	assert_match(%r{basedir.t/a/b\s*#.*Make some path}, out)
+	assert_rant("clean")
+    end
 end

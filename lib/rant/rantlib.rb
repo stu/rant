@@ -533,12 +533,10 @@ class Rant::RantApp
 	ch = Rant::Lib::parse_caller_elem(clr)
 	name = nil
 	pre = []
-	ln = ch[:ln] || 0
-	file = ch[:file]
 	# validate args
 	generator = args.shift
 	unless generator.respond_to? :rant_generate
-	    abort(pos_text(file, ln),
+	    abort_at(ch,
 		"First argument to `gen' has to be a task-generator.")
 	end
 	# ask generator to produce a task for this application
@@ -899,7 +897,7 @@ class Rant::RantApp
 
     # Invoke all tasks necessary to build +target+. Returns the number
     # of tasks invoked.
-    def build target, opt = {}
+    def make target, opt = {}
 	opt[:force] = true if @force_targets.delete(target)
 	matching_tasks = 0
 	old_subdir = @current_subdir
@@ -917,7 +915,8 @@ class Rant::RantApp
 	Dir.chdir old_pwd
 	matching_tasks
     end
-    public :build
+    public :make
+    alias build make
 
     # Currently always returns an array (which might actually be a
     # MetaTask or an empty array, but never nil).

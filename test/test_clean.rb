@@ -92,6 +92,8 @@ class TestClean < Test::Unit::TestCase
     end
     def layout_project2
 	FileUtils.mkdir "p2.t"
+	FileUtils.mkdir "p2.t/c.t"
+	FileUtils.touch "p2.t/c.t/data"
 	Dir.chdir "p2.t"
 	open("Rantfile", "w") { |f|
 	    f << <<-EOF
@@ -104,6 +106,10 @@ class TestClean < Test::Unit::TestCase
 		sys.touch t.name
 	    end
 	    gen Directory, "b.t/c.t"
+	    gen Directory, "c.t", "a"
+	    file "c.t/a/b" => "c.t/a" do
+		sys.touch t.name
+	    end
 	    file "b.t/c.t/d.t" => "b.t/c.t" do |t|
 		sys.touch t.name
 	    end
@@ -124,7 +130,9 @@ class TestClean < Test::Unit::TestCase
 	capture_std do
 	    assert_equal(0, Rant::RantApp.new("autoclean").run)
 	end
-	%w(a.t b.t/c.t/d.t mk_junk.t).each { |f| assert(!test(?e, f)) }
+	%w(a.t b.t/c.t/d.t c.t/a mk_junk.t).each { |f| assert(!test(?e, f)) }
+	assert(test(?d, "c.t"))
+	assert(test(?f, "c.t/data"))
 	capture_std do
 	    assert_equal(1, Rant::RantApp.new("clean").run)
 	end
