@@ -1,0 +1,16 @@
+
+import %w(autoclean subfile)
+
+gen AutoClean
+
+gen SubFile, "sub.t/file" do |t|
+    sys.touch t.name
+end
+
+gen SubFile, "sub2.t", "sub.t/file" do |t|
+    sys.touch t.name
+end
+
+gen SubFile, "sub3.t", "file" do |t|
+    sys.touch t.name
+end
