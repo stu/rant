@@ -23,8 +23,9 @@ module Rant
     RANTFILES	= [	"Rantfile",
 			"rantfile",
 			"Rantfile.rb",
-			"rantfile.rb",
+			"rantfile.rb"
 		  ]
+    SUB_RANTFILES = ["subrant"]
     
     # Names of plugins and imports for which code was loaded.
     # Files that where loaded with the `import' commant are directly
@@ -165,7 +166,7 @@ module Rant
 		    begin
 			id = Constraints.const_get(id)
 		    rescue
-			raise NotAConstraintFactoryError.new(ct), caller
+			raise NotAConstraintFactoryError.new(id), caller
 		    end
 		end
 		unless id.respond_to? :rant_constraint

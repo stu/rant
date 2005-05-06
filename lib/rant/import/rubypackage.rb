@@ -57,7 +57,8 @@ class Rant::Generators::RubyPackage
     PACKAGE_ATTRS = PACKAGE_SINGLE_ATTRS + PACKAGE_TO_LIST_ATTRS
 
     EXPLICIT_GEM_MAPPING = {
-	"executable" => "executables"
+	"executable" => "executables",
+	"requires" => "requirements",
 	# add requires => requirements ?
     }
 

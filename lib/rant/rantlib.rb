@@ -301,7 +301,7 @@ class Rant::RantApp
     # A hash with all tasks. For fast task lookup use this hash with
     # the taskname as key.
     #
-    # See also: #resolve, #build
+    # See also: #resolve, #make
     attr_reader :tasks
     # A list of all imports (code loaded with +import+).
     attr_reader :imports
@@ -359,8 +359,6 @@ class Rant::RantApp
     end
 
     def rootdir
-	#od = @opts[:directory]
-	#od ? od.dup : ""
 	@opts[:directory]
     end
 
@@ -1013,9 +1011,9 @@ class Rant::RantApp
 	files = []
 	::Rant::RANTFILES.each { |rfn|
 	    path = dir ? File.join(dir, rfn) : rfn
-	    # We load don't accept rantfiles with pathes that differ
-	    # only in case. This protects from loading the same file
-	    # twice on case insensitive file systems.
+	    # We don't accept rantfiles with pathes that differ only
+	    # in case. This protects from loading the same file twice
+	    # on case insensitive file systems.
 	    unless files.find { |f| f.downcase == path.downcase }
 		files << path if test(?f, path)
 	    end
