@@ -279,4 +279,16 @@ class TestFileList < Test::Unit::TestCase
 	    assert(l1.include("b.t"))
 	end
     end
+    def test_sys_glob_flags
+	cx = Rant::RantApp.new.cx
+	touch_temp %w(a.t .a.t b.t .b.t) do
+	    l1 = cx.sys["*.t"]
+	    l1.glob_flags |= File::FNM_DOTMATCH
+	    l2 = cx.sys["*.t"]
+	    assert_equal(4, l1.size)
+	    assert_equal(2, l2.size)
+	    %w(a.t .a.t b.t .b.t).each { |f| l1.include? f }
+	    %w(a.t b.t ).each { |f| l2.include? f }
+	end
+    end
 end

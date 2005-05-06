@@ -1117,14 +1117,15 @@ class Rant::RantApp
     # and the second is an array with the prerequisites.
     # The third is the file name of +clr+, the fourth is the line number
     # of +clr+.
-    def normalize_task_arg(targ, clr)
+    def normalize_task_arg(targ, ch)
+	# pre 0.3.7: ch in parameter list was clr
 	# TODO: check the code calling this method so that we can
 	# assume clr is already a hash
-	ch = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
+	#ch = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
+
 	name = nil
 	pre = []
-	ln = ch[:ln] || 0
-	file = ch[:file]
+	ln, file = ch[:ln], ch[:file]
 	
 	# process and validate targ
 	if targ.is_a? Hash
