@@ -31,7 +31,7 @@ module Rant
 	    [ "--plugins",	"-p",	GetoptLong::REQUIRED_ARGUMENT,
 		"Include PLUGINS (comma separated list)."	],
 	    [ "--imports",	"-i",	GetoptLong::REQUIRED_ARGUMENT,
-		"Include IMPORTS (coma separated list)."	],
+		"Include IMPORTS (comma separated list)."	],
 	    [ "--force",		GetoptLong::NO_ARGUMENT,
 		"Force overwriting of output file."		],
 	    [ "--with-comments",	GetoptLong::NO_ARGUMENT,
@@ -79,6 +79,7 @@ module Rant
 	    @force = false
 	    @rantapp = nil
 	    @core_imports = []
+	    @lib_imports = []
 	    @included_plugins = []
 	    @included_imports = []
 	    @skip_comments = true
@@ -289,16 +290,28 @@ EOF
 		    next if @skip_comments
 		end
 		name = nil
+		lib_file = nil
 		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
+		    # Rant library code
 		    name = $3
 		elsif line =~ /\s*(require|load)\s+('|")rant\/(import\/\w+)(\.rb)?('|")/
+		    # some "import" code
 		    name = $3
+		elsif line =~ /\s*(require|load)\s+('|")([^\2]+)\2[^r]*rant-import/
+		    # a require which is explicitely labelled with rant-import
+		    lib_file = $3
 		end
 		if name
 		    next if @core_imports.include? name
 		    path = get_lib_rant_path "#{name}.rb"
 		    msg "Including `#{name}'", path
 		    @core_imports << name
+		    rs << resolve_requires(File.read(path))
+		elsif lib_file
+		    next if @lib_imports.include? lib_file
+		    path = get_lib_path "#{lib_file}.rb"
+		    msg "Including `#{lib_file}'", path
+		    @lib_imports << lib_file
 		    rs << resolve_requires(File.read(path))
 		else
 		    line.sub!(/^\s+/, '') if @reduce_whitespace
@@ -308,11 +321,21 @@ EOF
 	    rs
 	end
 
+	private
+
 	def get_lib_rant_path(fn)
 	    path = File.join(LIB_DIR, fn)
 	    return path if File.exist?(path)
 	    $:.each { |lib_dir|
 		path = File.join(lib_dir, "rant", fn)
+		return path if File.exist?(path)
+	    }
+	    nil
+	end
+
+	def get_lib_path(fn)
+	    $:.each { |lib_dir|
+		path = File.join(lib_dir, fn)
 		return path if File.exist?(path)
 	    }
 	    nil

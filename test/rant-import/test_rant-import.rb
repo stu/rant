@@ -12,6 +12,7 @@ class TestRantImport < Test::Unit::TestCase
 	Dir.chdir($testRantImportDir) unless Dir.pwd == $testRantImportDir
     end
     def teardown
+	Dir.chdir($testRantImportDir)
 	FileUtils.rm_f Dir["ant*"]
 	FileUtils.rm_f Dir["make*"]
 	FileUtils.rm_rf Dir["*.t"]
@@ -61,5 +62,92 @@ class TestRantImport < Test::Unit::TestCase
 	assert(test(?f, "mygen"))
     ensure
 	FileUtils.rm_f "mygen"
+    end
+    def test_import_subdir
+	old_pwd = Dir.pwd
+	FileUtils.mkdir "sub.t"
+	Dir.chdir "sub.t"
+	FileUtils.mkpath "lib.t/rant/import/sub"
+	open("lib.t/rant/import/sub/t.rb", "w") { |f|
+	    f << <<-EOF
+	    module Rant::Generators
+		module Sub
+		    class T
+			def self.rant_generate(rac, ch, args, &blk)
+			    raise "no ch" unless Hash === ch
+			    rac.cx.task args.first do |t|
+				puts args
+				puts "block_given" if block_given?
+			    end
+			end
+		    end
+		end
+	    end
+	    EOF
+	}
+	open("Rantfile.rb", "w") { |f|
+	    f << <<-EOF
+	    $:.unshift "lib.t"
+	    import "sub/t"
+	    gen Sub::T, "hello", "test" do end
+	    EOF
+	}
+	out, err = assert_rant
+	assert_match(/.*hello.*\n.*test.*\n.*block_given/, out)
+	run_import("--quiet", "--auto", "ant")
+	assert(test(?f, "ant"))
+	FileUtils.rm_r "lib.t"
+	out = run_ruby("ant")
+	assert_match(/.*hello.*\n.*test.*\n.*block_given/, out)
+    ensure
+	Dir.chdir old_pwd
+	FileUtils.rm_rf "sub.t"
+    end
+    def test_import_marked_require
+	old_pwd = Dir.pwd
+	FileUtils.mkdir "sub2.t"
+	Dir.chdir "sub2.t"
+	FileUtils.mkpath "lib.t/rant/import/sub2"
+	FileUtils.mkdir "lib.t/misc"
+	open("lib.t/misc/printer.rb", "w") { |f|
+	    f << <<-EOF
+	    def misc_print(*args)
+		puts args.flatten.join('')
+	    end
+	    EOF
+	}
+	open("lib.t/rant/import/sub2/t.rb", "w") { |f|
+	    f << <<-EOF
+	    require 'misc/printer' # rant-import
+	    module Rant::Generators
+		module Sub2
+		    class T
+			def self.rant_generate(rac, ch, args, &blk)
+			    rac.cx.task args.first do |t|
+				misc_print(args)
+			    end
+			end
+		    end
+		end
+	    end
+	    EOF
+	}
+	open("rantfile.rb", "w") { |f|
+	    f << <<-EOF
+	    $:.unshift "lib.t"
+	    import "sub2/t"
+	    gen Sub2::T, "hello", "test" do end
+	    EOF
+	}
+	out, err = assert_rant
+	assert_match(/hellotest/, out)
+	run_import("--quiet", "--auto", "ant.rb")
+	assert(test(?f, "ant.rb"))
+	FileUtils.rm_r "lib.t"
+	out = run_ruby("ant.rb")
+	assert_match(/hellotest/, out)
+    ensure
+	Dir.chdir old_pwd
+	FileUtils.rm_rf "sub2.t"
     end
 end
