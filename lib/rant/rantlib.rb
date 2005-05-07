@@ -60,7 +60,7 @@ class String
 	if new_ext
 	    self.sub(/#{Regexp.escape ext}$/, new_ext)
 	else
-	    self.sub(/\.[^.]+$/, ".#{ext}")
+	    self.sub(/(\.[^.]*$)|$/, ".#{ext}")
 	end
     end
 end

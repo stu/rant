@@ -1,7 +1,7 @@
 
 # Rantfile for Rant :)
 
-import %w(rubytest rubydoc rubypackage autoclean)
+import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper)
 
 task :default => :test
 
@@ -128,22 +128,12 @@ task "to-win" => :package do
 end
 
 desc "Install Rant."
-install = task :install do
+task :install do
     sys.ruby "setup.rb"
 end
 
 if Env.on_windows?
-    cmd_files = bin_files.find_all { |f| f !~ /\.cmd$/}
-    cmd_files.map! { |f| "#{f}.cmd" }
-    cmd_files.zip(bin_files).each { |cmd, bin|
-	file cmd do |t|
-	    File.open(t.name, "w") { |f|
-		i_bin = File.join(Env::RUBY_BINDIR, File.basename(bin))
-		f.puts "@#{sys.sp Env::RUBY} #{sys.sp i_bin} %*"
-	    }
-	end
-	install << cmd
-    }
+    enhance :install => (gen Win32::RubyCmdWrapper, sys["bin/*"])
 end
 
 # vim:ft=ruby:

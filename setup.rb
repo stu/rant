@@ -1147,7 +1147,7 @@ class Installer
 	### stefan ###
 	# Add <tt>|| ""</tt> which avoids an ArgumentError if first
 	# line doesn't match the regexp.
-        return unless File.basename(first.sub(/\A\#!/, '').split[0] || "") == 'ruby'
+        return unless File.basename((first||"").sub(/\A\#!/, '').split[0] || "") == 'ruby'
         $stderr.puts "adjusting shebang: #{File.basename(path)}" if verbose?
         File.open(tmpfile, 'wb') {|w|
           w.print first.sub(/\A\#!\s*\S+/, '#! ' + config('rubypath'))

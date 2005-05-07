@@ -44,4 +44,25 @@ class TestRantfileAPI < Test::Unit::TestCase
     def test_rac_build_cd
 	assert_rant("tmp.t/Rantfile", "subdir_tmp", "build_test_t")
     end
+    def test_string_sub_ext
+	assert_equal("hello.txt", "hello.sxw".sub_ext(".sxw", ".txt"))
+    end
+    def test_string_sub_ext_2
+	assert_equal("hello.txt", "hello.sxw".sub_ext("sxw", "txt"))
+    end
+    def test_string_sub_ext_one_arg
+	assert_equal("hello.txt", "hello.sxw".sub_ext("txt"))
+    end
+    def test_string_sub_ext_new_ext
+	assert_equal("hello.txt", "hello".sub_ext("txt"))
+    end
+    def test_string_sub_ext_dot
+	assert_equal("hello.txt", "hello.".sub_ext("txt"))
+    end
+    def test_string_sub_ext_empty_str
+	assert_equal("hello.", "hello.txt".sub_ext(""))
+    end
+    def test_string_sub_ext_nil
+	assert_equal("hello.", "hello.txt".sub_ext(nil))
+    end
 end
