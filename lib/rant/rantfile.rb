@@ -216,16 +216,9 @@ module Rant
 		return needed? if opt[:needed?]
 		# +run+ already calls +goto_task_home+
 		#goto_task_home
-		if opt[:force] && !@done
-		    self.run
+		if opt[:force] && !@done or needed?
+		    run
 		    @done = true
-		else
-		    if needed?
-			run
-			@done = true
-		    else
-			false
-		    end
 		end
 	    rescue CommandError => e
 		err_msg e.message if app[:err_commands]

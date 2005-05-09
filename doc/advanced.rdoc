@@ -148,6 +148,22 @@ Practically, this means that it compiles the C files in src_x/, src_y,
 Look in the doc/examples/directedrule directory of the Rant
 distribution for a small example project.
 
+=== The SubFile generator
+
+A _SubFile_ is just a shortcut for the combination of a _Directory_
+and a _file_ task.
+The following example without the SubFile generator:
+    gen Directory, "backup"
+    file "backup/data" => %w(data backup) do |t|
+        sys.cp t.source, t.name
+    end
+can be directly translated to:
+    gen SubFile, "backup/data" => "data" do |t|
+        sys.cp t.source, t.name
+    end
+The SubFile generator automatically creates all necessary directory
+tasks and adds them as prerequisites to the final file task.
+
 === Constraining variables
 
 Rant allows you to constrain variables which are managed by the +var+
