@@ -51,8 +51,8 @@ class TestProject2 < Test::Unit::TestCase
 	capture_std do
 	    app("b_f2")
 	    @app.rootdir = $testProject2Dir
-	    assert(@app.source("buildfile"),
-		"source should return a true value on success")
+	    assert_equal(:return_val, @app.source("buildfile"),
+		"source should return value of last expression in Rantfile")
 	    assert_equal(@app.run, 0)
 	end
 	assert(File.exist?("b_f2"))

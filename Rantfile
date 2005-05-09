@@ -92,6 +92,12 @@ gen RubyTest, :timport do |t|
     t.test_files = sys["test/import/**/test_*.rb"]
 end
 
+desc "Test C support."
+gen RubyTest, :tc do |t|
+    t.libs << "test"
+    t.test_files = sys["test/c/test_*.rb"]
+end
+
 desc "Run all tests."
 gen RubyTest, :tall do |g|
     g.libs << "test"

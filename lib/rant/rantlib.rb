@@ -593,7 +593,7 @@ class Rant::RantApp
 		Rant::CODE_IMPORTS << import_name
 	    rescue LoadError
 		abort(pos_text(file, ln),
-		    "no such plugin library - `#{lc_pl_name}'")
+		    "no such plugin library -- #{lc_pl_name}")
 	    end
 	end
 	pl_class = nil
@@ -601,7 +601,7 @@ class Rant::RantApp
 	    pl_class = ::Rant::Plugin.const_get(pl_name)
 	rescue NameError, ArgumentError
 	    abort(pos_text(file, ln),
-		"`#{pl_name}': no such plugin")
+		"no such plugin -- #{pl_name}")
 	end
 
 	plugin = pl_class.rant_plugin_new(self, ch, *args, &block)
@@ -635,16 +635,16 @@ class Rant::RantApp
 	}
     end
 
+    # Returns the value of the last expression executed in +rantfile+.
     def source rantfile
 	rf, is_new = rantfile_for_path(rantfile)
 	return false unless is_new
-	build rantfile
+	make rantfile
 	unless rf.exist?
-	    abort("source: No such file - #{rantfile}")
+	    abort("source: No such file -- #{rantfile}")
 	end
 
 	load_file rf
-	true
     end
 
     # Search the given directories for Rantfiles.
@@ -654,12 +654,9 @@ class Rant::RantApp
 	ln = cinf[:ln] || 0
 	file = cinf[:file]
 	args.each { |arg|
-	    #if arg.is_a? Symbol
-	    #	arg = arg.to_s
 	    if arg.respond_to? :to_str
 		arg = arg.to_str
-	    end
-	    unless arg.is_a? String
+	    else
 		abort(pos_text(file, ln),
 		    "subdirs: arguments must be strings")
 	    end
@@ -884,8 +881,8 @@ class Rant::RantApp
 	matching_tasks = 0
 	target_list.each do |target|
 	    goto "#"
-	    if build(target) == 0
-		abort("Don't know how to build `#{target}'.")
+	    if make(target) == 0
+		abort("Don't know how to make `#{target}'.")
 	    end
 	end
     end
@@ -982,11 +979,13 @@ class Rant::RantApp
 	end
     end
 
+    # Returns the value of the last expression executed in +rantfile+.
     def load_file rantfile
 	msg 1, "source #{rantfile.path}"
+	rv = nil
 	begin
 	    path = rantfile.absolute_path
-	    @context.instance_eval(File.read(path), path)
+	    rv = @context.instance_eval(File.read(path), path)
 	rescue NameError => e
 	    abort("Name error when loading `#{rantfile.path}':",
 	    e.message, e.backtrace)
@@ -1000,6 +999,7 @@ class Rant::RantApp
 	unless @rantfiles.include?(rantfile)
 	    @rantfiles << rantfile
 	end
+	rv
     end
     private :load_file
 

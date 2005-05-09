@@ -23,7 +23,8 @@ gen Action do
     rac.build "version.t"
 end
 
-source "auto.rf"
+auto_t_task = source "auto.rf"
+rac.abort unless auto_t_task.name == "auto.t"
 
 task :clean do
     sys.rm_f %w(auto.t auto.rf version.t)
