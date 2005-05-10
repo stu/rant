@@ -1,6 +1,9 @@
 
 = TODO
 
+== GET RID OF CLASS Rant::Path
+Done.
+
 == Packaging
 Try minitar if tar is not available.
 

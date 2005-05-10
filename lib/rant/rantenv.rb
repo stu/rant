@@ -4,38 +4,6 @@ require 'rbconfig'
 
 module Rant end
 
-class Rant::Path
-    attr_reader :path
-    def initialize path, abs_path = nil
-	@path = path or raise ArgumentError, "path not given"
-	@abs_path = abs_path
-    end
-    def to_s
-	@path.dup
-    end
-    def to_str
-	@path.dup
-    end
-    def exist?
-	File.exist? @path
-    end
-    def file?
-	test ?f, @path
-    end
-    def dir?
-	test ?d, @path
-    end
-    def mtime
-	File.mtime @path
-    end
-    def absolute_path
-	@abs_path ||= File.expand_path(@path)
-    end
-    def dirname
-	File.dirname absolute_path
-    end
-end
-
 # This module provides some platform indenpendant
 # (let's hope) environment information.
 module Rant::Env

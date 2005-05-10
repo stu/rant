@@ -24,15 +24,18 @@ module Rant
 	end
     end
 
-    class Rantfile < Path
+    class Rantfile
 
-	attr_reader :tasks
+	attr_reader :tasks, :path
 	attr_accessor :project_subdir
 	
-	def initialize(*args)
-	    super
+	def initialize(path)
+	    @path = path or raise ArgumentError, "path required"
 	    @tasks = []
 	    @project_subdir = nil
+	end
+	def to_s
+	    @path
 	end
     end	# class Rantfile
 
@@ -514,17 +517,12 @@ module Rant
 
 	def initialize *args
 	    super
-	    if @name.is_a? Path
-		@path = @name
-		@name = @path.to_s
-	    else
-		@path = Path.new @name
-	    end
 	    @ts = T0
 	end
 
+	# TODO: remove this method?
 	def path
-	    @path
+	    @name
 	end
 
 	def needed?
@@ -538,8 +536,8 @@ module Rant
 	    begin
 		return if done?
 		goto_task_home
-		if @path.exist?
-		    @ts = @path.mtime
+		if File.exist? @name
+		    @ts = File.mtime @name
 		    internal_invoke opt, false
 		else
 		    @ts = T0
@@ -552,21 +550,19 @@ module Rant
 
 	def handle_filetask(dep, opt)
 	    return true if dep.invoke opt
-	    # TODO: require dep to exist after invoke?
-	    if dep.path.exist?
+	    if File.exist?(dep.name)
 		#puts "***`#{dep.name}' requires update" if dep.path.mtime > @ts
-		dep.path.mtime > @ts
+		File.mtime(dep.name) > @ts
 	    end
 	end
 
 	def handle_non_worker(dep, opt)
-	    dep = Path.new(dep) unless Path === dep
-	    unless dep.exist?
+	    unless File.exist? dep
 		err_msg @app.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
-	    [dep, dep.mtime > @ts]
+	    [dep, File.mtime(dep) > @ts]
 	end
 
 	def each_target
@@ -681,19 +677,18 @@ module Rant
 
 	def handle_filetask(dep, opt)
 	    return @block if dep.invoke opt
-	    if dep.path.exist?
-		@block && dep.path.mtime > @ts
+	    if File.exist?(dep.name)
+		@block && File.mtime(dep.name) > @ts
 	    end
 	end
 
 	def handle_non_worker(dep, opt)
-	    dep = Path.new(dep) unless Path === dep
-	    unless dep.exist?
+	    unless File.exist? dep
 		err_msg @app.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
-	    [dep, @block && dep.mtime > @ts]
+	    [dep, @block && File.mtime(dep) > @ts]
 	end
 
 	def run

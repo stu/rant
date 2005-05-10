@@ -9,7 +9,6 @@ end
 gen Directory, "obj"
 
 ro = gen DirectedRule, "obj" => sys["src_*"], :o => :c do |t|
-    rac.build "obj"
     sys "cc -c -o #{t.name} #{t.source}"
 end
 

@@ -640,7 +640,7 @@ class Rant::RantApp
 	rf, is_new = rantfile_for_path(rantfile)
 	return false unless is_new
 	make rantfile
-	unless rf.exist?
+	unless File.exist? rf.path
 	    abort("source: No such file -- #{rantfile}")
 	end
 
@@ -980,20 +980,21 @@ class Rant::RantApp
     end
 
     # Returns the value of the last expression executed in +rantfile+.
+    # +rantfile+ has to be an Rant::Rantfile instance.
     def load_file rantfile
-	msg 1, "source #{rantfile.path}"
+	msg 1, "source #{rantfile}"
 	rv = nil
 	begin
-	    path = rantfile.absolute_path
+	    path = rantfile.path
 	    rv = @context.instance_eval(File.read(path), path)
 	rescue NameError => e
-	    abort("Name error when loading `#{rantfile.path}':",
+	    abort("Name error when loading `#{rantfile}':",
 	    e.message, e.backtrace)
 	rescue LoadError => e
-	    abort("Load error when loading `#{rantfile.path}':",
+	    abort("Load error when loading `#{rantfile}':",
 	    e.message, e.backtrace)
 	rescue ScriptError => e
-	    abort("Script error when loading `#{rantfile.path}':",
+	    abort("Script error when loading `#{rantfile}':",
 	    e.message, e.backtrace)
 	end
 	unless @rantfiles.include?(rantfile)
@@ -1179,15 +1180,14 @@ class Rant::RantApp
     # the rantfile was created and added, otherwise the rantfile
     # already existed.
     def rantfile_for_path path
-	# TODO: optimization: File.expand_path is called very often
-	# (don't forget the calls from Rant::Path#absolute_path)
+	# all rantfiles have an absolute path as path attribute
 	abs_path = File.expand_path(path)
-	if @rantfiles.any? { |rf| rf.absolute_path == abs_path }
-	    file = @rantfiles.find { |rf| rf.absolute_path == abs_path }
+	if @rantfiles.any? { |rf| rf.path == abs_path }
+	    file = @rantfiles.find { |rf| rf.path == abs_path }
 	    [file, false]
 	else
 	    # create new Rantfile object
-	    file = Rant::Rantfile.new(abs_path, abs_path)
+	    file = Rant::Rantfile.new abs_path
 	    file.project_subdir = @current_subdir
 	    @rantfiles << file
 	    [file, true]
