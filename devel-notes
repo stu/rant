@@ -3,6 +3,11 @@
 Don't use here documents in the Rant sources, imports and plugins.
 They'll get messed up by the rant-import command.
 
+== More notes on rant-import
+rant-import removes all lines matching /^\s*#/ per default. Remember
+that, I was already bitten by that one in multiline regex!
+(FileList#mk_all_rx)
+
 == Running RDoc programmatically
 require 'rdoc/rdoc'
 rdoc = RDoc::RDoc.new

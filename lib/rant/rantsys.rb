@@ -192,15 +192,12 @@ module Rant
 	if File::ALT_SEPARATOR
 	    # TODO: check for FS case sensitivity?
 	    def mk_all_rx(file)
-
-		/(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)
-		    #{Regexp.escape(file)}
+		/(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)#{Regexp.escape(file)}
 		    ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x
 	    end
 	else
 	    def mk_all_rx(file)
-		/(^|#{ESC_SEPARATOR}+)
-		    #{Regexp.escape(file)}
+		/(^|#{ESC_SEPARATOR}+)#{Regexp.escape(file)}
 		    (#{ESC_SEPARATOR}+|$)/x
 	    end
 	end

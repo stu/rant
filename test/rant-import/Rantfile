@@ -12,4 +12,8 @@ task :private do |t|
     puts t.name
 end
 
+task :sys_shun_demo do |t|
+    puts(sys["**/*.s.t"].shun("a.t"))
+end
+
 # vim: ft=ruby

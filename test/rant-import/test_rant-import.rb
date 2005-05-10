@@ -150,4 +150,19 @@ class TestRantImport < Test::Unit::TestCase
 	Dir.chdir old_pwd
 	FileUtils.rm_rf "sub2.t"
     end
+    def test_sys_shun
+	FileUtils.mkdir "a.t"
+	FileUtils.mkdir "b.t"
+	FileUtils.touch %w(a.t/1.s.t a.t/2.s.t a.t/xy.s.t b.t/b.s.t)
+	out = run_rant("-q", "sys_shun_demo")
+	files = out.strip.split "\n"
+	assert_equal(1, files.size)
+	assert(files.include?("b.t/b.s.t"))
+	run_import("-q", "--auto", "ant")
+	assert(test(?f, "ant"))
+	out = run_ruby("ant", "-q", "sys_shun_demo")
+	files = out.strip.split "\n"
+	assert_equal(1, files.size)
+	assert(files.include?("b.t/b.s.t"))
+    end
 end
