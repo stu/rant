@@ -38,14 +38,14 @@ class TestDirTask < Test::Unit::TestCase
     end
     def test_basedir_no_create
 	out, err = capture_std do
-	    assert_equal(1, Rant::RantApp.new("basedir.t").run)
+	    assert_equal(1, Rant::RantApp.new.run("basedir.t"))
 	end
 	assert_match(/\[ERROR\].*basedir\.t/, err)
 	assert(!test(?e, "basedir.t"))
     end
     def test_basedir_fail_no_basedir
 	out, err = capture_std do
-	    assert_equal(1, Rant::RantApp.new("basedir.t/a").run)
+	    assert_equal(1, Rant::RantApp.new.run("basedir.t/a"))
 	end
 	assert(!test(?e, "basedir.t"))
 	assert(!test(?e, "a"))

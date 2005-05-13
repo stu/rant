@@ -13,9 +13,9 @@ class TestRantInterface < Test::Unit::TestCase
     def teardown
     end
     def test_cmd_targets
-	@app = Rant::RantApp.new("-f non_existent", "target", "-aforced_target")
+	@app = Rant::RantApp.new
 	op = capture_stderr {
-	    assert_equal(@app.run, 1,
+	    assert_equal(@app.run("-f non_existent", "target", "-aforced_target"), 1,
 		"Rant should fail because there is no such Rantfile.")
 	}
 	assert(op =~ /\[ERROR\]/,
@@ -28,25 +28,25 @@ class TestRantInterface < Test::Unit::TestCase
 	    "forced_target should run first")
     end
     def test_envvar_on_cmdline
-	@app = Rant::RantApp.new("VAR=VAL")
+	@app = Rant::RantApp.new
 	@app.context.var.env "VAR"
-	assert_equal(@app.run, 0)
+	assert_equal(@app.run("VAR=VAL"), 0)
 	assert_equal(ENV["VAR"], "VAL",
 	    "rant should set arguments of form VAR=VAL in var")
     end
     def test_envvar_on_cmdline_lc
-	@app = Rant::RantApp.new("var2=val2")
-	assert_equal(@app.run, 0)
+	@app = Rant::RantApp.new
+	assert_equal(@app.run("var2=val2"), 0)
 	assert_equal(@app.context.var["var2"], "val2",
 	    "rant should set arguments of form var2=val2 in var")
     end
     def test_opt_targets
-	@app = Rant::RantApp.new("--tasks")
+	@app = Rant::RantApp.new
 	@app.desc 'This is a "public" target.'
 	@app.task :public_task
 	@app.task :private_task
 	op = capture_stdout { 
-	    assert_equal(@app.run, 0)
+	    assert_equal(@app.run("--tasks"), 0)
 	}
 	assert(op =~ /\bpublic_task\b/,
 	    "rant -T output should contain name of described task")

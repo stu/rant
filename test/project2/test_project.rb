@@ -15,7 +15,9 @@ class TestProject2 < Test::Unit::TestCase
     include ::Rant::Sys
 
     def app *args
-	@app = ::Rant::RantApp.new(*args)
+	@app = ::Rant::RantApp.new
+	@app.args.concat(args.flatten)
+	@app
     end
     def setup
 	Dir.chdir($testProject2Dir) unless Dir.pwd == $testProject2Dir

@@ -213,8 +213,8 @@ module Rant
 		@@rac.args.replace(args.flatten)
 		@@rac.run
 	    else
-		@@rac = Rant::RantApp.new(args)
-		@@rac.run
+		@@rac = Rant::RantApp.new
+		@@rac.run(args)
 	    end
 	end
 
@@ -315,6 +315,11 @@ class Rant::RantApp
     attr_reader :resolve_hooks
 
     def initialize *args
+	unless args.empty?
+	    STDERR.puts caller[0]
+	    STDERR.puts "Warning: Giving arguments Rant::RantApp.new " +
+		"is deprecated. Give them to the #run method."
+	end
 	@args = args.flatten
 	# Rantfiles will be loaded in the context of this object.
 	@context = RantAppContext.new(self)
@@ -439,8 +444,9 @@ class Rant::RantApp
     end
 
     # Returns 0 on success and 1 on failure.
-    def run
+    def run *args
 	@run = true
+	@args.concat(args.flatten)
 	# remind pwd
 	@orig_pwd = Dir.pwd
 	# Process commandline.
@@ -672,15 +678,13 @@ class Rant::RantApp
 		rantfiles_in_dir.each { |f|
 		    loaded = true
 		    rf, is_new = rantfile_for_path(f)
-		    if is_new
-			load_file rf
-		    end
+		    load_file rf if is_new
 		}
 	    ensure
 		#puts "  going back to project dir: #{prev_subdir}"
 		goto_project_dir prev_subdir
 	    end
-	    unless loaded || quiet?
+	    unless loaded || @opts[:no_warn_subdir]
 		warn_msg(pos_text(file, ln),
 		    "subdirs: No Rantfile in subdir `#{arg}'.")
 	    end

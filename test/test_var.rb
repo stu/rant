@@ -85,7 +85,7 @@ class TestVar < Test::Unit::TestCase
 	assert(test(?f, "default_1.t"))
 	assert(test(?f, "default_2.t"))
 	capture_std do
-	    assert_equal(0, Rant::RantApp.new(%w(-fvar.rf clean)).run)
+	    assert_equal(0, Rant::RantApp.new.run(%w(-fvar.rf clean)))
 	end
     end
     def test_override
@@ -96,7 +96,7 @@ class TestVar < Test::Unit::TestCase
 	assert(test(?f, "val1.t"))
 	assert(test(?f, "default_2.t"))
 	capture_std do
-	    assert_equal(0, Rant::RantApp.new(%w(-fvar.rf clean)).run)
+	    assert_equal(0, Rant::RantApp.new.run(%w(-fvar.rf clean)))
 	end
     end
     def test_is_string
@@ -273,6 +273,6 @@ class TestVar < Test::Unit::TestCase
 	assert_match(
 	    /source_err\.rf\.t.+2.*\n.*11.+constraint.+integer/i, err)
     ensure
-	assert_equal(0, Rant::RantApp.new("-fvar.rf", "clean", "-q").run)
+	assert_equal(0, Rant::RantApp.new.run("-fvar.rf", "clean", "-q"))
     end
 end

@@ -520,11 +520,6 @@ module Rant
 	    @ts = T0
 	end
 
-	# TODO: remove this method?
-	def path
-	    @name
-	end
-
 	def needed?
 	    return false if done?
 	    invoke(:needed? => true)

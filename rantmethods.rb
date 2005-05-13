@@ -14,7 +14,7 @@ end
 
 desc "Print constants introduced by Rant."
 task :constants do
-    puts ((self.class.constants - Object.constants).sort)
+    puts((self.class.constants - Object.constants).sort)
 end
 
 desc "Print all attribute writers of a Gem::Specification."
@@ -81,50 +81,4 @@ file "bench-depsearch" do |t|
 	    }
 	EOT
     }
-end
-
-=begin
-class TraceObject < Object
-    ml = public_instance_methods + protected_instance_methods + private_instance_methods
-    ml.each { |m|
-	eval <<-EOM
-	    def #{m}(*args)
-		print "TraceObject##{m}("
-		print args.join(", ")
-		print ")"
-		puts(block_given? ? " block_given" : "")
-		super
-	    end
-	EOM
-    }
-end
-=end
-
-class TraceArray < Array
-    ml = public_instance_methods + protected_instance_methods + private_instance_methods
-    ml.delete "print"
-    ml.delete "block_given?"
-    ml.delete "puts"
-    ml.each { |m|
-	eval <<-EOM
-	    def #{m}(*args)
-		print "TraceArray##{m}("
-		print args.join(", ")
-		print ")"
-		puts(block_given? ? " block_given" : "")
-		super
-	    end
-	EOM
-    }
-end
-
-# list the methods that are sent to an object that is in an array
-# which is flattened.
-#task :flatten do
-    #    to = TraceObject.new
-    #[to].flatten
-    #end
-
-task :flatten_ary do
-    [TraceArray.new].flatten
 end

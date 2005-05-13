@@ -27,10 +27,10 @@ module Test
 		}
 		if capture
 		    capture_std do
-			assert_equal(res, ::Rant::RantApp.new(*args).run)
+			assert_equal(res, ::Rant::RantApp.new.run(*args))
 		    end
 		else
-		    assert_equal(res, ::Rant::RantApp.new(*args).run)
+		    assert_equal(res, ::Rant::RantApp.new.run(*args))
 		end
 	    end
 	end

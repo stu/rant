@@ -4,7 +4,7 @@ require 'tutil'
 
 class TestLightTask < Test::Unit::TestCase
     def setup
-	@app = Rant::RantApp.new %w()
+	@app = Rant::RantApp.new
     end
     def teardown
     end

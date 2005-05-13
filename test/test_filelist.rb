@@ -255,12 +255,12 @@ class TestFileList < Test::Unit::TestCase
 	    EOF
 	}
 	capture_std do
-	    Rant::RantApp.new("-fsys_cd.rf.t", "sub.t/a.t").run
+	    Rant::RantApp.new.run("-fsys_cd.rf.t", "sub.t/a.t")
 	end
 	assert(test(?f, "sub.t/a.t"))
 	assert(test(?f, "sub.t/b.t"))
 	capture_std do
-	    Rant::RantApp.new("-fsys_cd.rf.t", "clean").run
+	    Rant::RantApp.new.run("-fsys_cd.rf.t", "clean")
 	end
 	assert(!test(?e, "sub.t/a.t"))
 	assert(!test(?e, "sub.t/b.t"))

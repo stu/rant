@@ -65,7 +65,7 @@ class TestClean < Test::Unit::TestCase
 	files.each { |f| assert(test(?f, f)) }
 	dirs.each { |f| assert(test(?d, f)) }
 	capture_std do
-	    assert_equal(0, Rant::RantApp.new("clean").run)
+	    assert_equal(0, Rant::RantApp.new.run("clean"))
 	end
 	%w(sa.t a1.t a2.t sub1.t/b1.t sub1.t/b2.t).each { |f|
 	    assert(!test(?e, f))
@@ -81,7 +81,7 @@ class TestClean < Test::Unit::TestCase
 	%w(a1.t a2.t b1.t b2.t).each { |f| assert(test(?f, f)) }
 	%w(sa.t sb.t).each { |f| assert(test(?d, f)) }
 	capture_std do
-	    assert_equal(0, Rant::RantApp.new("clean").run)
+	    assert_equal(0, Rant::RantApp.new.run("clean"))
 	end
 	%w(b1.t b2.t sb.t).each { |f| assert(!test(?e, f)) }
 	%w(a1.t a2.t sa.t).each { |f| assert(test(?e, f)) }
@@ -128,13 +128,13 @@ class TestClean < Test::Unit::TestCase
 	end
 	%w(a.t b.t/c.t/d.t mk_junk.t).each { |f| assert(test(?e, f)) }
 	capture_std do
-	    assert_equal(0, Rant::RantApp.new("autoclean").run)
+	    assert_equal(0, Rant::RantApp.new.run("autoclean"))
 	end
 	%w(a.t b.t/c.t/d.t c.t/a mk_junk.t).each { |f| assert(!test(?e, f)) }
 	assert(test(?d, "c.t"))
 	assert(test(?f, "c.t/data"))
 	capture_std do
-	    assert_equal(1, Rant::RantApp.new("clean").run)
+	    assert_equal(1, Rant::RantApp.new.run("clean"))
 	end
     ensure
 	cleanup_project2

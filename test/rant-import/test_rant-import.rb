@@ -48,7 +48,7 @@ class TestRantImport < Test::Unit::TestCase
 	    EOF
 	}
 	out, err = capture_std do
-	    assert_equal(0, Rant::RantApp.new("-fmygen.rf.t").run)
+	    assert_equal(0, Rant::RantApp.new.run("-fmygen.rf.t"))
 	end
 	assert_match(/Greetings.*mygen/, out)
 	assert(test(?f, "mygen"))

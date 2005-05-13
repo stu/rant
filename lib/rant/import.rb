@@ -96,8 +96,8 @@ module Rant
 		rac_args = %w(--stop-after-load) + 
 		    @arg_rantfiles.collect { |rf| "-f#{rf}" }
 		rac_args << "-v" unless @quiet
-		@rantapp = RantApp.new(rac_args)
-		unless @rantapp.run == 0
+		@rantapp = RantApp.new
+		unless @rantapp.run(rac_args) == 0
 		    abort("Auto-determination of required code failed.")
 		end
 		@imports.concat(@rantapp.imports)
