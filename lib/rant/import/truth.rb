@@ -5,7 +5,7 @@
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
 module Rant
-    module Worker
+    module Node
 	def %(desc)
 	    @description = case @description
 	    when nil: desc

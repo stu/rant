@@ -926,7 +926,7 @@ class Rant::RantApp
 		return s if s
 	    }
 	    []
-	when Rant::Worker: [s]
+	when Rant::Node: [s]
 	else # assuming list of tasks
 	    s
 	end
@@ -1103,7 +1103,7 @@ class Rant::RantApp
 	case et
 	when nil
 	    @tasks[n] = task
-	when Rant::Worker
+	when Rant::Node
 	    mt = [et, task]
 	    @tasks[n] = mt
 	else # assuming list of tasks

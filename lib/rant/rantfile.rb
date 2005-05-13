@@ -40,18 +40,18 @@ module Rant
     end	# class Rantfile
 
     # Any +object+ is considered a _task_ if
-    # <tt>Rant::Worker === object</tt> is true.
+    # <tt>Rant::Node === object</tt> is true.
     #
     # Most important classes including this module are the Rant::Task
     # class and the Rant::FileTask class.
-    module Worker
+    module Node
 
 	INVOKE_OPT = {}.freeze
 
 	# Name of the task, this is always a string.
 	attr_reader :name
-	# A reference to the application this task belongs to.
-	attr_reader :app
+	# A reference to the Rant compiler this task belongs to.
+	attr_reader :rac
 	# Description for this task.
 	attr_accessor :description
 	# The rantfile this task was defined in.
@@ -93,7 +93,7 @@ module Rant
 	# Important for subclasses: Call this method always before
 	# invoking code from Rantfiles (e.g. task action blocks).
 	def goto_task_home
-	    @app.goto_project_dir project_subdir
+	    @rac.goto_project_dir project_subdir
 	end
 
 	def done?
@@ -110,11 +110,11 @@ module Rant
 	end
 
 	# +opt+ is a Hash and shouldn't be modified.
-	# All objects implementing the Rant::Worker protocol should
+	# All objects implementing the Rant::Node protocol should
 	# know about the following +opt+ values:
 	# <tt>:needed?</tt>::
 	#	Just check if this task is needed.  Should do the same
-	#	as calling Worker#needed?
+	#	as calling Node#needed?
 	# <tt>:force</tt>::
 	#	Run task action even if needed? is false.
 	# Returns true if task action was run.
@@ -150,7 +150,7 @@ module Rant
 	private :run
 
 	def circular_dep
-	    app.warn_msg "Circular dependency on task `#{full_name}'."
+	    rac.warn_msg "Circular dependency on task `#{full_name}'."
 	    false
 	end
 	private :circular_dep
@@ -161,31 +161,31 @@ module Rant
 	end
 
 	def eql? other
-	    Worker === other and full_name.eql? other.full_name
+	    Node === other and full_name.eql? other.full_name
 	end
-    end	# module Worker
+    end	# module Node
 
     # A very lightweight task for special purposes.
     class LightTask
-	include Worker
+	include Node
 
 	class << self
-	    def rant_generate(app, ch, args, &block)
+	    def rant_generate(rac, ch, args, &block)
 		unless args.size == 1
-		    app.abort("LightTask takes only one argument " +
+		    rac.abort("LightTask takes only one argument " +
 			"which has to be the taskname (string or symbol)")
 		end
-		app.prepare_task({args.first => [], :__caller__ => ch},
+		rac.prepare_task({args.first => [], :__caller__ => ch},
 			block) { |name,pre,blk|
 		    # TODO: ensure pre is empty
-		    self.new(app, name, &blk)
+		    self.new(rac, name, &blk)
 		}
 	    end
 	end
 
-	def initialize(app, name)
+	def initialize(rac, name)
 	    super()
-	    @app = app or raise ArgumentError, "no app given"
+	    @rac = rac or raise ArgumentError, "no rac given"
 	    @name = name
 	    @needed = nil
 	    @block = nil
@@ -193,8 +193,8 @@ module Rant
 	    yield self if block_given?
 	end
 
-	def app
-	    @app
+	def rac
+	    @rac
 	end
 
 	def needed &block
@@ -224,7 +224,7 @@ module Rant
 		    @done = true
 		end
 	    rescue CommandError => e
-		err_msg e.message if app[:err_commands]
+		err_msg e.message if rac[:err_commands]
 		self.fail(nil, e)
 	    rescue SystemCallError => e
 		err_msg e.message
@@ -236,25 +236,25 @@ module Rant
     end	# LightTask
 
     class Task
-	include Worker
+	include Node
 	include Console
 
 	T0 = Time.at(0).freeze
 
 	class << self
-	    def rant_generate(app, ch, args, &block)
+	    def rant_generate(rac, ch, args, &block)
 		if args.size == 1
-		    UserTask.rant_generate(app, ch, args, &block)
+		    UserTask.rant_generate(rac, ch, args, &block)
 		else
-		    app.abort("Task generator currently takes only one" +
+		    rac.abort("Task generator currently takes only one" +
 			" argument. (generates a UserTask)")
 		end
 	    end
 	end
 
-	def initialize(app, name, prerequisites = [], &block)
+	def initialize(rac, name, prerequisites = [], &block)
 	    super()
-	    @app = app || Rant.rac
+	    @rac = rac || Rant.rac
 	    @name = name or raise ArgumentError, "name not given"
 	    @pre = prerequisites || []
 	    @pre_resolved = false
@@ -352,7 +352,7 @@ module Rant
 	    each_dep { |dep|
 		if FileTask === dep
 		    handle_filetask(dep, opt) && update = true
-		elsif Worker === dep
+		elsif Node === dep
 		    handle_worker(dep, opt) && update = true
 		else
 		    dep, uf = handle_non_worker(dep, opt)
@@ -373,8 +373,8 @@ module Rant
 	private :internal_invoke
 
 	# Called from internal_invoke. +dep+ is a prerequisite which
-	# is_a? Worker, but not a FileTask. +opt+ are opts as given to
-	# Worker#invoke.
+	# is_a? Node, but not a FileTask. +opt+ are opts as given to
+	# Node#invoke.
 	#
 	# Override this method in subclasses to modify behaviour of
 	# prerequisite handling.
@@ -385,7 +385,7 @@ module Rant
 	end
 
 	# Called from internal_invoke. +dep+ is a prerequisite which
-	# is_a? FileTask. +opt+ are opts as given to Worker#invoke.
+	# is_a? FileTask. +opt+ are opts as given to Node#invoke.
 	#
 	# Override this method in subclasses to modify behaviour of
 	# prerequisite handling.
@@ -421,7 +421,7 @@ module Rant
 	    my_full_name = full_name
 	    my_project_subdir = project_subdir
 	    @pre.map! { |t|
-		if Worker === t
+		if Node === t
 		    # Remove references to self from prerequisites!
 		    if t.full_name == my_full_name
 			nil
@@ -435,7 +435,7 @@ module Rant
 			nil
 		    else
 			#STDERR.puts "selecting `#{t}'"
-			selection = @app.resolve t,
+			selection = @rac.resolve t,
 					my_project_subdir
 			#STDERR.puts selection.size
 			if selection.empty?
@@ -459,14 +459,14 @@ module Rant
     class UserTask < Task
 
 	class << self
-	    def rant_generate(app, ch, args, &block)
+	    def rant_generate(rac, ch, args, &block)
 		unless args.size == 1
-		    app.abort("UserTask takes only one argument " +
+		    rac.abort("UserTask takes only one argument " +
 			"which has to be like one given to the " +
 			"`task' function")
 		end
-		app.prepare_task(args.first, nil, ch) { |name,pre,blk|
-		    self.new(app, name, pre, &block)
+		rac.prepare_task(args.first, nil, ch) { |name,pre,blk|
+		    self.new(rac, name, pre, &block)
 		}
 	    end
 	end
@@ -553,7 +553,7 @@ module Rant
 
 	def handle_non_worker(dep, opt)
 	    unless File.exist? dep
-		err_msg @app.pos_text(rantfile.path, line_number),
+		err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
@@ -571,7 +571,7 @@ module Rant
 	def run
 	    dir, = File.split(name)
 	    unless dir == "."
-		dt = @app.resolve(dir, project_subdir).last
+		dt = @rac.resolve(dir, project_subdir).last
 		dt.invoke if DirTask === dt
 	    end
 	    super
@@ -592,23 +592,23 @@ module Rant
 	    # block will be called after complete directory creation.
 	    # After the block execution, the modification time of the
 	    # directory will be updated.
-	    def rant_generate(app, ch, args, &block)
+	    def rant_generate(rac, ch, args, &block)
 		case args.size
 		when 1
-		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
-		    self.task(app, ch, name, pre, &block)
+		    name, pre, file, ln = rac.normalize_task_arg(args.first, ch)
+		    self.task(rac, ch, name, pre, &block)
 		when 2
 		    basedir = args.shift
 		    if basedir.respond_to? :to_str
 			basedir = basedir.to_str
 		    else
-			app.abort_at(ch,
+			rac.abort_at(ch,
 			    "Directory: basedir argument has to be a string.")
 		    end
-		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
-		    self.task(app, ch, name, pre, basedir, &block)
+		    name, pre, file, ln = rac.normalize_task_arg(args.first, ch)
+		    self.task(rac, ch, name, pre, basedir, &block)
 		else
-		    app.abort(app.pos_text(ch[:file], ch[:ln]),
+		    rac.abort(rac.pos_text(ch[:file], ch[:ln]),
 			"Directory takes one argument, " +
 			"which should be like one given to the `task' command.")
 		end
@@ -617,28 +617,28 @@ module Rant
 	    # Returns the task which creates the last directory
 	    # element (and has all other necessary directories as
 	    # prerequisites).
-	    def task(app, ch, name, prerequisites=[], basedir=nil, &block)
+	    def task(rac, ch, name, prerequisites=[], basedir=nil, &block)
 		dirs = ::Rant::Sys.split_path(name)
 		if dirs.empty?
-		    app.abort_at(ch,
+		    rac.abort_at(ch,
 			"Not a valid directory name: `#{name}'")
 		end
 		path = basedir
 		last_task = nil
 		task_block = nil
-		desc_for_last = app.pop_desc
+		desc_for_last = rac.pop_desc
 		dirs.each { |dir|
 		    pre = [path]
 		    pre.compact!
 		    if dir.equal?(dirs.last)
-			app.cx.desc desc_for_last
+			rac.cx.desc desc_for_last
 			pre.concat prerequisites if prerequisites
 			task_block = block
 		    end
 		    path = path.nil? ? dir : File.join(path, dir)
-		    last_task = app.prepare_task({:__caller__ => ch,
+		    last_task = rac.prepare_task({:__caller__ => ch,
 			    path => pre}, task_block) { |name,pre,blk|
-			self.new(app, name, pre, &blk)
+			self.new(rac, name, pre, &blk)
 		    }
 		}
 		last_task
@@ -679,7 +679,7 @@ module Rant
 
 	def handle_non_worker(dep, opt)
 	    unless File.exist? dep
-		err_msg @app.pos_text(rantfile.path, line_number),
+		err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
@@ -687,11 +687,11 @@ module Rant
 	end
 
 	def run
-	    @app.sys.mkdir @name unless @isdir
+	    @rac.sys.mkdir @name unless @isdir
 	    if @block
 		@block.arity == 0 ? @block.call : @block[self]
 		goto_task_home
-		@app.sys.touch @name
+		@rac.sys.touch @name
 	    end
 	end
 

@@ -22,7 +22,7 @@ class TestDirTask < Test::Unit::TestCase
     end
     def test_return
 	dt = @cx.gen Directory, "a.t/b.t"
-	assert(Rant::Worker === dt)
+	assert(Rant::Node === dt)
 	assert_equal("a.t/b.t", dt.name,
 	    "`gen Directory' should return task for last directory")
 	args "--quiet", "a.t/b.t"

@@ -24,7 +24,7 @@ module Rant
 	    s << ">"
 	end
     end
-    module Worker
+    module Node
 	def inspect
 	    s = "#<#{self.class}:0x#{"%x" % object_id} "
 	    s << "task_id:#{full_name}, action:#{inspect_action}"
