@@ -1,0 +1,13 @@
+
+import "c/dependencies", "autoclean"
+
+file "a.t" => sys["**/*.{c,cpp}"] do |t|
+    sys.touch t.name
+end
+
+desc "Create C source dependency file."
+gen C::Dependencies
+
+gen AutoClean
+
+# vim:ft=ruby

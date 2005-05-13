@@ -736,8 +736,17 @@ module Rant
 	    @ts = nil
 	end
 
+	# Use this readonly!
+	def prerequisites
+	    @pre
+	end
+
 	# Note: The timestamp will only be calculated once!
 	def timestamp
+	    # Circular dependencies don't generate endless
+	    # recursion/loops because before calling the timestamp
+	    # method of any other node, we set @ts to some non-nil
+	    # value.
 	    return @ts if @ts
 	    goto_task_home
 	    if File.exist?(@name)
@@ -746,13 +755,27 @@ module Rant
 		rac.abort(rac.pos_text(@rantfile, @line_number),
 		    "SourceNode: no such file -- #@name")
 	    end
+	    sd = project_subdir
 	    @pre.each { |f|
-		if File.exist? f
-		    mtime = File.mtime f
-		    @ts = mtime if mtime > @ts
+		nodes = rac.resolve f, sd
+		if nodes.empty?
+		    if File.exist? f
+			mtime = File.mtime f
+			@ts = mtime if mtime > @ts
+		    else
+			rac.abort(rac.pos_text(@rantfile, @line_number),
+			    "SourceNode: no such file -- #{f}")
+		    end
 		else
-		    rac.abort(rac.pos_text(@rantfile, @line_number),
-			"SourceNode: no such file -- #{f}")
+		    nodes.each { |node|
+			if node.respond_to? :timestamp
+			    node_ts = node.timestamp
+			    @ts = node_ts if node_ts > @ts
+			else
+			    rac.abort(rac.pos_text(@rantfile, @line_number),
+				"SourceNode can't depend on #{node.name}")
+			end
+		    }
 		end
 	    }
 	    @ts

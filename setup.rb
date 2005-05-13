@@ -1143,7 +1143,7 @@ class Installer
     begin
       File.open(path, 'rb') {|r|
         first = r.gets
-        return unless File.basename(config('rubypath')) == 'ruby'
+        return unless File.basename(config('rubypath')) =~ /ruby/
 	### stefan ###
 	# Add <tt>|| ""</tt> which avoids an ArgumentError if first
 	# line doesn't match the regexp.

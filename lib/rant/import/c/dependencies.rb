@@ -9,7 +9,7 @@ require 'rant/c/include'
 module Rant::Generators::C end
 class Rant::Generators::C::Dependencies
     def self.rant_generate(rac, ch, args, &block)
-	c_files, out_fn, include_pathes = nil
+	c_files, out_fn, include_pathes, opts = nil
 	# args validation
 	if block
 	    rac.warn_msg "C::Dependencies: ignoring block"
@@ -17,10 +17,16 @@ class Rant::Generators::C::Dependencies
 	case args.size
 	when 0 # noop
 	when 1
-	    out_fn = args.first
+	    farg = args.first
+	    Hash === farg ? (opts = farg) : (out_fn = farg)
 	when 2
 	    out_fn = args.first
 	    opts = args[1]
+	else
+	    rac.abort_at(ch,
+		"C::Dependencies takes one or two arguments.")
+	end
+	if opts
 	    if opts.respond_to? :to_hash
 		opts = opts.to_hash
 	    else
@@ -38,9 +44,6 @@ class Rant::Generators::C::Dependencies
 			"C::Dependencies: no such option -- #{k}")
 		end
 	    }
-	else
-	    rac.abort_at(ch,
-		"C::Dependencies takes one or two arguments.")
 	end
 	out_fn ||= "c_dependencies"
 	c_files ||= rac.cx.sys["**/*.{c,cpp,cc,h,hpp}"]
@@ -113,10 +116,7 @@ class Rant::Generators::C::Dependencies
 	nil
     end
     def self.file_deps(target, deps)
-	s = "file #{target.to_str.inspect} => "
+	s = "gen SourceNode, #{target.to_str.inspect} => "
 	s << "[#{ deps.map{ |fn| fn.to_str.inspect }.join(', ')}]"
-	s << " do |t|\n"
-	s << "    sys.touch t.name\n"
-	s << "end\n"
     end
 end # class Rant::Generators::C::Dependencies

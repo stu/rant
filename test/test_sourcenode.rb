@@ -115,4 +115,49 @@ class TestSourceNode < Test::Unit::TestCase
 	    assert_match(/\[ERROR\].*SourceNode.*block/m, err)
 	end
     end
+    def test_with_autoclean
+	@rf = <<-EOF
+	import "autoclean"
+	gen SourceNode, "a.t" => %w(b.t c.t)
+	gen AutoClean
+	EOF
+	tmp_rf do
+	    assert_rant("-frf.t", "autoclean")
+	    FileUtils.touch %w(a.t b.t c.t)
+	    assert_rant("-frf.t", "autoclean")
+	    assert(test(?f, "a.t"))
+	    assert(test(?f, "b.t"))
+	    assert(test(?f, "c.t"))
+	end
+    end
+    def test_sourcenode_depends_on_sourcenode
+	@rf = <<-EOF
+	file "a.t" => "b.t" do |t|
+	    sys.touch t.name
+	end
+	gen SourceNode, "b.t" => %w(c.t d.t)
+	gen SourceNode, "d.t" => "e.t"
+	EOF
+	FileUtils.touch %w(b.t c.t d.t e.t)
+	tmp_rf do
+	    assert_rant("-frf.t")
+	    assert(test(?f, "a.t"))
+	    timeout
+	    FileUtils.touch "e.t"
+	    old_mtime = File.mtime "a.t"
+	    assert_rant("-frf.t")
+	    assert(File.mtime("a.t") > old_mtime)
+	end
+    end
+    def test_circular_dep
+	@rf = <<-EOF
+	gen SourceNode, "a.t" => "b.t"
+	gen SourceNode, "b.t" => "a.t"
+	EOF
+	FileUtils.touch %w(a.t b.t)
+	tmp_rf do
+	    th = Thread.new{ assert_rant("-frf.t") }
+	    assert_equal(th, th.join(0.5))
+	end
+    end
 end
