@@ -350,12 +350,12 @@ module Rant
 	    dep = nil
 	    uf = false
 	    each_dep { |dep|
-		if FileTask === dep
-		    handle_filetask(dep, opt) && update = true
+		if dep.respond_to? :timestamp
+		    handle_timestamped(dep, opt) && update = true
 		elsif Node === dep
-		    handle_worker(dep, opt) && update = true
+		    handle_node(dep, opt) && update = true
 		else
-		    dep, uf = handle_non_worker(dep, opt)
+		    dep, uf = handle_non_node(dep, opt)
 		    uf && update = true
 		    dep
 		end
@@ -379,8 +379,8 @@ module Rant
 	# Override this method in subclasses to modify behaviour of
 	# prerequisite handling.
 	#
-	# See also: handle_filetask, handle_non_worker
-	def handle_worker(dep, opt)
+	# See also: handle_timestamped, handle_non_node
+	def handle_node(dep, opt)
 	    dep.invoke opt
 	end
 
@@ -390,8 +390,8 @@ module Rant
 	# Override this method in subclasses to modify behaviour of
 	# prerequisite handling.
 	#
-	# See also: handle_worker, handle_non_worker
-	def handle_filetask(dep, opt)
+	# See also: handle_node, handle_non_node
+	def handle_timestamped(dep, opt)
 	    dep.invoke opt
 	end
 
@@ -403,8 +403,8 @@ module Rant
 	# [1] Fail with an exception.
 	# [2] Return two values: replacement_for_dep, update_required
 	#
-	# See also: handle_worker, handle_filetask
-	def handle_non_worker(dep, opt)
+	# See also: handle_node, handle_timestamped
+	def handle_non_node(dep, opt)
 	    err_msg "Unknown task `#{dep}',",
 		"referenced in `#{rantfile.path}', line #{@line_number}!"
 	    self.fail
@@ -543,15 +543,17 @@ module Rant
 	    end
 	end
 
-	def handle_filetask(dep, opt)
-	    return true if dep.invoke opt
-	    if File.exist?(dep.name)
-		#puts "***`#{dep.name}' requires update" if dep.path.mtime > @ts
-		File.mtime(dep.name) > @ts
-	    end
+	def timestamp
+	    File.exist?(@name) ? File.mtime(@name) : T0
 	end
 
-	def handle_non_worker(dep, opt)
+	def handle_timestamped(dep, opt)
+	    return true if dep.invoke opt
+	    #puts "***`#{dep.name}' requires update" if dep.timestamp > @ts
+	    dep.timestamp > @ts
+	end
+
+	def handle_non_node(dep, opt)
 	    unless File.exist? dep
 		err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
@@ -670,14 +672,12 @@ module Rant
 	    end
 	end
 
-	def handle_filetask(dep, opt)
+	def handle_timestamped(dep, opt)
 	    return @block if dep.invoke opt
-	    if File.exist?(dep.name)
-		@block && File.mtime(dep.name) > @ts
-	    end
+	    @block && dep.timestamp > @ts
 	end
 
-	def handle_non_worker(dep, opt)
+	def handle_non_node(dep, opt)
 	    unless File.exist? dep
 		err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
@@ -700,10 +700,79 @@ module Rant
 	    yield name
 	end
     end	# class DirTask
+
+    # A SourceNode describes dependencies between source files. Thus
+    # there is no action attached to a SourceNode. The target should
+    # be an existing file as well as all dependencies.
+    #
+    # An example would be a C source file which depends on other C
+    # source files because of <tt>#include</tt> statements.
+    #
+    # Rantfile usage:
+    #	gen SourceNode, "myext.c" => %w(ruby.h myext.h)
+    class SourceNode
+	include Node
+
+	def self.rant_generate(rac, ch, args)
+	    unless args.size == 1
+		rac.abort_at(ch, "SourceNode takes one argument.")
+	    end
+	    if block_given?
+		rac.abort_at(ch, "SourceNode doesn't take a block.")
+	    end
+	    rac.prepare_task(args.first, nil, ch) { |name, pre, blk|
+		new(rac, name, pre, &blk)
+	    }
+	end
+
+	def initialize(rac, name, prerequisites = [])
+	    super()
+	    @rac = rac
+	    @name = name or raise ArgumentError, "name not given"
+	    @pre = prerequisites
+	    @run = false
+	    # The timestamp is the latest of this file and all
+	    # dependencies:
+	    @ts = nil
+	end
+
+	# Note: The timestamp will only be calculated once!
+	def timestamp
+	    return @ts if @ts
+	    goto_task_home
+	    if File.exist?(@name)
+		@ts = File.mtime @name
+	    else
+		rac.abort(rac.pos_text(@rantfile, @line_number),
+		    "SourceNode: no such file -- #@name")
+	    end
+	    @pre.each { |f|
+		if File.exist? f
+		    mtime = File.mtime f
+		    @ts = mtime if mtime > @ts
+		else
+		    rac.abort(rac.pos_text(@rantfile, @line_number),
+			"SourceNode: no such file -- #{f}")
+		end
+	    }
+	    @ts
+	end
+
+	def needed?
+	    false
+	end
+
+	def invoke(opt = INVOKE_OPT)
+	    false
+	end
+
+    end # class SourceNode
+
     module Generators
 	Task = ::Rant::Task
 	LightTask = ::Rant::LightTask
 	Directory = ::Rant::DirTask
+	SourceNode = ::Rant::SourceNode
 
 	class Rule < ::Proc
 	    # Generate a rule by installing an at_resolve hook for
