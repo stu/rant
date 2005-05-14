@@ -1,12 +1,33 @@
 
 import "c/dependencies", "autoclean"
 
+var :deps, 1..3
+
 file "a.t" => sys["**/*.{c,cpp}"] do |t|
+    sys.touch t.name
+end
+
+file "hello.t" => "hello.c" do |t|
+    sys.touch t.name
+end
+
+file "bar.t" => "src/bar.c" do |t|
     sys.touch t.name
 end
 
 desc "Create C source dependency file."
 gen C::Dependencies
+
+gen C::Dependencies, "deps2.t", :search => [".", "include"]
+gen C::Dependencies, "deps3.t", :search => [".", "include", "src"]
+
+gen Action do
+    source case var[:deps]
+    when 2: "deps2.t"
+    when 3: "deps3.t"
+    else    "c_dependencies"
+    end
+end
 
 gen AutoClean
 

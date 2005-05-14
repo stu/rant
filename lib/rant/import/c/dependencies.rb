@@ -38,7 +38,12 @@ class Rant::Generators::C::Dependencies
 		when :sources
 		    c_files = v
 		when :search, :search_pathes, :include_pathes
-		    include_pathes = v
+		    include_pathes = 
+		    if v.respond_to? :to_str
+			[v.to_str]
+		    else
+			v
+		    end
 		else
 		    rac.abort_at(ch,
 			"C::Dependencies: no such option -- #{k}")

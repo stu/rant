@@ -45,7 +45,7 @@ class TestTask < Test::Unit::TestCase
 	assert(task.invoked?, "although task failed, it was invoked")
     end
 
-    def test_dependant
+    def test_dependent
 	r1 = r2 = false
 	t1 = Rant::Task.new(nil, :t1) { r1 = true }
 	t2 = Rant::Task.new(nil, :t2) { r2 = true }
@@ -59,7 +59,7 @@ class TestTask < Test::Unit::TestCase
 	assert(!t2.needed?)
     end
 
-    def test_dependance_fails
+    def test_dependency_fails
 	t1 = Rant::Task.new(nil, :t1) { true }
 	t2 = Rant::Task.new(nil, :t2) { |t| t.fail }
 	t1 << t2
