@@ -856,7 +856,7 @@ module Rant
 		    end
 		}
 		blk.target_rx = target_rx
-		rac.at_resolve(&blk)
+		rac.resolve_hooks << blk
 		nil
 	    end
 	    attr_accessor :target_rx

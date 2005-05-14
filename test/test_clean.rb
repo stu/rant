@@ -139,4 +139,39 @@ class TestClean < Test::Unit::TestCase
     ensure
 	cleanup_project2
     end
+    def test_clean_rule_target_rx
+	FileUtils.mkdir "t"
+	Dir.chdir "t"
+	FileUtils.mkdir "sub"
+	FileUtils.mkdir "sub/sub"
+	FileUtils.touch "sub/sub/a.t"
+	FileUtils.touch "sub/a.t"
+	FileUtils.touch "a.t"
+	open "Rantfile", "w" do |f|
+	    f << <<-EOF
+	    gen Rule, :tt => :t do |t|
+		sys.touch t.name
+	    end
+	    import "autoclean"
+	    gen AutoClean
+	    EOF
+	end
+	assert_rant("sub/sub/a.tt")
+	assert(test(?f, "sub/sub/a.tt"))
+	assert_rant("sub/a.tt")
+	assert(test(?f, "sub/a.tt"))
+	assert_rant("a.tt")
+	assert(test(?f, "a.tt"))
+	assert_rant("autoclean")
+	%w(a.tt sub/a.tt sub/sub/a.tt).each { |f|
+	    assert(!test(?e, f),
+		"#{f} should get unlinked by AutoClean")
+	}
+	%w(a.t sub/a.t sub/sub/a.t).each { |f|
+	    assert(test(?e, f))
+	}
+    ensure
+	Dir.chdir $testDir
+	FileUtils.rm_rf "t"
+    end
 end

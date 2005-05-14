@@ -138,8 +138,8 @@ module RantContext
 	rac.subdirs(*args)
     end
 
-    def source rantfile
-	rac.source(rantfile)
+    def source(opt, rantfile = nil)
+	rac.source(opt, rantfile)
     end
 
     def sys(*args, &block)
@@ -642,10 +642,15 @@ class Rant::RantApp
     end
 
     # Returns the value of the last expression executed in +rantfile+.
-    def source rantfile
+    def source(opt, rantfile = nil)
+	unless rantfile
+	    rantfile = opt
+	    opt = nil
+	end
+	make_rf = opt != :n && opt != :now
 	rf, is_new = rantfile_for_path(rantfile)
 	return false unless is_new
-	make rantfile
+	make rantfile if make_rf
 	unless File.exist? rf.path
 	    abort("source: No such file -- #{rantfile}")
 	end

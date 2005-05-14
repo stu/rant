@@ -1,0 +1,27 @@
+
+import %w(c/dependencies clean autoclean)
+
+desc "Compile hello world program."
+file "hello" => %w(src/main.o src/util.o) do |t|
+    sys "cc -Wall -o#{t.name} #{t.prerequisites.arglist}"
+end
+
+gen Rule, :o => :c do |t|
+    sys "cc -Wall -c -Iinclude -o#{t.name} #{t.source}"
+end
+
+# Similar to the "makedepend" program:
+# Create dependencies between C/C++ source/header files by parsing them
+# for #include statements. The dependencies will be written to a file
+# called "c_dependencies".
+gen C::Dependencies, :search => "include"
+# Automatically make and load the dependency file before invoking any
+# task.
+gen Action do source "c_dependencies" end
+
+desc "Remove C compiler products."
+gen Clean
+var[:clean].include "**/*.o", "hello"
+
+desc "Remove all generated files."
+gen AutoClean, :distclean
