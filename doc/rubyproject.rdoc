@@ -202,6 +202,32 @@ task is run. If you want to see one, set the verbose attribute to
 +true+:
 	t.verbose = true
 
+=== Installation
+
+Since we get a RubyGem from the RubyPackage generator, our package is
+ready for distribution and installation. But probably you also want to
+provide a "normal" zip/tar archive. In this case you can use a
+conventional install.rb or setup.rb script for installation.
+
+If we install the "wgrep" script on Windows, it won't run out of the
+box, because Windows doesn't know that it has to run it with the Ruby
+interpreter. This problem can be solved with Rant. Add the following
+lines to your Rantfile:
+    
+    import "win32/rubycmdwrapper"
+
+    desc "Install wgrep."
+    task :install do
+	# Run setup.rb with the Ruby interpreter.
+	sys.ruby "setup.rb"
+    end
+
+    if Env.on_windows?
+	# Create .cmd files for all scripts in the bin/ directory and
+	# make the install task dependent on them.
+	enhance :install => (gen Win32::RubyCmdWrapper, sys["bin/*"])
+    end
+
 == See also
 
 Rant Overview::

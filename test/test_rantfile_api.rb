@@ -9,10 +9,11 @@ $testDir ||= File.expand_path(File.dirname(__FILE__))
 class TestRantfileAPI < Test::Unit::TestCase
     def setup
 	# Ensure we run in test directory.
-	Dir.chdir($testDir) unless Dir.pwd == $testDir
+	Dir.chdir $testDir
 	@app = Rant::RantApp.new
     end
     def teardown
+	Dir.chdir $testDir
 	FileUtils.rm_rf Dir["*.t"]
     end
     def test_action
@@ -64,5 +65,19 @@ class TestRantfileAPI < Test::Unit::TestCase
     end
     def test_string_sub_ext_nil
 	assert_equal("hello.", "hello.txt".sub_ext(nil))
+    end
+    def test_name_error_in_task
+	open "rf.t", "w" do |f|
+	    f << <<-EOF
+	    task :a do
+		n_i_x
+	    end
+	    EOF
+	end
+	out, err = assert_rant(:fail, "-frf.t")
+	assert(out.strip.empty?)
+	assert_match(/rf\.t/, err)
+	assert_match(/2/, err)
+	assert_match(/n_i_x/, err)
     end
 end

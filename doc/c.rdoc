@@ -1,0 +1,64 @@
+
+== Support for C/C++
+
+Rant can automatically determine the dependencies between C/C++ source
+files. Use the C::Dependencies generator:
+    
+    import "c/dependencies"
+    gen C::Dependencies
+
+This generates a task called "c_dependencies" which will scan all
+C/C++ source files in the current directory and all subdirectories for
+#include statements and write the dependencies to the file
+"c_dependencies". It searches for include files in the current
+directory.
+
+If you want to specify which directories it should search for include
+files, give the +search+ option:
+    gen C::Dependencies, :search => %w(. include)
+Rant will search for include files in the current and in the "include"
+directory now.
+
+If you want to create the dependencies only for a specific set of
+source files or for source files with non-standard filename
+extensions, give a list with the +sources+ option:
+    gen C::Dependencies, :sources => sys["**/*.cxx"]
+This task will create the dependencies for all files ending in ".cxx".
+
+Of course you can combine this options and you can give another
+task/filename as first argument:
+    gen C::Dependencies, "depend.rf"
+	:search => "include",
+	:sources => sys["**/*.cxx"]
+This creates a file task with the name "depend.rf".
+
+Note that all our previous examples only created a filetask with the
+dependencies, to use them you have to load them in your Rantfile. So
+you probably want to call the +source+ command:
+
+    gen C::Dependencies
+
+    # invoke task "c_dependencies" and load the created file
+    source "c_dependencies"
+
+And a good habit would be to wrap the +source+ expression in an
++Action+ block:
+
+    gen C::Dependencies
+
+    # Do dependency checking only if at least one task will be
+    # invoked.
+    gen Action do source "c_dependencies" end
+
+For a little example project using the C::Dependency generator look
+into the doc/examples/c_dependencies[link:../examples/c_dependencies]
+directory of the Rant distribution.
+
+== See also
+
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

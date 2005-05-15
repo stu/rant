@@ -1,6 +1,19 @@
 
 = Rant NEWS
 
+== Rant 0.3.8
+
+This version should be fully backwards compatible to 0.3.6.
+
+New features:
+* Dependency checking for C/C++ sources.
+  Read doc/c.rdoc[link:files/doc/c_rdoc.html] documentation.
+* Installing ".cmd" files on Windows with the Win32::RubyCmdWrapper.
+  Read doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html].
+* Convenient directory/file creation with SubFile.
+  Read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+* rant-import inlines specially marked, +require+ files.
+
 == Rant 0.3.6
 
 This version should be fully backwards compatible to 0.3.4.

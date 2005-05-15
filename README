@@ -14,6 +14,7 @@ Rant currently features:
   applications and libraries.
 * Primitive support for compiling C# sources portably with csc, cscc
   and mcs.
+* Dependency checking for C/C++ source files.
 * A _configure_ plugin for easy environment and build-parameter
   checking (but not like autoconf!) which saves data in a yaml file.
 * The <em>rant-import</em> command creates a monolithic rant script,
@@ -36,7 +37,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.3.6 of Rant. Most things
+This document was written for version 0.3.8 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.
@@ -67,6 +68,10 @@ Automation for your Ruby library/application::
     read doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
 Independent from Rant? The <tt>rant-import</tt> command::
     read doc/rant-import.rdoc[link:files/doc/rant-import_rdoc.html]
+Advanced Rantfiles::
+    read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Compiling C/C++::
+    read doc/c.rdoc[link:files/doc/c_rdoc.html]
 Using the Configure plugin::
     read doc/configure.rdoc[link:files/doc/configure_rdoc.html]
 Compiling C#::
@@ -196,6 +201,7 @@ Rant was tested on:
     System		Ruby version
     =======================================================
     Linux		1.8.2
+			1.8.3 preview 1
 			1.9
     MacOS X		1.8.2
     Windows XP		1.8.2 (OneClick Installer)

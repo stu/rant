@@ -1244,8 +1244,8 @@ class Rant::RantApp
 		end
 	    elsif Rant::CommandError === orig
 		msg << orig.message if @opts[:err_commands]
-	    else
-		msg << orig.message unless Rant::RantAbortException
+	    elsif !(Rant::RantAbortException === orig)
+		msg << orig.message << orig.backtrace[0..4]
 	    end
 	end
 	err_msg msg unless msg.empty?
