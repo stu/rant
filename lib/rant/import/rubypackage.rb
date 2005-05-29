@@ -4,7 +4,7 @@ require 'rant/rantlib'
 class Rant::Generators::RubyPackage
 
     class << self
-	def rant_generate(app, ch, args, &block)
+	def rant_gen(app, ch, args, &block)
 	    if !args || args.empty?
 		self.new(:app => app, :__caller__ => ch, &block)
 	    elsif args.size == 1

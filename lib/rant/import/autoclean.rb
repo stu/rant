@@ -7,7 +7,7 @@ require 'rant/rantlib'
 require 'rant/import/clean'
 
 class Rant::Generators::AutoClean
-    def self.rant_generate(rac, ch, args, &block)
+    def self.rant_gen(rac, ch, args, &block)
 	# validate args
 	if args.size > 1
 	    rac.abort_at(ch,
@@ -17,7 +17,7 @@ class Rant::Generators::AutoClean
 
 	# we generate a normal clean task too, so that the user can
 	# add files to clean via a var
-	::Rant::Generators::Clean.rant_generate(rac, ch, [tname])
+	::Rant::Generators::Clean.rant_gen(rac, ch, [tname])
 
 	# create task
 	rac.task :__caller__ => ch, tname => [] do |t|

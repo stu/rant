@@ -6,7 +6,7 @@
 require 'rant/rantlib'
 
 class Rant::Generators::Clean
-    def self.rant_generate(rac, ch, args, &block)
+    def self.rant_gen(rac, ch, args, &block)
 	# validate args
 	if args.size > 1
 	    rac.abort_at(ch, "Clean doesn't take more than one argument.")

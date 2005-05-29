@@ -6,7 +6,7 @@ module Rant
 
 	class << self
 
-	    def rant_generate(app, ch, args, &block)
+	    def rant_gen(app, ch, args, &block)
 		if !args || args.empty?
 		    self.new(app, ch, &block)
 		elsif args.size == 1

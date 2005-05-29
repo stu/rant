@@ -539,12 +539,12 @@ class Rant::RantApp
 	pre = []
 	# validate args
 	generator = args.shift
-	unless generator.respond_to? :rant_generate
+	unless generator.respond_to? :rant_gen
 	    abort_at(ch,
 		"First argument to `gen' has to be a task-generator.")
 	end
 	# ask generator to produce a task for this application
-	generator.rant_generate(self, ch, args, &block)
+	generator.rant_gen(self, ch, args, &block)
     end
 
     # Currently ignores block.

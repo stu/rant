@@ -8,7 +8,7 @@ require 'rant/c/include'
 
 module Rant::Generators::C end
 class Rant::Generators::C::Dependencies
-    def self.rant_generate(rac, ch, args, &block)
+    def self.rant_gen(rac, ch, args, &block)
 	c_files, out_fn, include_pathes, opts = nil
 	# args validation
 	if block

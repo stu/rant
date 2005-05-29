@@ -9,7 +9,7 @@ module Rant
     class Generators::Assembly < CsCompiler
 	class << self
 
-	    def rant_generate(app, clr, args, &block)
+	    def rant_gen(app, clr, args, &block)
 		assembly = self.new(&block)
 		if args.size == 1
 		    targ = args.first

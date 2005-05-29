@@ -8,7 +8,7 @@ require 'rant/rantlib'
 module Rant::Generators
     module Win32
 	module RubyCmdWrapper
-	    def self.rant_generate(rac, ch, args, &block)
+	    def self.rant_gen(rac, ch, args, &block)
 		fl = args.first
 		unless args.size == 1 and fl.respond_to? :to_ary
 		    rac.abort_at(ch,

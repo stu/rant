@@ -6,7 +6,7 @@
 require 'rant/rantlib'
 
 class Rant::Generators::SubFile
-    def self.rant_generate(rac, ch, args, &block)
+    def self.rant_gen(rac, ch, args, &block)
 	case args.size
 	when 1
 	    basedir, fine = nil, args.first

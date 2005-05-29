@@ -170,7 +170,7 @@ module Rant
 	include Node
 
 	class << self
-	    def rant_generate(rac, ch, args, &block)
+	    def rant_gen(rac, ch, args, &block)
 		unless args.size == 1
 		    rac.abort("LightTask takes only one argument " +
 			"which has to be the taskname (string or symbol)")
@@ -242,9 +242,9 @@ module Rant
 	T0 = Time.at(0).freeze
 
 	class << self
-	    def rant_generate(rac, ch, args, &block)
+	    def rant_gen(rac, ch, args, &block)
 		if args.size == 1
-		    UserTask.rant_generate(rac, ch, args, &block)
+		    UserTask.rant_gen(rac, ch, args, &block)
 		else
 		    rac.abort("Task generator currently takes only one" +
 			" argument. (generates a UserTask)")
@@ -459,7 +459,7 @@ module Rant
     class UserTask < Task
 
 	class << self
-	    def rant_generate(rac, ch, args, &block)
+	    def rant_gen(rac, ch, args, &block)
 		unless args.size == 1
 		    rac.abort("UserTask takes only one argument " +
 			"which has to be like one given to the " +
@@ -594,7 +594,7 @@ module Rant
 	    # block will be called after complete directory creation.
 	    # After the block execution, the modification time of the
 	    # directory will be updated.
-	    def rant_generate(rac, ch, args, &block)
+	    def rant_gen(rac, ch, args, &block)
 		case args.size
 		when 1
 		    name, pre, file, ln = rac.normalize_task_arg(args.first, ch)
@@ -713,7 +713,7 @@ module Rant
     class SourceNode
 	include Node
 
-	def self.rant_generate(rac, ch, args)
+	def self.rant_gen(rac, ch, args)
 	    unless args.size == 1
 		rac.abort_at(ch, "SourceNode takes one argument.")
 	    end
@@ -800,7 +800,7 @@ module Rant
 	class Rule < ::Proc
 	    # Generate a rule by installing an at_resolve hook for
 	    # +rac+.
-	    def self.rant_generate(rac, ch, args, &block)
+	    def self.rant_gen(rac, ch, args, &block)
 		unless args.size == 1
 		    rac.abort_at(ch, "Rule takes only one argument.")
 		end
@@ -863,7 +863,7 @@ module Rant
 	end	# class Rule
 
 	class Action
-	    def self.rant_generate(rac, ch, args, &block)
+	    def self.rant_gen(rac, ch, args, &block)
 		unless args.empty?
 		    rac.warn_msg(rac.pos_text(ch[:file], ch[:ln]),
 			"Action doesn't take arguments.")

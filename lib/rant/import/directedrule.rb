@@ -6,7 +6,7 @@
 require 'rant/rantlib'
 
 class Rant::Generators::DirectedRule
-    def self.rant_generate(rac, ch, args, &block)
+    def self.rant_gen(rac, ch, args, &block)
 	unless args.size == 1
 	    rac.abort_at(ch, "DirectedRule takes one arguments.")
 	end
