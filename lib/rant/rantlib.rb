@@ -938,6 +938,10 @@ class Rant::RantApp
     end
     public :resolve
 
+    # This hook will be invoked when no matching task is found for a
+    # target. It may create one or more tasks for the target, which is
+    # given as argument, on the fly and return an array of the created
+    # tasks or nil.
     def at_resolve &block
 	@resolve_hooks << block if block
     end

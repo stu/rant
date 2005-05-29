@@ -170,20 +170,6 @@ explain it a little bit. The +sys+ function can be used in three ways:
 	sys.ruby "arg1", "arg2", ... # invoke the ruby interpreter
 	sys.safe_ln "src", "dest"    # create a hardlink or fall back to
 				     # copying
-   If you're tired of typing <tt>sys.</tt> all the time, you can include
-   the Rant::Sys module in your Rantfile (though it is not recommended
-   to do this):
-	include Rant::Sys
-	task :clean do
-	    rm_f "myprog"
-	end
-Then you can invoke these methods without the <tt>sys</tt> function.
-Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
-	into your Rantfile as this introduces many methods in the
-	global namespace, which can cause name clashes with other
-	libraries.  Of course if you have just some tasks to remove
-	backup files in your home directory and do not use other Ruby
-	libraries in your Rantfile, it is no problem.
 
 2. <b>Running external commands</b>
 
@@ -206,8 +192,8 @@ Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
    read the ri docs to get an overview:
 	ri Dir::glob
 
-   From now on we'll call <tt>sys[...]</tt> the <it>glob
-   operator</it>.
+   From now on we'll call <tt>sys[...]</tt> the <em>glob
+   operator</em>.
 
    You can give more patterns:
 	c_files = sys["**/*.h", "**/*.c"]
@@ -215,7 +201,7 @@ Note::	You are highly encouraged to not <tt>include Rant::Sys</tt>
    directory and all subdirectories.
 
    The object returned by the glob operator _behaves_ like a list of
-   string, so it is possible to pass it to methods expecting an array.
+   strings, so it is possible to pass it to methods expecting an array.
    If you're getting errors or experience strange behaviour convert
    the list explicetely to an array:
 	sys.touch c_files.to_a

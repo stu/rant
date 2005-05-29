@@ -121,7 +121,7 @@ class Rant::Generators::C::Dependencies
 	nil
     end
     def self.file_deps(target, deps)
-	s = "gen SourceNode, #{target.to_str.inspect} => "
-	s << "[#{ deps.map{ |fn| fn.to_str.inspect }.join(', ')}]"
+	s = "gen SourceNode, #{target.to_str.dump} => "
+	s << "[#{ deps.map{ |fn| fn.to_str.dump }.join(', ')}]"
     end
 end # class Rant::Generators::C::Dependencies
