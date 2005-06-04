@@ -1,6 +1,14 @@
 
 = TODO
 
+== Dependency alternation
+Allow at least two tasks as one dependency where the first available
+will actually used to satisfy the dependency, pseudo code:
+    task :a => :b | :c
+Rant should first try :b and if the task :b exists and succeds
+:c won't be considered, if task :b doesn't exist, rant should try
+to make :c.
+
 == GET RID OF CLASS Rant::Path
 Done.
 

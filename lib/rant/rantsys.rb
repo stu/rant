@@ -68,7 +68,9 @@ module Rant
 	def +(other)
 	    case other
 	    when Array
-		dup.files.concat(other)
+		c = dup
+		c.files.concat(other)
+		c
 	    when FileList
 		c = other.dup
 		c.actions.concat(@actions)

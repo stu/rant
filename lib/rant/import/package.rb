@@ -1,258 +1,236 @@
 
+# package.rb - Rant packaging support.
+#
+# Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
+
 require 'rant/rantlib'
 
-class Rant::Generators::Package
+module Rant::Generators::Package
+    class Base
+	extend Rant::MetaUtils
 
-    class << self
-	def rant_gen(app, ch, args, &block)
-	    if !args || args.empty?
-		self.new(:app => app, :__caller__ => ch, &block)
-	    elsif args.size == 1
-		pkg_name = case args.first
-		when String: args.first
-		when Symbol: args.first.to_s
+	def self.rant_gen(rac, ch, args, &block)
+	    if args.size < 1 || args.size > 2
+		rac.abort_at(ch,
+		    "#{self.class} takes one or two arguments.")
+	    end
+	    pkg_name, opts = args
+	    pkg = self.new(pkg_name)
+	    pkg.rac = rac
+	    pkg.ch = ch
+	    if opts
+		if opts.respond_to? :to_hash
+		    opts = opts.to_hash
 		else
-		    app.abort("Package takes only one additional " +
-			"argument, which should be a string or symbol.")
+		    rac.abort_at(ch,
+			"#{self.class}: second argument has to be a hash.")
 		end
-		self.new(:app => app, :__caller__ => ch,
-		    :name => pkg_name, &block)
+		opts.each { |k, v|
+		    case k
+		    when :version
+			pkg.version = v
+		    when :dir
+			pkg.dir = v
+		    when :path
+			pkg.archive_path = v
+		    when :extension
+			pkg.extension = v
+		    when :files
+			pkg.files = v
+		    when :manifest
+			pkg.manifest = v
+		    when :files_only
+			pkg.files_only = v
+		    else
+			rac.warn("#{self.class}: ignoring option #{k}")
+		    end
+		}
+	    end
+	    pkg.define_manifest_task if opts[:files] && opts[:manifest]
+	    pkg.define_task
+	    pkg
+	end
+
+	string_attr :name
+	string_attr :version
+	string_attr :dir
+	string_attr :extension
+	rant_attr :files
+	string_attr :manifest
+	# overrides path to generated archive file, which is
+	# otherwise constructed as <dir>/<name>-<version>.<extension>
+	string_attr :archive_path
+	# If this is true, directories won't be included for packaging
+	# (only files). Defaults to true.
+	rant_attr :files_only
+	# Caller information, e.g.: {:file => "Rantfile", :ln => 10}
+	attr_accessor :ch
+	attr_accessor :rac
+	
+
+	def initialize(name, files = nil)
+	    self.name = name or raise "package name required"
+	    @files = files
+	    @version, @dir, @extension, @archive_path = nil
+	    @rac = nil
+	    @dir_task = nil
+	    @pkg_task = nil
+	    @ch = nil
+	    @files_only = true
+	    @manifest_task = nil
+	    @data = {}
+	end
+
+	def rac
+	    @rac
+	end
+	def rac=(val)
+	    @rac = val
+	    @dir_task = nil
+	    @pkg_task = nil
+	end
+
+	def get_archive_path
+	    return @archive_path if @archive_path
+	    path = ""
+	    if dir
+		dir.sub!(/^\.(\/|$)/, '')
+		path << "#{dir}/" unless dir.empty?
+	    end
+	    path << name
+	    path << "-#@version" if @version
+	    path << @extension if @extension
+	    @archive_path = path
+	end
+
+	def get_files
+	    fl = @files.dup || []
+	    if @manifest
+		if fl.empty?
+		    fl = read_manifest
+		else
+		    fl << @manifest
+		end
+	    elsif @files_only
+		fl = fl.reject { |f| test ?d, f }
+	    end
+	    fl
+	end
+
+	# Ensure to set #rac first.
+	# Returns nil if no dir task is required, the task otherwise.
+	def get_dir_task
+	    return nil unless dir
+	    return @dir_task if @dir_task
+	    et = @rac.resolve(dir).first
+	    if et
+		@dir_task = et
 	    else
-		app.abort(app.pos_text(file, ln),
-		    "Package takes only one additional argument, " +
-		    "which should be a string or symbol.")
+		@dir_task =
+		    @rac.cx.gen ::Rant::Generators::Directory, dir
 	    end
 	end
-    end
 
-    # A hash containing all package information.
-    attr_reader :data
-    # Directory where packages go to. Defaults to "pkg".
-    attr_accessor :pkg_dir
-
-    def initialize(opts = {})
-	@rac = opts[:app] || Rant.rantapp
-	@pkg_dir = "pkg"
-	@pkg_dir_task = nil
-	@dist_dir_task = nil
-	@tar_task = nil
-	@zip_task = nil
-	@package_task = nil
-	name = opts[:name]
-	@ch = opts[:__caller__] || Rant::Lib.parse_caller_elem(caller[0])
-	unless name
-	    # TODO: pos_text
-	    @rac.warn_msg(@rac.pos_text(@ch[:file], @ch[:ln]),
-		"No package name given, using directory name.")
-	    # use directory name as project name
-	    name = File.split(Dir.pwd)[1]
-	    # reset name if it contains a slash or a backslash
-	    name = nil if name =~ /\/|\\/
-	end
-	@data = { "name" => name }
-
-	yield self if block_given?
-    end
-
-    def name
-	@data["name"]
-    end
-
-    def version
-	@data["version"]
-    end
-
-    def version=(str)
-	unless String === str
-	    @rac.abort_at(@ch, "version has to be a String")
-	end
-	@data["version"] = str
-    end
-
-    def files
-	@data["files"]
-    end
-
-    def files=(list)
-	unless Array === list || ::Rant::FileList === List
-	    if list.respond_to? :to_ary
-		list = list.to_ary
+	# Creates an (eventually) temporary manifest file and yields
+	# with the path of this file as argument.
+	def with_manifest
+	    fl = get_files
+	    if @manifest
+		rac.make @manifest
+		yield @manifest
 	    else
-		@rac.abort_at(@ch,
-		    "files must be an Array or FileList")
+		tf = Tempfile.new "rant"
+		begin
+		    fl.each { |path| tf.puts path }
+		    tf.close
+		    yield(tf.path)
+		ensure
+		    tf.unlink
+		end
 	    end
+	    nil
 	end
-	@data["files"] = list
-    end
 
-    def validate_attrs(pkg_type = :general)
-	%w(name files).each { |a|
-	    pkg_requires_attr a
-	}
-    end
-    private :validate_attrs
-
-    def pkg_requires_attr(attr_name)
-	unless @data[attr_name]
-	    @rac.abort("Packaged defined: " +
-		@rac.pos_text(@ch[:file], @ch[:ln]),
-		"`#{attr_name}' attribute required")
+	def define_manifest_task
+	    return @manifest_task if @manifest_task
+	    @manifest_task =
+		@rac.gen ::Rant::Task, @manifest do |t|
+		    t.needed {
+			@data["fl_ary"] = (@files + [@manifest]).sort.uniq
+			if @files_only
+			    @data["fl_ary"].reject! { |f| test ?d, f }
+			end
+			if test ?f, @manifest
+			    read_manifest != @data["fl_ary"]
+			else
+			    true
+			end
+		    }
+		    t.act {
+			write_manifest @data["fl_ary"]
+		    }
+		end
 	end
-    end
 
-    def pkg_dir_task
-	return if @pkg_dir_task
-	if @dist_dir_task
-	    # not ideal but should work: If only the gem task will
-	    # be run, dist dir creation wouldn't be necessary
-	    return @pkg_dir_task = @dist_dir_task
-	end
-	@pkg_dir_task = @rac.gen(
-	    ::Rant::Generators::Directory, @pkg_dir)
-    end
-
-    def dist_dir_task
-	return if @dist_dir_task
-	pkg_name = pkg_dist_dir
-	dist_dir = pkg_dist_dir
-	@dist_dir_task = @rac.gen(Rant::Generators::Directory,
-		dist_dir => files) { |t|
-	    # ensure to create new and empty destination directory
-	    if Dir.entries(dist_dir).size > 2	# "." and ".."
-		@rac.sys.rm_rf(dist_dir)
-		@rac.sys.mkdir(dist_dir)
-	    end
-	    # evaluate directory structure first
-	    dirs = []
+	private
+	def read_manifest
 	    fl = []
-	    files.each { |e|
-		if test(?d, e)
-		    dirs << e unless dirs.include? e
-		else	# assuming e is a file
-		    fl << e
-		    dir = File.dirname(e)
-		    dirs << dir unless dir == "." || dirs.include?(dir)
+	    open @manifest do |f|
+		f.each { |line|
+		    fl << line unless line.strip.empty?
+		}
+	    end
+	    fl
+	end
+	def write_manifest fl
+	    @rac.cmd_msg "writing #@manifest" if @rac
+	    open @manifest, "w" do |f|
+		fl.each { |path| f.puts path }
+	    end
+	end
+	def define_cmd_task
+	    return @pkg_task if @pkg_task
+	    pre = [get_dir_task].compact + get_files
+	    targ = {get_archive_path => pre}
+	    targ[:__caller__] = @ch if @ch
+	    @pkg_task = @rac.cx.file(targ) do |t|
+		with_manifest { |path| yield(path, t) }
+	    end
+	    @pkg_task
+	end
+    end # class Base
+
+    class Tgz < Base
+	def initialize(*args)
+	    super
+	    @extension = ".tgz"
+	end
+	# Ensure to set #rac first.
+	# Creates a file task wich invokes tar to create a tgz
+	# archive. Returns the created task.
+	def define_task
+	    define_cmd_task { |path, t|
+		@rac.cx.sys "tar --files-from #{path} -czf #{t.name}"
+	    }
+	end
+    end # class Tgz
+
+    class Zip < Base
+	def initialize(*args)
+	    super
+	    @extension = ".zip"
+	end
+	# Ensure to set #rac first.
+	# Creates a file task wich invokes zip to create a zip
+	# archive. Returns the created task.
+	def define_task
+	    define_cmd_task { |path, t|
+		cmd = "zip -@yr #{t.name}"
+		@rac.cmd_msg cmd
+		IO.popen cmd, "w" do |z|
+		    z.print IO.read(path)
 		end
 	    }
-	    # create directory structure
-	    dirs.each { |dir|
-		dest = File.join(dist_dir, dir)
-		@rac.sys.mkpath(dest) unless test(?d, dest)
-	    }
-	    # link or copy files
-	    fl.each { |f|
-		dest = File.join(dist_dir, f)
-		@rac.sys.safe_ln(f, dest)
-	    }
-	}
-    end
-
-    def tar_task(tname = :tar)
-	validate_attrs
-	# Create tar task first to ensure that a pending description
-	# is used for the tar task and not for the dist dir task.
-	pkg_name = tar_pkg_path
-	pkg_files = files
-	if tname
-	    # shortcut task
-	    @rac.task({:__caller__ => @ch, tname => pkg_name})
 	end
-	# actual tar-creating task
-	@tar_task = @rac.file(:__caller__ => @ch,
-		pkg_name => [pkg_dist_dir] + pkg_files) { |t|
-	    @rac.sys.cd(@pkg_dir) {
-		@rac.sys %W(tar zcf #{tar_pkg_name} #{pkg_base_name})
-	    }
-	}
-	dist_dir_task
-    end
-
-    def zip_task(tname = :zip)
-	validate_attrs
-	# Create zip task first to ensure that a pending description
-	# is used for the zip task and not for the dist dir task.
-	pkg_name = zip_pkg_path
-	pkg_files = files
-	if tname
-	    # shortcut task
-	    @rac.task({:__caller__ => @ch, tname => pkg_name})
-	end
-	# actual zip-creating task
-	@zip_task = @rac.file(:__caller__ => @ch,
-		pkg_name => [pkg_dist_dir] + pkg_files) { |t|
-	    @rac.sys.cd(@pkg_dir) {
-		# zip options:
-		#   y: store symlinks instead of referenced files
-		#   r: recurse into directories
-		#   q: quiet operation
-		@rac.sys %W(zip -yqr #{zip_pkg_name} #{pkg_base_name})
-	    }
-	}
-	dist_dir_task
-    end
-
-    # Create a task which runs gem/zip/tar tasks.
-    def package_task(tname = :package)
-	def_tasks = [@tar_task, @zip_task].compact
-	if def_tasks.empty?
-	    # take description for overall package task
-	    pdesc = @rac.pop_desc
-	    unless def_available_tasks
-		@rac.desc pdesc
-		@rac.warn_msg("No tools for packaging available (tar, zip):",
-		    "Can't generate task `#{tname}'.")
-		return
-	    end
-	    @rac.desc pdesc
-	end
-	pre = []
-	pre << tar_pkg_path if @tar_task
-	pre << zip_pkg_path if @zip_task
-	pre << gem_pkg_path if @gem_task
-	@rac.task(:__caller__ => @ch, tname => pre)
-    end
-
-    # Returns true if at least one task was defined.
-    def def_available_tasks
-	defined = false
-	if Rant::Env.have_tar?
-	    # we don't create shortcut tasks, hence nil as argument
-	    self.tar_task(nil)
-	    defined = true
-	end
-	if Rant::Env.have_zip?
-	    self.zip_task(nil)
-	    defined = true
-	end
-	defined
-    end
-
-    def pkg_base_name
-	unless name
-	    @rac.abort(@rac.pos_text(@ch[:file], @ch[:ln]),
-		"`name' required for packaging")
-	end
-	version ? "#{name}-#{version}" : name
-    end
-
-    def tar_pkg_name
-	pkg_base_name + ".tar.gz"
-    end
-
-    def tar_pkg_path
-	pkg_dist_dir + ".tar.gz"
-    end
-
-    def zip_pkg_name
-	pkg_base_name + ".zip"
-    end
-
-    def zip_pkg_path
-	pkg_dist_dir + ".zip"
-    end
-
-    def pkg_dist_dir
-	@pkg_dir ? File.join(@pkg_dir, pkg_base_name) : pkg_base_name
-    end
-
-end	# class Rant::Generators::Package
+    end # class Zip
+end # module Rant::Generators::Package

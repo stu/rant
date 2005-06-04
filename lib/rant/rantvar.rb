@@ -46,6 +46,67 @@ module Rant
     module Generators
     end
 
+    @__rant_no_value__ = Object.new.freeze
+    def self.__rant_no_value__
+	@__rant_no_value__
+    end
+
+    module MetaUtils
+	# Creates two accessor methods:
+	#    obj.attr_name::	Return value of instance variable
+	#			@attr_name
+	#    obj.attr_name = val::	Set value instance variable
+	#				@attr_name to val
+	#    obj.attr_name val::	same as above
+	def rant_attr attr_name
+	    attr_name = valid_attr_name attr_name
+	    attr_writer attr_name
+	    module_eval <<-EOD
+		def #{attr_name} val=Rant.__rant_no_value__
+		    if val.equal? Rant.__rant_no_value__
+			@#{attr_name}
+		    else
+			@#{attr_name} = val
+		    end
+		end
+	    EOD
+	    nil
+	end
+	# Creates accessor methods like #rant_attr for the attribute
+	# attr_name. Additionally, values are converted with to_str
+	# before assignment to instance variables happens.
+	def string_attr attr_name
+	    attr_name = valid_attr_name attr_name
+	    module_eval <<-EOD
+		def #{attr_name}=(val)
+		    if val.respond_to? :to_str
+			@#{attr_name} = val.to_str
+		    else
+			raise ArgumentError,
+			    "string (#to_str) value required", caller
+		    end
+		end
+		def #{attr_name} val=Rant.__rant_no_value__
+		    if val.equal? Rant.__rant_no_value__
+			@#{attr_name}
+		    else
+			self.__send__(:#{attr_name}=, val)
+		    end
+		end
+	    EOD
+	    nil
+	end
+	# attr_name is converted to a string with #to_s and has to
+	# match /^\w+$/. Returns attr_name.to_s.
+	def valid_attr_name attr_name
+	    attr_name = attr_name.to_s
+	    attr_name =~ /^\w+$/ or
+		raise ArgumentError,
+		    "argument has to match /^\w+$/", caller
+	    attr_name
+	end
+    end # module MetaUtils
+
     module RantVar
 
 	class Error < RantError

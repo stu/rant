@@ -158,6 +158,15 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(1, l2.size)
 	end
     end
+    def test_add_array
+	touch_temp %w(1.t 2.t) do
+	    l1 = fl "*.t"
+	    l2 = l1 + %w(x)
+	    assert_equal(2, l1.size)
+	    assert_equal(3, l2.size)
+	    assert(l2.include?("x"))
+	end
+    end
     def test_glob
 	touch_temp %w(t.t1 t.t2) do
 	    l = fl "*.t1"
