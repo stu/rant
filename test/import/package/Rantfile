@@ -1,0 +1,22 @@
+
+import %w(package autoclean)
+
+gen Package::Tgz, "t1", :manifest => "MANIFEST"
+gen Package::Zip, "t1", :manifest => "MANIFEST"
+
+gen Package::Tgz, "t2",
+    :files => sys["sub*/f?"],
+    :manifest => "m2.tgz.t"
+
+gen Package::Zip, "t2",
+    :files => sys["sub*/f?"],
+    :manifest => "m2.zip.t"
+
+gen Package::Tgz, "t3", :files => %w(Rantfile sub/f1)
+gen Package::Zip, "t3", :files => sys["Rantfile", "sub/f1"]
+
+gen Package::Tgz, "pkg.t/t4",
+    :version => "1.0.0",
+    :manifest => "MANIFEST"
+
+gen AutoClean

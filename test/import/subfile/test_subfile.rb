@@ -71,6 +71,18 @@ class TestSubFile < Test::Unit::TestCase
 	out, err = assert_rant("file.t")
 	assert(out.strip.empty?)
     end
+    def test_dependency
+	FileUtils.mkdir "sub.t"
+	assert_rant("sub.t/sub/file")
+	assert(test(?f, "file.t"))
+	assert(test(?f, "sub.t/sub/file"))
+    end
+    def test_dependencies
+	assert_rant("a.t")
+	assert(test(?f, "file.t"))
+	assert(test(?f, "sub.t/file2"))
+	assert(test(?f, "a.t"))
+    end
     def test_autoclean
 	assert_rant("-fautoclean.rf", "sub.t/file")
 	assert(test(?f, "sub.t/file"))

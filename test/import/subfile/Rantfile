@@ -26,3 +26,11 @@ end
 gen SubFile, "file.t" do |t|
     sys.touch t.name
 end
+
+gen SubFile, "sub.t", "sub/file" => "file.t" do |t|
+    sys.touch t.name
+end
+
+gen SubFile, "a.t" => %w(file.t sub.t/file2) do |t|
+    sys.touch t.name
+end
