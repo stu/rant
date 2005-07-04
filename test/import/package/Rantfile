@@ -15,8 +15,6 @@ gen Package::Zip, "t2",
 gen Package::Tgz, "t3", :files => %w(Rantfile sub/f1)
 gen Package::Zip, "t3", :files => sys["Rantfile", "sub/f1"]
 
-gen Package::Tgz, "pkg.t/t4",
-    :version => "1.0.0",
-    :manifest => "MANIFEST"
+gen Package::Tgz, "pkg.t/t4", :manifest, :version => "1.0.0"
 
 gen AutoClean

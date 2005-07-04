@@ -9,9 +9,13 @@ class TestImportPackage < Test::Unit::TestCase
 	# Ensure we run in test directory.
 	Dir.chdir $testIPackageDir
     end
+    def teardown
+	assert_rant("autoclean")
+	assert(Dir["*.{tgz,zip,t}"].empty?)
+    end
     def check_contents(atype, archive, files, dirs = [], manifest_file = nil)
 	FileUtils.mkdir "u.t"
-	FileUtils.mv archive, "u.t"
+	FileUtils.cp archive, "u.t"
 	FileUtils.cd "u.t"
 	archive = File.basename archive
 	unpack_archive atype, archive
@@ -48,7 +52,7 @@ class TestImportPackage < Test::Unit::TestCase
     end
 if Rant::Env.have_tar?
     def test_tgz_from_manifest
-	assert_rant("t1.tgz")
+	assert_rant
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
 	dirs = %w(sub sub2)
 	check_contents(:tgz, "t1.tgz", mf, dirs, "MANIFEST")
@@ -59,8 +63,25 @@ if Rant::Env.have_tar?
 	dirs = %w(sub sub2)
 	check_manifest("m2.tgz.t", mf)
 	check_contents(:tgz, "t2.tgz", mf, dirs, "m2.tgz.t")
+	out, err = assert_rant("t2.tgz")
+	assert(out.strip.empty?)
+	#assert(err.strip.empty?)
+	FileUtils.touch "sub/f5"
+	out, err = assert_rant("t2.tgz")
+	assert_match(/writing m2\.tgz\.t.*\n.*tar/m, out)
+	check_contents(:tgz, "t2.tgz", mf + %w(sub/f5), dirs, "m2.tgz.t")
+	timeout
+	FileUtils.rm "sub/f5"
+	out, err = assert_rant("t2.tgz")
+	assert_match(/writing m2\.tgz\.t.*\n.*tar/m, out)
+	check_contents(:tgz, "t2.tgz", mf, dirs, "m2.tgz.t")
+	# test autoclean
+	assert_rant("autoclean")
+	assert(!test(?e, "m2.tgz.t"))
+	# hmm.. the tgz will be removed by check_contents anyway...
+	assert(!test(?e, "t2.tgz"))
     ensure
-	FileUtils.rm_f "m2.tgz.t"
+	FileUtils.rm_rf "sub/f5"
     end
     def test_tgz_files_array
 	assert_rant("t3.tgz")

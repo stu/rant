@@ -37,11 +37,11 @@ class Rant::Generators::SubFile
 		dt = rac.resolve(dirp)
 		if dt.empty?
 		    dt = [if basedir
-			rac.cx.gen(
-			    ::Rant::Generators::Directory, basedir, dir)
+			::Rant::Generators::Directory.rant_gen(
+			    rac, ch, [basedir, dir])
 		    else
-			rac.cx.gen(
-			    ::Rant::Generators::Directory, dir)
+			::Rant::Generators::Directory.rant_gen(
+			    rac, ch, [dir])
 		    end]
 		end
 		pre.concat(dt)

@@ -1,6 +1,12 @@
 
 = Rant NEWS
 
+== Rant 0.4.0
+
+Incompatible changes:
+* _Internal_: A generator has to respond to +rant_gen+ instead of
+  +rant_generate+.
+
 == Rant 0.3.8
 
 This version should be fully backwards compatible to 0.3.6.

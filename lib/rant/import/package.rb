@@ -11,38 +11,68 @@ module Rant::Generators::Package
 	extend Rant::MetaUtils
 
 	def self.rant_gen(rac, ch, args, &block)
-	    if args.size < 1 || args.size > 2
+	    pkg_name = args.shift
+	    unless pkg_name
 		rac.abort_at(ch,
-		    "#{self.class} takes one or two arguments.")
+		    "#{self} takes at least one argument (package name)")
 	    end
-	    pkg_name, opts = args
+	    opts = nil
+	    flags = []
+	    arg = args.shift
+	    case arg
+	    when String
+		basedir = pkg_name
+		pkg_name = arg
+	    when Symbol
+		flags << arg
+	    else
+		opts = arg
+	    end
+	    flags << arg while Symbol === (arg = args.shift)
+	    opts ||= (arg || {})
+	    unless args.empty?
+		rac.abort_at(ch, "#{self}: too many arguments")
+	    end
+
 	    pkg = self.new(pkg_name)
 	    pkg.rac = rac
 	    pkg.ch = ch
-	    if opts
-		if opts.respond_to? :to_hash
-		    opts = opts.to_hash
+	    flags.each { |f|
+		case f
+		when :manifest
+		    pkg.manifest = "MANIFEST"
+		when :verbose
+		    # TODO
+		when :quiet
+		    # TODO
 		else
-		    rac.abort_at(ch,
-			"#{self.class}: second argument has to be a hash.")
+		    rac.warn_msg(
+			"#{self}: ignoring unknown flag #{flag}")
 		end
-		opts.each { |k, v|
-		    case k
-		    when :version
-			pkg.version = v
-		    when :extension
-			pkg.extension = v
-		    when :files
-			pkg.files = v
-		    when :manifest
-			pkg.manifest = v
-		    when :files_only
-			pkg.files_only = v
-		    else
-			rac.warn_msg("#{self}: ignoring option #{k}")
-		    end
-		}
+	    }
+	    if opts.respond_to? :to_hash
+		opts = opts.to_hash
+	    else
+		rac.abort_at(ch,
+		    "#{self}: option argument has to be a hash.")
 	    end
+	    opts.each { |k, v|
+		case k
+		when :version
+		    pkg.version = v
+		when :extension
+		    pkg.extension = v
+		when :files
+		    pkg.files = v
+		when :manifest
+		    pkg.manifest = v
+		when :files_only
+		    pkg.files_only = v
+		else
+		    rac.warn_msg(
+			"#{self}: ignoring unknown option #{k}")
+		end
+	    }
 	    pkg.define_manifest_task if opts[:files] && opts[:manifest]
 	    pkg.define_task
 	    pkg
@@ -132,6 +162,10 @@ module Rant::Generators::Package
 	    return @manifest_task if @manifest_task
 	    @manifest_task =
 		@rac.gen ::Rant::Task, @manifest do |t|
+		    def t.each_target
+			goto_task_home
+			yield name
+		    end
 		    t.needed {
 			@data["fl_ary"] = (@files + [@manifest]).sort.uniq
 			if @files_only
@@ -169,10 +203,11 @@ module Rant::Generators::Package
 	def define_cmd_task
 	    return @pkg_task if @pkg_task
 	    targ = {get_archive_path => get_files}
-	    targ[:__caller__] = @ch if @ch
-	    args = [::Rant::Generators::SubFile, basedir, targ].compact
+	    #targ[:__caller__] = @ch if @ch
+	    #args = [::Rant::Generators::SubFile, basedir, targ].compact
 	    @pkg_task =
-		@rac.cx.gen(*args) do |t|
+		::Rant::Generators::SubFile.rant_gen(
+			@rac, @ch, [basedir, targ].compact) do |t|
 		    with_manifest { |path| yield(path, t) }
 		end
 	end
