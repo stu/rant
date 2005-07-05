@@ -53,10 +53,29 @@ class TestImportPackage < Test::Unit::TestCase
 	when :tgz
 	    `tar -xzf #{archive}`
 	when :zip
-	    `unzip -q #{archive}`
+	    if $have_unzip
+		`unzip -q #{archive}`
+	    else
+		rubyzip_unpack archive
+	    end
 	else
 	    raise "can't unpack archive type #{atype}"
 	end
+    end
+    def rubyzip_unpack(archive)
+	begin
+	    require 'zip/zip'
+	rescue LoadError
+	    require 'rubygems' rescue nil
+	    require 'zip/zip' rescue nil
+	end
+	f = Zip::ZipFile.open archive
+	f.entries.each { |e|
+	    dir, = File.split(e.name)
+	    FileUtils.mkpath dir unless test ?d, dir
+	    f.extract e, e.name
+	}
+	f.close
     end
 if Rant::Env.have_tar?
     def test_tgz_from_manifest
@@ -119,12 +138,12 @@ if Rant::Env.have_tar?
 	assert(!test(?e, "pkg2.t"))
     end
 else
-    STDERR.puts "tar not available, skipping zip tests"
+    STDERR.puts "tar not available, skipping tar tests"
 end
 if have_any_zip?
     def test_zip_package_write_manifest
 	assert(!test(?f, "CONTENTS"))
-	assert_rant("pkg.t/pkg.zip")
+	assert_rant(:x, "pkg.t/pkg.zip")
 	assert(test(?f, "CONTENTS"))
 	mf = %w(deep/sub/sub/f1 CONTENTS)
 	dirs = %w(deep deep/sub deep/sub/sub)
@@ -138,7 +157,7 @@ if have_any_zip?
 	assert_rant(:fail, "zip.t/t4-1.0.0.zip")
 	assert(!test(?d, "zip.t"))
 	FileUtils.mkdir "zip.t"
-	assert_rant("zip.t/t4-1.0.0.zip")
+	assert_rant(:x, "zip.t/t4-1.0.0.zip")
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
 	dirs = %w(sub sub2)
 	check_contents(:zip, "zip.t/t4-1.0.0.zip", mf, dirs, "MANIFEST")
@@ -146,13 +165,13 @@ if have_any_zip?
 	FileUtils.rm_rf "zip.t"
     end
     def test_zip_from_manifest
-	assert_rant("t1.zip")
+	assert_rant(:x, "t1.zip")
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
 	dirs = %w(sub sub2)
 	check_contents(:zip, "t1.zip", mf, dirs, "MANIFEST")
     end
     def test_zip_sync_manifest
-	assert_rant("t2.zip")
+	assert_rant(:x, "t2.zip")
 	mf = %w(sub/f1 sub2/f1 m2.zip.t)
 	dirs = %w(sub sub2)
 	check_manifest("m2.zip.t", mf)
@@ -161,7 +180,7 @@ if have_any_zip?
 	FileUtils.rm_f "m2.zip.t"
     end
     def test_zip_filelist
-	assert_rant("t3.zip")
+	assert_rant(:x, "t3.zip")
 	mf = %w(Rantfile sub/f1)
 	dirs = %w(sub)
 	check_contents(:zip, "t3.zip", mf, dirs)

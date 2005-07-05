@@ -10,6 +10,7 @@ module Test
 	    def assert_rant(*args)
 		res = 0
 		capture = true
+                newproc = false
 		args.flatten!
 		args.reject! { |arg|
 		    if Symbol === arg
@@ -17,6 +18,7 @@ module Test
 			when :fail: res = 1
 			when :v: capture = false
 			when :verbose: capture = false
+                        when :x: newproc = true
 			else
 			    raise "No such option -- #{arg}"
 			end
@@ -25,6 +27,17 @@ module Test
 			false
 		    end
 		}
+                if newproc
+                    if capture
+                        # TODO: stderr
+                        `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
+                    else
+                        system("#{Rant::Sys.sp(Rant::Env::RUBY)} " +
+                            #{Rant::Sys.sp(RANT_BIN)} " +
+                            "#{args.flatten.join(' ')}")
+                    end
+                    assert_equal(res, $?.exitstatus)
+                end
 		if capture
 		    capture_std do
 			assert_equal(res, ::Rant::RantApp.new.run(*args))
@@ -156,6 +169,8 @@ def run_ruby(*args)
     `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.arglist}`
 end
 
+$have_unzip = !!Rant::Env.find_bin("unzip")
+
 $have_any_zip = nil
 def have_any_zip?
     return $have_any_zip unless $have_any_zip.nil?
@@ -171,8 +186,9 @@ def have_any_zip?
                 require 'zip/zip'
                 $have_any_zip = true
             rescue LoadError
+		$have_any_zip = false
             end
         end
-        $have_any_zip = false
     end
+    $have_any_zip
 end
