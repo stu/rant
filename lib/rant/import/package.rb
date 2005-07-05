@@ -310,9 +310,27 @@ module Rant::Generators::Archive
 	# Creates a file task wich invokes tar to create a tgz
 	# archive. Returns the created task.
 	def define_task
+	    if ::Rant::Env.have_tar?
+		define_tar_task
+	    else
+		define_minitar_task
+	    end
+	end
+	def define_tar_task
 	    define_cmd_task { |path, t|
 		@rac.cx.sys "tar --files-from #{path} -czf #{t.name}"
 	    }
+	end
+	def define_minitar_task
+	    define_cmd_task do |path, t|
+		begin
+		    @rac.cx.sys.minitar_tgz t.name, @res_files
+		rescue LoadError
+		    @rac.abort_at @ch,
+			"minitar not available. " +
+			"Try to install with `gem install archive-tar-minitar'."
+		end
+	    end
 	end
     end # class Tgz
 
@@ -362,13 +380,29 @@ end # module Rant::Generators::Archive
 # generators move all archive entries into a toplevel directory.
 module Rant::Generators::Package
     class Tgz < Rant::Generators::Archive::Tgz
-	def define_task
+	def define_tar_task
 	    define_task_for_dir do |t|
 		fn = @dist_dirname + (@extension ? @extension : "")
 		old_pwd = Dir.pwd
 		Dir.chdir @dist_root
 		@rac.cx.sys %W(tar zcf #{fn} #@dist_dirname)
 		Dir.chdir old_pwd
+	    end
+	end
+	def define_minitar_task
+	    define_task_for_dir do
+		fn = @dist_dirname + (@extension ? @extension : "")
+		old_pwd = Dir.pwd
+		Dir.chdir @dist_root
+		begin
+		    @rac.cx.sys.minitar_tgz fn, @dist_dirname
+		rescue LoadError
+		    @rac.abort_at @ch,
+			"minitar not available. " +
+			"Try to install with `gem install archive-tar-minitar'."
+		ensure
+		    Dir.chdir old_pwd
+		end
 	    end
 	end
     end # class Tgz

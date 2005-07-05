@@ -51,7 +51,11 @@ class TestImportPackage < Test::Unit::TestCase
     def unpack_archive(atype, archive)
 	case atype
 	when :tgz
-	    `tar -xzf #{archive}`
+	    if ::Rant::Env.have_tar?
+		`tar -xzf #{archive}`
+	    else
+		minitar_unpack archive
+	    end
 	when :zip
 	    if $have_unzip
 		`unzip -q #{archive}`
@@ -62,12 +66,23 @@ class TestImportPackage < Test::Unit::TestCase
 	    raise "can't unpack archive type #{atype}"
 	end
     end
+    def minitar_unpack(archive)
+	begin
+	    require 'archive/tar/minitar'
+	rescue LoadError
+	    require 'rubygems'
+	    require 'archive/tar/mintar'
+	end
+	tgz = Zlib::GzipReader.new(File.open(archive, 'rb'))
+        # unpack closes tgz
+	Archive::Tar::Minitar.unpack(tgz, '.')
+    end
     def rubyzip_unpack(archive)
 	begin
 	    require 'zip/zip'
 	rescue LoadError
-	    require 'rubygems' rescue nil
-	    require 'zip/zip' rescue nil
+	    require 'rubygems'
+	    require 'zip/zip'
 	end
 	f = Zip::ZipFile.open archive
 	f.entries.each { |e|
@@ -77,7 +92,7 @@ class TestImportPackage < Test::Unit::TestCase
 	}
 	f.close
     end
-if Rant::Env.have_tar?
+if have_any_tar?
     def test_tgz_from_manifest
 	assert_rant
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
@@ -138,7 +153,7 @@ if Rant::Env.have_tar?
 	assert(!test(?e, "pkg2.t"))
     end
 else
-    STDERR.puts "tar not available, skipping tar tests"
+    STDERR.puts "tar/minitar not available, skipping tar tests"
 end
 if have_any_zip?
     def test_zip_package_write_manifest

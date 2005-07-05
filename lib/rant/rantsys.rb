@@ -532,6 +532,22 @@ module Rant
             nil
         end
 
+        def minitar_tgz fn, files
+            require 'zlib'
+            begin
+                require 'archive/tar/minitar'
+            rescue LoadError
+                require 'rubygems'
+                require 'archive/tar/minitar'
+            end
+            fu_output_message "minitar #{fn}"
+            files = files.to_ary if files.respond_to? :to_ary
+            tgz = Zlib::GzipWriter.new(File.open(fn, 'wb'))
+            # pack closes tgz
+            Archive::Tar::Minitar.pack(files, tgz)
+            nil
+        end
+
 	extend self
 
     end	# module Sys

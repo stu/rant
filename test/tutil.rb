@@ -192,3 +192,24 @@ def have_any_zip?
     end
     $have_any_zip
 end
+$have_any_tar = nil
+def have_any_tar?
+    return $have_any_tar unless $have_any_tar.nil?
+    if Rant::Env.have_tar?
+        $have_any_tar = true
+    else
+        begin
+            require 'archive/tar/minitar'
+            $have_any_tar = true
+        rescue LoadError
+            begin
+                require 'rubygems'
+                require 'archive/tar/minitar'
+                $have_any_tar = true
+            rescue LoadError
+		$have_any_tar = false
+            end
+        end
+    end
+    $have_any_tar
+end
