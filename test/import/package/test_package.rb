@@ -118,8 +118,10 @@ if Rant::Env.have_tar?
 	assert_rant("autoclean")
 	assert(!test(?e, "pkg2.t"))
     end
+else
+    STDERR.puts "tar not available, skipping zip tests"
 end
-if Rant::Env.have_zip?
+if have_any_zip?
     def test_zip_package_write_manifest
 	assert(!test(?f, "CONTENTS"))
 	assert_rant("pkg.t/pkg.zip")
@@ -164,6 +166,8 @@ if Rant::Env.have_zip?
 	dirs = %w(sub)
 	check_contents(:zip, "t3.zip", mf, dirs)
     end
+else
+    STDERR.puts "zip/rubyzip not available, skipping zip tests"
 end
     def test_dummy
 	assert(true)

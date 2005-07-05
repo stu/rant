@@ -504,6 +504,34 @@ module Rant
 	    split_path(base) + [last]
 	end
 
+        # Raises a LoadError if rubyzip can't be loaded.
+        def rubyzip fn, files, opts = {}
+            begin
+                require 'zip/zip'
+            rescue LoadError
+                require 'rubygems'
+                require 'zip/zip'
+            end
+            fu_output_message "rubyzip #{fn}"
+            Zip::ZipFile.open fn, Zip::ZipFile::CREATE do |z|
+                if opts[:recurse]
+                    require 'find'
+                    files.each { |f|
+                        if test ?d, f
+                            Find.find(f) { |f2| z.add f2, f2 }
+                        else
+                            z.add f, f
+                        end
+                    }
+                else
+                    files.each { |f|
+                        z.add f, f
+                    }
+                end
+            end
+            nil
+        end
+
 	extend self
 
     end	# module Sys

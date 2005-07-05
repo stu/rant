@@ -326,6 +326,13 @@ module Rant::Generators::Archive
 	# Creates a file task wich invokes zip to create a zip
 	# archive. Returns the created task.
 	def define_task
+	    if ::Rant::Env.have_zip?
+		define_zip_task
+	    else
+		define_rubyzip_task
+	    end
+	end
+	def define_zip_task
 	    define_cmd_task { |path, t|
 		cmd = "zip -@qyr #{t.name}"
 		@rac.cmd_msg cmd
@@ -334,6 +341,18 @@ module Rant::Generators::Archive
 		end
 		raise Rant::CommandError.new(cmd, $?) unless $?.success?
 	    }
+	end
+	def define_rubyzip_task
+	    define_cmd_task do |path, t|
+		begin
+		    @rac.cx.sys.rubyzip t.name,
+			@res_files, :recurse => true
+		rescue LoadError
+		    @rac.abort_at @ch,
+			"rubyzip not available. " +
+			"Try to install with `gem install rubyzip'."
+		end
+	    end
 	end
     end # class Zip
 end # module Rant::Generators::Archive
@@ -355,7 +374,7 @@ module Rant::Generators::Package
     end # class Tgz
 
     class Zip < Rant::Generators::Archive::Zip
-	def define_task
+	def define_zip_task
 	    define_task_for_dir do
 		fn = @dist_dirname + (@extension ? @extension : "")
 		old_pwd = Dir.pwd
@@ -366,6 +385,23 @@ module Rant::Generators::Package
 		#   q: quiet operation
 		@rac.cx.sys %W(zip -yqr #{fn} #@dist_dirname)
 		Dir.chdir old_pwd
+	    end
+	end
+	def define_rubyzip_task
+	    define_task_for_dir do
+		fn = @dist_dirname + (@extension ? @extension : "")
+		old_pwd = Dir.pwd
+		Dir.chdir @dist_root
+		begin
+		    @rac.cx.sys.rubyzip fn,
+			@dist_dirname, :recurse => true
+		rescue LoadError
+		    @rac.abort_at @ch,
+			"rubyzip not available. " +
+			"Try to install with `gem install rubyzip'."
+		ensure
+		    Dir.chdir old_pwd
+		end
 	    end
 	end
     end # class Zip

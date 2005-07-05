@@ -155,3 +155,24 @@ end
 def run_ruby(*args)
     `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.arglist}`
 end
+
+$have_any_zip = nil
+def have_any_zip?
+    return $have_any_zip unless $have_any_zip.nil?
+    if Rant::Env.have_zip?
+        $have_any_zip = true
+    else
+        begin
+            require 'zip/zip'
+            $have_any_zip = true
+        rescue LoadError
+            begin
+                require 'rubygems'
+                require 'zip/zip'
+                $have_any_zip = true
+            rescue LoadError
+            end
+        end
+        $have_any_zip = false
+    end
+end
