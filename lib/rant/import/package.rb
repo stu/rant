@@ -6,7 +6,10 @@
 require 'rant/rantlib'
 require 'rant/import/subfile'
 
-module Rant::Generators::Package
+module Rant::Generators::Archive
+
+    # A subclass has to provide a +define_task+ method to act as a
+    # generator.
     class Base
 	extend Rant::MetaUtils
 
@@ -35,6 +38,7 @@ module Rant::Generators::Package
 	    end
 
 	    pkg = self.new(pkg_name)
+	    pkg.basedir = basedir if basedir
 	    pkg.rac = rac
 	    pkg.ch = ch
 	    flags.each { |f|
@@ -114,15 +118,26 @@ module Rant::Generators::Package
 	    @pkg_task = nil
 	end
 
+	# Path to archive file.
+	def path
+	    if basedir
+		File.join(basedir, get_archive_path)
+	    else
+		get_archive_path
+	    end
+	end
+
 	# Path to archive without basedir.
 	def get_archive_path
 	    return @archive_path if @archive_path
-	    path = name
+	    path = name.dup
 	    path << "-#@version" if @version
 	    path << @extension if @extension
 	    @archive_path = path
 	end
 
+	# This method sets @res_files to the return value, a list of
+	# files to include in the archive.
 	def get_files
 	    fl = @files ? @files.dup : []
 	    if @manifest
@@ -134,7 +149,7 @@ module Rant::Generators::Package
 	    elsif @files_only
 		fl = fl.reject { |f| test ?d, f }
 	    end
-	    fl
+	    @res_files = fl
 	end
 
 	# Creates an (eventually) temporary manifest file and yields
@@ -211,8 +226,81 @@ module Rant::Generators::Package
 		    with_manifest { |path| yield(path, t) }
 		end
 	end
+	# Define a task to package one dir. For usage in subclasses.
+	# This method sets the following instance variables:
+	# [@dist_dirname]  The name of the directory which shall be
+	#                  the root of all entries in the archive.
+	# [@dist_root]	   The directory in which the @dist_dirname
+	#                  directory will be created with contents for
+	#                  archiving.
+	# [@dist_path]     @dist_root/@dist_dirname (or just
+	#                  @dist_dirname if @dist_root is ".")
+	#
+	# The block supplied to this method will be the action
+	# to create the archive file (e.g. by invoking the tar
+	# command).
+	def define_task_for_dir(&block)
+	    return @pkg_task if @pkg_task
+	    targ = {get_archive_path => get_files}
+	    @pkg_task = ::Rant::Generators::SubFile.rant_gen(
+		@rac, @ch, [basedir, targ].compact, &block)
+
+	    @dist_dirname = File.split(name).last
+	    @dist_dirname << "-#@version" if @version
+	    @dist_root, = File.split path
+	    @dist_path = (@dist_root == "." ?
+		@dist_dirname : File.join(@dist_root, @dist_dirname))
+	    dist_task = define_dist_dir_task
+	    # the archive-creating task depends on the copying task
+	    # (dist_task)
+	    @pkg_task << dist_task
+
+	    @pkg_task
+	end
+
+	# This method sets the instance variable @dist_dir_task.
+	# Assumes that @res_files is set.
+	#
+	# Returns a task which creates the directory @dist_path and
+	# links/copies @res_files to @dist_path.
+	def define_dist_dir_task
+	    return if @dist_dir_task
+	    cx = @rac.cx
+	    @dist_dir_task = cx.gen(Rant::Generators::Directory,
+		    @dist_path => @res_files) { |t|
+		# ensure to create new and empty destination directory
+		if Dir.entries(@dist_path).size > 2	# "." and ".."
+		    cx.sys.rm_rf(@dist_path)
+		    cx.sys.mkdir(@dist_path)
+		end
+		# evaluate directory structure first
+		dirs = []
+		fl = []
+		@res_files.each { |e|
+		    if test(?d, e)
+			dirs << e unless dirs.include? e
+		    else	# assuming e is a file
+			fl << e
+			dir = File.dirname(e)
+			dirs << dir unless dir == "." || dirs.include?(dir)
+		    end
+		}
+		# create directory structure
+		dirs.each { |dir|
+		    dest = File.join(@dist_path, dir)
+		    cx.sys.mkpath(dest) unless test(?d, dest)
+		}
+		# link or copy files
+		fl.each { |f|
+		    dest = File.join(@dist_path, f)
+		    cx.sys.safe_ln(f, dest)
+		}
+	    }
+	end
     end # class Base
 
+    # Use this class as a generator to create gzip compressed tar
+    # archives.
     class Tgz < Base
 	def initialize(*args)
 	    super
@@ -228,6 +316,7 @@ module Rant::Generators::Package
 	end
     end # class Tgz
 
+    # Use this class as a generator to create zip archives.
     class Zip < Base
 	def initialize(*args)
 	    super
@@ -243,7 +332,41 @@ module Rant::Generators::Package
 		IO.popen cmd, "w" do |z|
 		    z.print IO.read(path)
 		end
+		raise Rant::CommandError.new(cmd, $?) unless $?.success?
 	    }
+	end
+    end # class Zip
+end # module Rant::Generators::Archive
+
+# The classes in this module act as generators which create archives.
+# The difference to the Archive::* generators is, that the Package
+# generators move all archive entries into a toplevel directory.
+module Rant::Generators::Package
+    class Tgz < Rant::Generators::Archive::Tgz
+	def define_task
+	    define_task_for_dir do |t|
+		fn = @dist_dirname + (@extension ? @extension : "")
+		old_pwd = Dir.pwd
+		Dir.chdir @dist_root
+		@rac.cx.sys %W(tar zcf #{fn} #@dist_dirname)
+		Dir.chdir old_pwd
+	    end
+	end
+    end # class Tgz
+
+    class Zip < Rant::Generators::Archive::Zip
+	def define_task
+	    define_task_for_dir do
+		fn = @dist_dirname + (@extension ? @extension : "")
+		old_pwd = Dir.pwd
+		Dir.chdir @dist_root
+		# zip options:
+		#   y: store symlinks instead of referenced files
+		#   r: recurse into directories
+		#   q: quiet operation
+		@rac.cx.sys %W(zip -yqr #{fn} #@dist_dirname)
+		Dir.chdir old_pwd
+	    end
 	end
     end # class Zip
 end # module Rant::Generators::Package
