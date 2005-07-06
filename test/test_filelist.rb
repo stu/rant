@@ -296,8 +296,27 @@ class TestFileList < Test::Unit::TestCase
 	    l2 = cx.sys["*.t"]
 	    assert_equal(4, l1.size)
 	    assert_equal(2, l2.size)
-	    %w(a.t .a.t b.t .b.t).each { |f| l1.include? f }
-	    %w(a.t b.t ).each { |f| l2.include? f }
+	    %w(a.t .a.t b.t .b.t).each { |f|
+                assert(l1.include?(f))
+            }
+	    %w(a.t b.t ).each { |f|
+                assert(l2.include?(f))
+            }
 	end
+    end
+    def test_add_no_dir
+        cx = Rant::RantApp.new.cx
+        FileUtils.mkdir "tfl.t"
+        FileUtils.mkdir "tfl.tt"
+        touch_temp %w(a.t a.tt) do
+            l1 = cx.sys["*.t"]
+            l1 += cx.sys["*.tt"].no_dir
+            assert_equal(3, l1.size)
+            %w(tfl.t a.t a.tt).each { |f|
+                assert(l1.include?(f))
+            }
+        end
+    ensure
+        FileUtils.rm_rf %w(tfl.t tfl.tt)
     end
 end

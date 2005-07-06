@@ -55,16 +55,6 @@ class TestProjectRb1 < Test::Unit::TestCase
 	end
 	assert(test(?d, "packages"),
 	    "task `pkg' should create dir `packages'")
-	begin
-	    have_tar = !`tar --help`.empty?
-	rescue
-	    have_tar = false
-	end
-	begin
-	    have_zip = !`zip -help`.empty?
-	rescue
-	    have_zip = false
-	end
 	have_gem = false
 	pkg_base = "packages/wgrep-1.0.0"
 	begin
@@ -72,7 +62,7 @@ class TestProjectRb1 < Test::Unit::TestCase
 	    have_gem = true
 	rescue LoadError
 	end
-	if have_tar
+	if have_any_tar?
 	    tar_fn = pkg_base + ".tar.gz"
 	    assert(test(?f, tar_fn),
 		"tar is available, so a tar.gz should have been built")
@@ -80,7 +70,7 @@ class TestProjectRb1 < Test::Unit::TestCase
 	else
 	    puts "*** tar not available ***"
 	end
-	if have_zip
+	if have_any_zip?
 	    assert(test(?f, pkg_base + ".zip"),
 		"zip is available, so a zip should have been built")
 	    verify_zip "packages", "wgrep-1.0.0", ".zip"
@@ -103,7 +93,8 @@ class TestProjectRb1 < Test::Unit::TestCase
 	FileUtils.mkdir tmp_dir
 	FileUtils.cp tar_fn, tmp_dir
 	FileUtils.cd tmp_dir do
-	    `tar xzf #{tar_fn}`
+            #`tar xzf #{tar_fn}`
+            unpack_archive :tgz, tar_fn
 	    assert(test(?d, pkg_base),
 		"`#{pkg_base}' should be root directory of all files in tar")
 	    FileUtils.cd pkg_base do
@@ -123,7 +114,8 @@ class TestProjectRb1 < Test::Unit::TestCase
 	FileUtils.mkdir tmp_dir
 	FileUtils.cp zip_fn, tmp_dir
 	FileUtils.cd tmp_dir do
-	    `unzip -q #{zip_fn}`
+            #`unzip -q #{zip_fn}`
+            unpack_archive :zip, zip_fn
 	    assert(test(?d, pkg_base),
 		"`#{pkg_base}' should be root directory of all files in zip")
 	    FileUtils.cd pkg_base do

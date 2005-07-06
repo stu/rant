@@ -32,6 +32,32 @@ module Rant::Env
 	!@@tar_bin.nil?
     end
 
+    def have_rubyzip?
+        require 'zip/zip'
+        return true
+    rescue LoadError
+        begin
+            require 'rubygems'
+            require 'zip/zip'
+            return true
+        rescue LoadError
+            return false
+        end
+    end
+    
+    def have_minitar?
+        require 'archive/tar/minitar'
+        return true
+    rescue LoadError
+        begin
+            require 'rubygems'
+            require 'archive/tar/minitar'
+            return true
+        rescue LoadError
+            return false
+        end
+    end
+
     # Get an array with all pathes in the PATH
     # environment variable.
     def pathes

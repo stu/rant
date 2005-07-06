@@ -213,3 +213,47 @@ def have_any_tar?
     end
     $have_any_tar
 end
+def unpack_archive(atype, archive)
+    case atype
+    when :tgz
+        if ::Rant::Env.have_tar?
+            `tar -xzf #{archive}`
+        else
+            minitar_unpack archive
+        end
+    when :zip
+        if $have_unzip
+            `unzip -q #{archive}`
+        else
+            rubyzip_unpack archive
+        end
+    else
+        raise "can't unpack archive type #{atype}"
+    end
+end
+def minitar_unpack(archive)
+    begin
+        require 'archive/tar/minitar'
+    rescue LoadError
+        require 'rubygems'
+        require 'archive/tar/mintar'
+    end
+    tgz = Zlib::GzipReader.new(File.open(archive, 'rb'))
+    # unpack closes tgz
+    Archive::Tar::Minitar.unpack(tgz, '.')
+end
+def rubyzip_unpack(archive)
+    begin
+        require 'zip/zip'
+    rescue LoadError
+        require 'rubygems'
+        require 'zip/zip'
+    end
+    f = Zip::ZipFile.open archive
+    f.entries.each { |e|
+        dir, = File.split(e.name)
+        FileUtils.mkpath dir unless test ?d, dir
+        f.extract e, e.name
+    }
+    f.close
+end

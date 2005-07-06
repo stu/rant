@@ -25,8 +25,12 @@ class TestImportPackage < Test::Unit::TestCase
 	    assert(test(?d, @pkg_dir))
 	    FileUtils.cd @pkg_dir
 	end
-	files.each { |f| assert(test(?f, f)) }
-	dirs.each { |f| assert(test(?d, f)) }
+	files.each { |f|
+	    assert(test(?f, f), "file #{f} is missing in archive")
+	}
+	dirs.each { |f|
+	    assert(test(?d, f), "dir #{f} is missing in archive")
+	}
 	count = files.size + dirs.size
 	# + 1 because of the archive file
 	count += 1 unless @pkg_dir
@@ -47,50 +51,6 @@ class TestImportPackage < Test::Unit::TestCase
 	    assert(m_entries.include?(f),
 		"#{f} missing in manifest")
 	}
-    end
-    def unpack_archive(atype, archive)
-	case atype
-	when :tgz
-	    if ::Rant::Env.have_tar?
-		`tar -xzf #{archive}`
-	    else
-		minitar_unpack archive
-	    end
-	when :zip
-	    if $have_unzip
-		`unzip -q #{archive}`
-	    else
-		rubyzip_unpack archive
-	    end
-	else
-	    raise "can't unpack archive type #{atype}"
-	end
-    end
-    def minitar_unpack(archive)
-	begin
-	    require 'archive/tar/minitar'
-	rescue LoadError
-	    require 'rubygems'
-	    require 'archive/tar/mintar'
-	end
-	tgz = Zlib::GzipReader.new(File.open(archive, 'rb'))
-        # unpack closes tgz
-	Archive::Tar::Minitar.unpack(tgz, '.')
-    end
-    def rubyzip_unpack(archive)
-	begin
-	    require 'zip/zip'
-	rescue LoadError
-	    require 'rubygems'
-	    require 'zip/zip'
-	end
-	f = Zip::ZipFile.open archive
-	f.entries.each { |e|
-	    dir, = File.split(e.name)
-	    FileUtils.mkpath dir unless test ?d, dir
-	    f.extract e, e.name
-	}
-	f.close
     end
 if have_any_tar?
     def test_tgz_from_manifest
@@ -217,6 +177,16 @@ if have_any_tar?
     ensure
 	FileUtils.rm_rf %w(rf.t ant.t)
     end
+    def test_tgz_package_empty_dir
+	FileUtils.mkdir "sub6.t"
+	assert_rant("t6.tgz")
+	@pkg_dir = "t6"
+	mf = %w()
+	dirs = %w(sub6.t)
+	check_contents(:tgz, "t6.tgz", mf, dirs)
+    ensure
+	FileUtils.rm_rf %w(sub6.t)
+    end
     def test_tgz_files_manifest_desc
 	out, err = assert_rant("--tasks")
 	assert_match(/rant\s+t2\.tgz\s+#\s+Create t2\.tgz/, out)
@@ -234,6 +204,16 @@ else
     STDERR.puts "tar/minitar not available, skipping tar tests"
 end
 if have_any_zip?
+    def test_zip_package_empty_dir
+	FileUtils.mkdir "sub6.t"
+	assert_rant("t6.zip")
+	@pkg_dir = "t6"
+	mf = %w()
+	dirs = %w(sub6.t)
+	check_contents(:zip, "t6.zip", mf, dirs)
+    ensure
+	FileUtils.rm_rf %w(sub6.t)
+    end
     def test_zip_manifest_desc
 	out, err = assert_rant("--tasks")
 	assert_match(/rant\s+t1\.zip\s+#\s+Create t1\.zip/, out)

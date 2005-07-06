@@ -104,7 +104,7 @@ module Rant::Generators::Archive
 	    @rac = nil
 	    @pkg_task = nil
 	    @ch = nil
-	    @files_only = true
+	    @files_only = false
 	    @manifest_task = nil
 	    @basedir = nil
             @res_files = nil
@@ -280,6 +280,7 @@ module Rant::Generators::Archive
 		    cx.sys.rm_rf(@dist_path)
 		    cx.sys.mkdir(@dist_path)
 		end
+                p @res_files.include?("test/project2/sub2")
 		# evaluate directory structure first
 		dirs = []
 		fl = []

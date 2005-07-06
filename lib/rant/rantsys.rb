@@ -505,13 +505,8 @@ module Rant
 	end
 
         # Raises a LoadError if rubyzip can't be loaded.
-        def rubyzip fn, files, opts = {}
-            begin
-                require 'zip/zip'
-            rescue LoadError
-                require 'rubygems'
-                require 'zip/zip'
-            end
+        def rubyzip fn, files, opts = {:recurse => true}
+            raise LoadError, "zip/zip" unless Env.have_rubyzip?
             fu_output_message "rubyzip #{fn}"
             Zip::ZipFile.open fn, Zip::ZipFile::CREATE do |z|
                 if opts[:recurse]
@@ -533,13 +528,8 @@ module Rant
         end
 
         def minitar_tgz fn, files
+            raise LoadError, "archive/tar/minitar" unless Env.have_minitar?
             require 'zlib'
-            begin
-                require 'archive/tar/minitar'
-            rescue LoadError
-                require 'rubygems'
-                require 'archive/tar/minitar'
-            end
             fu_output_message "minitar #{fn}"
             files = files.to_ary if files.respond_to? :to_ary
             tgz = Zlib::GzipWriter.new(File.open(fn, 'wb'))

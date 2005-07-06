@@ -37,4 +37,7 @@ gen Package::Tgz, "t5",
     :manifest => "mf5.t",
     :files => %w(Rantfile mf5.t)
 
+gen Package::Tgz, "t6", :files => %w(sub6.t)
+gen Package::Zip, "t6", :files => %w(sub6.t)
+
 gen AutoClean
