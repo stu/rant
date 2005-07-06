@@ -221,6 +221,15 @@ if have_any_tar?
 	out, err = assert_rant("--tasks")
 	assert_match(/rant\s+t2\.tgz\s+#\s+Create t2\.tgz/, out)
     end
+    def test_tgz_package_files_contains_manifest
+	assert_rant("t5.tgz")
+	@pkg_dir = "t5"
+	mf = %w(Rantfile mf5.t)
+	dirs = %w()
+	check_contents(:tgz, "t5.tgz", mf, dirs, "mf5.t")
+	assert_rant("autoclean")
+	assert(!test(?e, "t5"))
+    end
 else
     STDERR.puts "tar/minitar not available, skipping tar tests"
 end

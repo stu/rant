@@ -242,13 +242,18 @@ EOF
 	    rs = ""
 	    @imports.each { |name|
 		next if @included_imports.include? name
-		path = get_lib_rant_path "import/#{name}.rb"
+                lib_name = "import/#{name}"
+                lib_fn = "#{lib_name}.rb"
+		path = get_lib_rant_path lib_fn
 		unless path
 		    abort("No such import - #{name}")
 		end
-		msg "Including import `#{name}'", path
-		@included_imports << name.dup
-		rs << resolve_requires(File.read(path))
+                @included_imports << name.dup
+                unless @core_imports.include? lib_name
+                    @core_imports << lib_name
+                    msg "Including import `#{name}'", path
+                    rs << resolve_requires(File.read(path))
+                end
 	    }
 	    rs
 	end
@@ -258,13 +263,18 @@ EOF
 	    @plugins.each { |name|
 		lc_name = name.downcase
 		next if @included_plugins.include? lc_name
-		path = get_lib_rant_path "plugin/#{lc_name}.rb"
+                plugin_name = "plugin/#{lc_name}"
+                plugin_fn = "#{plugin_name}.rb"
+		path = get_lib_rant_path plugin_fn
 		unless File.exist? path
 		    abort("No such plugin - #{name}")
 		end
-		msg "Including plugin `#{lc_name}'", path
 		@included_plugins << lc_name
-		rs << resolve_requires(File.read(path))
+                unless @core_imports.include? plugin_name
+                    @core_imports << plugin_name
+                    msg "Including plugin `#{lc_name}'", path
+                    rs << resolve_requires(File.read(path))
+                end
 	    }
 	    rs
 	end

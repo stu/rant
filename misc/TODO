@@ -1,6 +1,13 @@
 
 = TODO
 
+== Solve archiving dependency problem
+Because of timed depdencies, the archiving tasks don't recognize if
+the only change is that a file was removed. The only exception is a
+primitive +Archive+ task whith manifest synchronization. The problem
+can be solved by writing a list of files parallel to archive creation
+or to write a signature of the filelist.
+
 == Dependency alternation
 Allow at least two tasks as one dependency where the first available
 will actually used to satisfy the dependency, pseudo code:
@@ -10,10 +17,11 @@ Rant should first try :b and if the task :b exists and succeds
 to make :c.
 
 == GET RID OF CLASS Rant::Path
-Done.
+Done (0.3.7).
 
 == Packaging
 Try minitar if tar is not available.
+Done (0.3.9).
 
 == C# plugin
 Define the method +assembly+ for building a file with the C# compiler?
@@ -23,7 +31,11 @@ Done.
 
 Add a 'distclean' task that removes all files and directories
 generatet by any file task.
+Done (AutoClean generator).
 
 == Java plugin
 
 At least for the 1.0.0 release.
+
+#--
+# vim:tw=70

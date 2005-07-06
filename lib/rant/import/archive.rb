@@ -96,8 +96,6 @@ module Rant::Generators::Archive
 	rant_attr :files_only
 	# Caller information, e.g.: {:file => "Rantfile", :ln => 10}
 	attr_accessor :ch
-	attr_accessor :rac
-	
 
 	def initialize(name, files = nil)
 	    self.name = name or raise "package name required"
@@ -108,8 +106,10 @@ module Rant::Generators::Archive
 	    @ch = nil
 	    @files_only = true
 	    @manifest_task = nil
-	    @data = {}
 	    @basedir = nil
+            @res_files = nil
+            @manifest = nil
+            @dist_dir_task = nil
 	end
 
 	def rac
@@ -141,16 +141,17 @@ module Rant::Generators::Archive
 	# This method sets @res_files to the return value, a list of
 	# files to include in the archive.
 	def get_files
+            return @res_files if @res_files
 	    fl = @files ? @files.dup : []
+            fl = fl.to_ary
 	    if @manifest
-		if fl.empty?
-		    fl = read_manifest
-		else
-		    fl << @manifest
-		end
+                fl = read_manifest if fl.empty?
+                fl << @manifest
 	    elsif @files_only
-		fl = fl.reject { |f| test ?d, f }
+		fl.reject! { |f| test ?d, f }
 	    end
+            fl.uniq!
+            fl.sort!
 	    @res_files = fl
 	end
 
@@ -184,18 +185,16 @@ module Rant::Generators::Archive
 			yield name
 		    end
 		    t.needed {
-			@data["fl_ary"] = (@files + [@manifest]).sort.uniq
-			if @files_only
-			    @data["fl_ary"].reject! { |f| test ?d, f }
-			end
+                        # fl refers to @res_files
+                        fl = get_files
 			if test ?f, @manifest
-			    read_manifest != @data["fl_ary"]
+                            read_manifest != @res_files
 			else
 			    true
 			end
 		    }
 		    t.act {
-			write_manifest @data["fl_ary"]
+                        write_manifest get_files
 		    }
 		end
 	end
@@ -220,8 +219,6 @@ module Rant::Generators::Archive
 	def define_cmd_task
 	    return @pkg_task if @pkg_task
 	    targ = {get_archive_path => get_files}
-	    #targ[:__caller__] = @ch if @ch
-	    #args = [::Rant::Generators::SubFile, basedir, targ].compact
 	    @pkg_task =
 		::Rant::Generators::SubFile.rant_gen(
 			@rac, @ch, [basedir, targ].compact) do |t|

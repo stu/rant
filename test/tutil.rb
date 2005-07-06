@@ -158,15 +158,15 @@ When testing Rant: `#{Dir.pwd + "/" + errfn}' exists.
 end
 
 def run_rant(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.arglist}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
 end
 
 def run_import(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_IMPORT_BIN)} #{args.flatten.arglist}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_IMPORT_BIN)} #{args.flatten.join(' ')}`
 end
 
 def run_ruby(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.arglist}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.join(' ')}`
 end
 
 $have_unzip = !!Rant::Env.find_bin("unzip")

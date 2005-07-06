@@ -33,4 +33,8 @@ gen Package::Tgz, "sub", "pkg.t/pkg", :manifest,
 
 gen Package::Tgz, "sub.t/", "pkg", :files => %w(sub/f1)
 
+gen Package::Tgz, "t5",
+    :manifest => "mf5.t",
+    :files => %w(Rantfile mf5.t)
+
 gen AutoClean
