@@ -2,8 +2,10 @@
 import %w(package autoclean)
 
 gen Archive::Tgz, "t1", :manifest => "MANIFEST"
+desc "Create t1.zip"
 gen Archive::Zip, "t1", :manifest => "MANIFEST"
 
+desc "Create t2.tgz"
 gen Archive::Tgz, "t2",
     :files => sys["sub*/f?"],
     :manifest => "m2.tgz.t"
@@ -24,5 +26,11 @@ gen Package::Tgz, "pkg2.t", :manifest
 gen Package::Zip, "pkg.t/pkg",
     :manifest => "CONTENTS",
     :files => %w(deep/sub/sub/f1)
+
+gen Package::Tgz, "sub", "pkg.t/pkg", :manifest,
+    :version => "0.1",
+    :extension => ".tar.gz"
+
+gen Package::Tgz, "sub.t/", "pkg", :files => %w(sub/f1)
 
 gen AutoClean

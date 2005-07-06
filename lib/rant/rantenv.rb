@@ -4,8 +4,8 @@ require 'rbconfig'
 
 module Rant end
 
-# This module provides some platform indenpendant
-# (let's hope) environment information.
+# This module interfaces with the environment to provide
+# information/conversion methods in a portable manner.
 module Rant::Env
     OS		= ::Config::CONFIG['target']
     RUBY	= ::Config::CONFIG['ruby_install_name']
@@ -175,15 +175,4 @@ module Rant::Console
     end
 
     extend self
-end
-
-class Rant::CustomConsole
-    include Rant::Console
-
-    def initialize msg_prefix = RANT_PREFIX
-	@msg_prefix = msg_prefix || ""
-    end
-    def msg_prefix=(str)
-	@msg_prefix = str || ""
-    end
 end

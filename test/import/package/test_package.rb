@@ -152,10 +152,102 @@ if have_any_tar?
 	assert_rant("autoclean")
 	assert(!test(?e, "pkg2.t"))
     end
+    def test_tgz_package_basedir_manifest_extension
+	assert_rant("sub/pkg.t/pkg-0.1.tar.gz")
+	assert(test(?f, "sub/pkg.t/pkg-0.1.tar.gz"))
+	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
+	dirs = %w(sub sub2)
+	@pkg_dir = "pkg-0.1"
+	check_contents(:tgz,
+	    "sub/pkg.t/pkg-0.1.tar.gz", mf, dirs, "MANIFEST")
+	assert(test(?f, "sub/f1"))
+	assert_rant("autoclean")
+	assert(!test(?e, "sub/pkg.t-0.1"))
+	assert(test(?d, "sub"))
+	assert(test(?f, "sub/f1"))
+    end
+    def test_tgz_package_basedir_with_slash
+	assert(!test(?d, "sub.t"))
+	assert_rant(:fail, "sub.t/pkg.tgz")
+	assert(!test(?d, "sub.t"))
+	FileUtils.mkdir "sub.t"
+	FileUtils.touch "sub.t/a.t"
+	out, err = assert_rant("sub.t/pkg.tgz")
+	assert(!out.empty?)
+	out, err = assert_rant("sub.t/pkg.tgz")
+	assert(out.empty?)
+	assert(test(?d, "sub.t/pkg"))
+	@pkg_dir = "pkg"
+	mf = %w(sub/f1)
+	dirs = %w(sub)
+	check_contents(:tgz, "sub.t/pkg.tgz", mf, dirs)
+	assert_rant("autoclean")
+	assert(!test(?e, "sub.t/pkg.tgz"))
+	assert(!test(?e, "sub.t/pkg"))
+	assert(test(?d, "sub.t"))
+	assert(test(?f, "sub.t/a.t"))
+    ensure
+	FileUtils.rm_rf "sub.t"
+    end
+    def test_tgz_import_archive
+	open "rf.t", "w" do |f|
+	    f << <<-EOF
+		import "archive", "autoclean"
+		gen Archive::Tgz, "rf", :files => sys["deep/sub/sub/f1"]
+		gen AutoClean
+	    EOF
+	end
+	assert_rant("-frf.t")
+	mf = %w(deep/sub/sub/f1)
+	dirs = %w(deep deep/sub deep/sub/sub)
+	check_contents(:tgz, "rf.tgz", mf, dirs)
+	assert(test(?f, "rf.tgz"))
+	assert_rant("-frf.t", "autoclean")
+	assert(!test(?e, "rf.tgz"))
+	run_import("-frf.t", "-q", "--auto", "ant.t")
+	assert_equal(0, $?.exitstatus)
+	out = run_ruby("ant.t", "-frf.t")
+	assert(!out.empty?)
+	out = run_ruby("ant.t", "-frf.t")
+	assert(out.empty?)
+	check_contents(:tgz, "rf.tgz", mf, dirs)
+	assert(test(?f, "rf.tgz"))
+	assert_rant("-frf.t", "autoclean")
+	assert(!test(?e, "rf.tgz"))
+    ensure
+	FileUtils.rm_rf %w(rf.t ant.t)
+    end
+    def test_tgz_files_manifest_desc
+	out, err = assert_rant("--tasks")
+	assert_match(/rant\s+t2\.tgz\s+#\s+Create t2\.tgz/, out)
+    end
 else
     STDERR.puts "tar/minitar not available, skipping tar tests"
 end
 if have_any_zip?
+    def test_zip_manifest_desc
+	out, err = assert_rant("--tasks")
+	assert_match(/rant\s+t1\.zip\s+#\s+Create t1\.zip/, out)
+    end
+    def test_zip_rant_import
+	run_import("-q", "--auto", "ant.t")
+	assert_equal(0, $?.exitstatus)
+	assert(test(?f, "ant.t"))
+	out = run_ruby("ant.t", "pkg.t/pkg.zip")
+	assert_equal(0, $?.exitstatus)
+	assert(!out.empty?)
+	out = run_ruby("ant.t", "pkg.t/pkg.zip")
+	assert(out.empty?)
+	mf = %w(deep/sub/sub/f1 CONTENTS)
+	dirs = %w(deep deep/sub deep/sub/sub)
+	@pkg_dir = "pkg"
+	check_contents(:zip, "pkg.t/pkg.zip", mf, dirs, "CONTENTS")
+	assert(test(?f, "CONTENTS"))
+	run_ruby("ant.t", "autoclean")
+	assert(!test(?f, "CONTENTS"))
+    ensure
+	FileUtils.rm_f "ant.t"
+    end
     def test_zip_package_write_manifest
 	assert(!test(?f, "CONTENTS"))
 	assert_rant(:x, "pkg.t/pkg.zip")
@@ -176,6 +268,9 @@ if have_any_zip?
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
 	dirs = %w(sub sub2)
 	check_contents(:zip, "zip.t/t4-1.0.0.zip", mf, dirs, "MANIFEST")
+	assert_rant("autoclean")
+	assert(test(?d, "zip.t"))
+	assert(!test(?e, "zip.t/t4-1.0.0.zip"))
     ensure
 	FileUtils.rm_rf "zip.t"
     end
