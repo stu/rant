@@ -93,16 +93,18 @@ class TestImportCDependencies < Test::Unit::TestCase
         run_import("-q", "--auto", "ant.t")
         assert_exit
         assert(test(?f, "ant.t"))
-        out, err = run_ruby("ant.t", "hello.t")
+        run_ruby("ant.t", "hello.t")
         assert_exit
 	assert(test(?f, "hello.t"))
 	assert(test(?f, "c_dependencies"))
         out = run_ruby("ant.t", "hello.t")
 	assert(out.strip.empty?)
-        requires = extract_requires(open("ant.t"))
-        requires.each { |fn|
-            assert_no_match(/^rant\//, fn,
-                "#{fn} should be inlined by rant-import")
-        }
+	open "ant.t" do |f|
+	    requires = extract_requires(f)
+	    requires.each { |fn|
+		assert_no_match(/^rant\//, fn,
+		    "#{fn} should be inlined by rant-import")
+	    }
+	end
     end
 end

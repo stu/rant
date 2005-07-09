@@ -315,23 +315,15 @@ class Rant::Generators::RubyPackage
 
     # Returns true if at least one task was defined.
     def def_available_tasks
-	defined = false
-	if Rant::Env.have_tar? || Rant::Env.have_minitar?
-	    # we don't create shortcut tasks, hence nil as argument
-	    self.tar_task(nil)
-	    defined = true
-	end
-	if Rant::Env.have_zip? || Rant::Env.have_rubyzip?
-	    self.zip_task(nil)
-	    defined = true
-	end
+	self.tar_task(nil)
+	self.zip_task(nil)
 	begin
 	    require 'rubygems'
 	    self.gem_task(nil)
 	    defined = true
 	rescue LoadError
 	end
-	defined
+	true
     end
 
     def pkg_base_name
