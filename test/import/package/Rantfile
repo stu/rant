@@ -1,5 +1,5 @@
 
-import %w(package autoclean)
+import %w(package/tgz package/zip autoclean)
 
 gen Archive::Tgz, "t1", :manifest => "MANIFEST"
 desc "Create t1.zip"
@@ -39,5 +39,8 @@ gen Package::Tgz, "t5",
 
 gen Package::Tgz, "t6", :files => %w(sub6.t)
 gen Package::Zip, "t6", :files => %w(sub6.t)
+
+gen Archive::Tgz, "t7", :files => %w(sub7.t)
+gen Archive::Zip, "t7", :files => %w(sub7.t)
 
 gen AutoClean

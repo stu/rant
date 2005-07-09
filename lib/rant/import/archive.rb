@@ -2,12 +2,15 @@
 # archive.rb - Archiving support for Rant.
 #
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
+#
+# This file currently doesn't contain a generator. Thus an <tt>import
+# "archive"</tt> doesn't make sense. Do an <tt>import
+# "archive/tgz"</tt> or <tt>import "archive/zip"</tt> instead.
 
 require 'rant/rantlib'
 require 'rant/import/subfile'
 
 module Rant::Generators::Archive
-
     # A subclass has to provide a +define_task+ method to act as a
     # generator.
     class Base
@@ -280,7 +283,6 @@ module Rant::Generators::Archive
 		    cx.sys.rm_rf(@dist_path)
 		    cx.sys.mkdir(@dist_path)
 		end
-                p @res_files.include?("test/project2/sub2")
 		# evaluate directory structure first
 		dirs = []
 		fl = []
@@ -306,79 +308,4 @@ module Rant::Generators::Archive
 	    }
 	end
     end # class Base
-
-    # Use this class as a generator to create gzip compressed tar
-    # archives.
-    class Tgz < Base
-	def initialize(*args)
-	    super
-	    @extension = ".tgz"
-	end
-	# Ensure to set #rac first.
-	# Creates a file task wich invokes tar to create a tgz
-	# archive. Returns the created task.
-	def define_task
-	    if ::Rant::Env.have_tar?
-		define_tar_task
-	    else
-		define_minitar_task
-	    end
-	end
-	def define_tar_task
-	    define_cmd_task { |path, t|
-		@rac.cx.sys "tar --files-from #{path} -czf #{t.name}"
-	    }
-	end
-	def define_minitar_task
-	    define_cmd_task do |path, t|
-		begin
-		    @rac.cx.sys.minitar_tgz t.name, @res_files
-		rescue LoadError
-		    @rac.abort_at @ch,
-			"minitar not available. " +
-			"Try to install with `gem install archive-tar-minitar'."
-		end
-	    end
-	end
-    end # class Tgz
-
-    # Use this class as a generator to create zip archives.
-    class Zip < Base
-	def initialize(*args)
-	    super
-	    @extension = ".zip"
-	end
-	# Ensure to set #rac first.
-	# Creates a file task wich invokes zip to create a zip
-	# archive. Returns the created task.
-	def define_task
-	    if ::Rant::Env.have_zip?
-		define_zip_task
-	    else
-		define_rubyzip_task
-	    end
-	end
-	def define_zip_task
-	    define_cmd_task { |path, t|
-		cmd = "zip -@qyr #{t.name}"
-		@rac.cmd_msg cmd
-		IO.popen cmd, "w" do |z|
-		    z.print IO.read(path)
-		end
-		raise Rant::CommandError.new(cmd, $?) unless $?.success?
-	    }
-	end
-	def define_rubyzip_task
-	    define_cmd_task do |path, t|
-		begin
-		    @rac.cx.sys.rubyzip t.name,
-			@res_files, :recurse => true
-		rescue LoadError
-		    @rac.abort_at @ch,
-			"rubyzip not available. " +
-			"Try to install with `gem install rubyzip'."
-		end
-	    end
-	end
-    end # class Zip
 end # module Rant::Generators::Archive

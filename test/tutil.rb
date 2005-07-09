@@ -46,6 +46,9 @@ module Test
 		    assert_equal(res, ::Rant::RantApp.new.run(*args))
 		end
 	    end
+            def assert_exit(status = 0)
+                assert_equal(status, $?.exitstatus)
+            end
 	end
     end
 end
@@ -171,48 +174,6 @@ end
 
 $have_unzip = !!Rant::Env.find_bin("unzip")
 
-$have_any_zip = nil
-def have_any_zip?
-    return $have_any_zip unless $have_any_zip.nil?
-    if Rant::Env.have_zip?
-        $have_any_zip = true
-    else
-        begin
-            require 'zip/zip'
-            $have_any_zip = true
-        rescue LoadError
-            begin
-                require 'rubygems'
-                require 'zip/zip'
-                $have_any_zip = true
-            rescue LoadError
-		$have_any_zip = false
-            end
-        end
-    end
-    $have_any_zip
-end
-$have_any_tar = nil
-def have_any_tar?
-    return $have_any_tar unless $have_any_tar.nil?
-    if Rant::Env.have_tar?
-        $have_any_tar = true
-    else
-        begin
-            require 'archive/tar/minitar'
-            $have_any_tar = true
-        rescue LoadError
-            begin
-                require 'rubygems'
-                require 'archive/tar/minitar'
-                $have_any_tar = true
-            rescue LoadError
-		$have_any_tar = false
-            end
-        end
-    end
-    $have_any_tar
-end
 def unpack_archive(atype, archive)
     case atype
     when :tgz
@@ -232,28 +193,51 @@ def unpack_archive(atype, archive)
     end
 end
 def minitar_unpack(archive)
-    begin
-        require 'archive/tar/minitar'
-    rescue LoadError
-        require 'rubygems'
-        require 'archive/tar/mintar'
-    end
+    require 'rant/archive/minitar'
     tgz = Zlib::GzipReader.new(File.open(archive, 'rb'))
     # unpack closes tgz
-    Archive::Tar::Minitar.unpack(tgz, '.')
+    Rant::Archive::Minitar.unpack(tgz, '.')
 end
 def rubyzip_unpack(archive)
-    begin
-        require 'zip/zip'
-    rescue LoadError
-        require 'rubygems'
-        require 'zip/zip'
-    end
-    f = Zip::ZipFile.open archive
+    require 'rant/archive/rubyzip'
+    f = Rant::Archive::Rubyzip::ZipFile.open archive
     f.entries.each { |e|
         dir, = File.split(e.name)
         FileUtils.mkpath dir unless test ?d, dir
         f.extract e, e.name
     }
     f.close
+end
+
+# Returns a list with the files required by the IO object script.
+def extract_requires(script, dynamic_requires = [])
+    in_ml_comment = false
+    requires = []
+    script.each { |line|
+        if in_ml_comment
+            if line =~ /^=end/
+                in_ml_comment = false
+            end
+            next
+        end
+        # skip shebang line
+        next if line =~ /^#! ?(\/|\\)?\w/
+        # skip pure comment lines
+        next if line =~ /^\s*#/
+        if line =~ /^=begin\s/
+            in_ml_comment = true
+            next
+        end
+        name = nil
+        lib_file = nil
+        if line =~ /\s*(require|load)\s*('|")([^\2]*)\2/
+            fn = $3
+            if fn =~ /\#\{[^\}]+\}/ || fn =~ /\#\@/
+                dynamic_requires << fn
+            else
+                requires << fn
+            end
+        end
+    }
+    requires
 end

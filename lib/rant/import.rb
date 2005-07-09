@@ -78,10 +78,10 @@ module Rant
 	    @mono_fn = nil
 	    @force = false
 	    @rantapp = nil
-	    @core_imports = []
-	    @lib_imports = []
 	    @included_plugins = []
 	    @included_imports = []
+            # contains all filenames as given to +require+
+            @included_files = []
 	    @skip_comments = true
 	    @reduce_whitespace = false
 	    @auto = false
@@ -234,7 +234,7 @@ EOF
 		    "This file should contains the core of rant, so import is impossible.",
 		    "Please check your rant installation!")
 	    end
-	    @core_imports << "rantlib"
+	    @included_files << "rant/rantlib"
 	    resolve_requires rantlib
 	end
 
@@ -244,13 +244,14 @@ EOF
 		next if @included_imports.include? name
                 lib_name = "import/#{name}"
                 lib_fn = "#{lib_name}.rb"
+                rfn = "rant/#{lib_name}"
 		path = get_lib_rant_path lib_fn
 		unless path
 		    abort("No such import - #{name}")
 		end
                 @included_imports << name.dup
-                unless @core_imports.include? lib_name
-                    @core_imports << lib_name
+                unless @included_files.include? rfn
+                    @included_files << rfn
                     msg "Including import `#{name}'", path
                     rs << resolve_requires(File.read(path))
                 end
@@ -265,13 +266,14 @@ EOF
 		next if @included_plugins.include? lc_name
                 plugin_name = "plugin/#{lc_name}"
                 plugin_fn = "#{plugin_name}.rb"
+                rfn = "rant/#{plugin_name}"
 		path = get_lib_rant_path plugin_fn
 		unless File.exist? path
 		    abort("No such plugin - #{name}")
 		end
 		@included_plugins << lc_name
-                unless @core_imports.include? plugin_name
-                    @core_imports << plugin_name
+                unless @included_files.include? rfn
+                    @included_files << rfn
                     msg "Including plugin `#{lc_name}'", path
                     rs << resolve_requires(File.read(path))
                 end
@@ -293,6 +295,12 @@ EOF
 		end
 		# skip shebang line
 		next if line =~ /^#! ?(\/|\\)?\w/
+                # uncomment line if +uncomment+ directive given
+                if line =~ /^\s*#.*#\s?rant-import:\s?uncomment\s*$/
+                    line.sub! '#', ''
+                end
+                # skip line if +remove+ directive given
+                next if line =~ /#\s?rant-import:\s?remove\s*$/
 		# skip pure comment lines
 		next if line =~ /^\s*#/ if @skip_comments
 		if line =~ /^=begin\s/
@@ -301,10 +309,11 @@ EOF
 		end
 		name = nil
 		lib_file = nil
-		if line =~ /\s*(require|load)\s+('|")rant\/(\w+)(\.rb)?('|")/
+		if line =~ /\s*(require|load)\s+('|")rant\/([\w\/]+)(\.rb)?('|")/
 		    # Rant library code
 		    name = $3
-		elsif line =~ /\s*(require|load)\s+('|")rant\/(import\/\w+)(\.rb)?('|")/
+		elsif line =~
+                    /\s*(require|load)\s+('|")rant\/(import\/[\w\/]+)(\.rb)?('|")/
 		    # some "import" code
 		    name = $3
 		elsif line =~ /\s*(require|load)\s+('|")([^\2]+)\2[^r]*rant-import/
@@ -312,16 +321,17 @@ EOF
 		    lib_file = $3
 		end
 		if name
-		    next if @core_imports.include? name
+                    rfn = "rant/#{name}"
+		    next if @included_files.include? rfn
 		    path = get_lib_rant_path "#{name}.rb"
 		    msg "Including `#{name}'", path
-		    @core_imports << name
+		    @included_files << rfn
 		    rs << resolve_requires(File.read(path))
 		elsif lib_file
-		    next if @lib_imports.include? lib_file
+		    next if @included_files.include? lib_file
 		    path = get_lib_path "#{lib_file}.rb"
 		    msg "Including `#{lib_file}'", path
-		    @lib_imports << lib_file
+		    @included_files << lib_file
 		    rs << resolve_requires(File.read(path))
 		else
 		    line.sub!(/^\s+/, '') if @reduce_whitespace

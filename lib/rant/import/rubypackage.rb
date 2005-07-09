@@ -1,6 +1,5 @@
 
 require 'rant/rantlib'
-require 'rant/import/package'
 
 class Rant::Generators::RubyPackage
 
@@ -268,6 +267,7 @@ class Rant::Generators::RubyPackage
 	    @app.cx.task({:__caller__ => @ch, tname => pkg_name})
 	end
 	# actual tar-creating task
+        @app.cx.import "package/tgz"
         @tar_task =
         Rant::Generators::Package::Tgz.rant_gen(@app, @ch,
             ["#@pkg_dir/#{pkg_base_name}",
@@ -286,6 +286,7 @@ class Rant::Generators::RubyPackage
 	    @app.task({:__caller__ => @ch, tname => pkg_name})
 	end
 	# actual zip-creating task
+        @app.cx.import "package/zip"
         @zip_task =
         Rant::Generators::Package::Zip.rant_gen(@app, @ch,
             ["#@pkg_dir/#{pkg_base_name}", {:files => pkg_files}])

@@ -504,40 +504,6 @@ module Rant
 	    split_path(base) + [last]
 	end
 
-        # Raises a LoadError if rubyzip can't be loaded.
-        def rubyzip fn, files, opts = {:recurse => true}
-            raise LoadError, "zip/zip" unless Env.have_rubyzip?
-            fu_output_message "rubyzip #{fn}"
-            Zip::ZipFile.open fn, Zip::ZipFile::CREATE do |z|
-                if opts[:recurse]
-                    require 'find'
-                    files.each { |f|
-                        if test ?d, f
-                            Find.find(f) { |f2| z.add f2, f2 }
-                        else
-                            z.add f, f
-                        end
-                    }
-                else
-                    files.each { |f|
-                        z.add f, f
-                    }
-                end
-            end
-            nil
-        end
-
-        def minitar_tgz fn, files
-            raise LoadError, "archive/tar/minitar" unless Env.have_minitar?
-            require 'zlib'
-            fu_output_message "minitar #{fn}"
-            files = files.to_ary if files.respond_to? :to_ary
-            tgz = Zlib::GzipWriter.new(File.open(fn, 'wb'))
-            # pack closes tgz
-            Archive::Tar::Minitar.pack(files, tgz)
-            nil
-        end
-
 	extend self
 
     end	# module Sys

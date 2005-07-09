@@ -12,7 +12,9 @@ class TestImportPackage < Test::Unit::TestCase
     end
     def teardown
 	assert_rant("autoclean")
-	assert(Dir["*.{tgz,zip,t}"].empty?)
+	Dir["*.{tgz,zip,t}"].each { |f|
+            assert(false, "#{f} should be removed by AutoClean")
+        }
     end
     def check_contents(atype, archive, files, dirs = [], manifest_file = nil)
 	old_pwd = Dir.pwd
@@ -52,7 +54,6 @@ class TestImportPackage < Test::Unit::TestCase
 		"#{f} missing in manifest")
 	}
     end
-if have_any_tar?
     def test_tgz_from_manifest
 	assert_rant
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
@@ -152,7 +153,7 @@ if have_any_tar?
     def test_tgz_import_archive
 	open "rf.t", "w" do |f|
 	    f << <<-EOF
-		import "archive", "autoclean"
+		import "archive/tgz", "autoclean"
 		gen Archive::Tgz, "rf", :files => sys["deep/sub/sub/f1"]
 		gen AutoClean
 	    EOF
@@ -200,10 +201,54 @@ if have_any_tar?
 	assert_rant("autoclean")
 	assert(!test(?e, "t5"))
     end
-else
-    STDERR.puts "tar/minitar not available, skipping tar tests"
-end
-if have_any_zip?
+    def test_tgz_package_non_recursive
+        FileUtils.mkdir "sub6.t"
+        FileUtils.touch "sub6.t/.t"
+        FileUtils.touch "sub6.t/a.t"
+        assert_rant("t6.tgz")
+        @pkg_dir = "t6"
+        mf = %w()
+        dirs = %w(sub6.t)
+        check_contents(:tgz, "t6.tgz", mf, dirs)
+        assert_rant("autoclean")
+        assert(!test(?e, "t6"))
+    ensure
+        FileUtils.rm_rf "sub6.t"
+    end
+    def test_tgz_non_recursive
+        FileUtils.mkdir "sub7.t"
+        FileUtils.touch "sub7.t/a"
+        assert_rant("t7.tgz")
+        mf = %w()
+        dirs = %w(sub7.t)
+        check_contents(:tgz, "t7.tgz", mf, dirs)
+    ensure
+        FileUtils.rm_rf "sub7.t"
+    end
+    def test_zip_non_recursive
+        FileUtils.mkdir "sub7.t"
+        FileUtils.touch "sub7.t/a"
+        assert_rant("t7.zip")
+        mf = %w()
+        dirs = %w(sub7.t)
+        check_contents(:zip, "t7.zip", mf, dirs)
+    ensure
+        FileUtils.rm_rf "sub7.t"
+    end
+    def test_zip_package_non_recursive
+        FileUtils.mkdir "sub6.t"
+        FileUtils.touch "sub6.t/.t"
+        FileUtils.touch "sub6.t/a.t"
+        assert_rant("t6.zip")
+        @pkg_dir = "t6"
+        mf = %w()
+        dirs = %w(sub6.t)
+        check_contents(:zip, "t6.zip", mf, dirs)
+        assert_rant("autoclean")
+        assert(!test(?e, "t6"))
+    ensure
+        FileUtils.rm_rf "sub6.t"
+    end
     def test_zip_package_empty_dir
 	FileUtils.mkdir "sub6.t"
 	assert_rant("t6.zip")
@@ -283,11 +328,5 @@ if have_any_zip?
 	mf = %w(Rantfile sub/f1)
 	dirs = %w(sub)
 	check_contents(:zip, "t3.zip", mf, dirs)
-    end
-else
-    STDERR.puts "zip/rubyzip not available, skipping zip tests"
-end
-    def test_dummy
-	assert(true)
     end
 end

@@ -62,21 +62,13 @@ class TestProjectRb1 < Test::Unit::TestCase
 	    have_gem = true
 	rescue LoadError
 	end
-	if have_any_tar?
-	    tar_fn = pkg_base + ".tar.gz"
-	    assert(test(?f, tar_fn),
-		"tar is available, so a tar.gz should have been built")
-	    verify_tar "packages", "wgrep-1.0.0", ".tar.gz"
-	else
-	    puts "*** tar not available ***"
-	end
-	if have_any_zip?
+        tar_fn = pkg_base + ".tar.gz"
+        assert(test(?f, tar_fn),
+            "tar is available, so a tar.gz should have been built")
+        verify_tar "packages", "wgrep-1.0.0", ".tar.gz"
 	    assert(test(?f, pkg_base + ".zip"),
 		"zip is available, so a zip should have been built")
 	    verify_zip "packages", "wgrep-1.0.0", ".zip"
-	else
-	    puts "*** zip not available ***"
-	end
 	if have_gem
 	    assert(test(?f, pkg_base + ".gem"),
 		"gem is available, so a gem should have been built")

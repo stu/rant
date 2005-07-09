@@ -89,4 +89,20 @@ class TestImportCDependencies < Test::Unit::TestCase
 	    assert(!test(?e, f), "#{f} should get unlinked by AutoClean")
 	}
     end
+    def test_rant_import_hello_c
+        run_import("-q", "--auto", "ant.t")
+        assert_exit
+        assert(test(?f, "ant.t"))
+        out, err = run_ruby("ant.t", "hello.t")
+        assert_exit
+	assert(test(?f, "hello.t"))
+	assert(test(?f, "c_dependencies"))
+        out = run_ruby("ant.t", "hello.t")
+	assert(out.strip.empty?)
+        requires = extract_requires(open("ant.t"))
+        requires.each { |fn|
+            assert_no_match(/^rant\//, fn,
+                "#{fn} should be inlined by rant-import")
+        }
+    end
 end
