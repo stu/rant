@@ -146,16 +146,17 @@ module Rant::Generators::Archive
 	def get_files
             return @res_files if @res_files
 	    fl = @files ? @files.dup : []
-            fl = fl.to_ary
 	    if @manifest
-                fl = read_manifest if fl.empty?
+                fl = read_manifest unless @files
+                fl = Rant::RacFileList.filelist(@rac, fl)
                 fl << @manifest
 	    elsif @files_only
-		fl.reject! { |f| test ?d, f }
+                fl = Rant::RacFileList.filelist(@rac, fl)
+		fl.no_dirs
+            else
+                fl = Rant::RacFileList.filelist(@rac, fl)
 	    end
-            fl.uniq!
-            fl.sort!
-	    @res_files = fl
+            @res_files = fl.lazy_uniq!.lazy_sort!
 	end
 
 	# Creates an (eventually) temporary manifest file and yields
@@ -191,7 +192,7 @@ module Rant::Generators::Archive
                         # fl refers to @res_files
                         fl = get_files
 			if test ?f, @manifest
-                            read_manifest != @res_files
+                            read_manifest != @res_files.to_ary
 			else
 			    true
 			end
@@ -243,20 +244,20 @@ module Rant::Generators::Archive
 	# command).
 	def define_task_for_dir(&block)
 	    return @pkg_task if @pkg_task
-	    targ = {get_archive_path => get_files}
-	    #STDERR.puts "basedir: #{basedir}, fn: #@archive_path"
-	    @pkg_task = ::Rant::Generators::SubFile.rant_gen(
-		@rac, @ch, [basedir, targ].compact, &block)
 
+            get_files # set @res_files
 	    @dist_dirname = File.split(name).last
 	    @dist_dirname << "-#@version" if @version
 	    @dist_root, = File.split path
 	    @dist_path = (@dist_root == "." ?
 		@dist_dirname : File.join(@dist_root, @dist_dirname))
-	    dist_task = define_dist_dir_task
-	    # the archive-creating task depends on the copying task
-	    # (dist_task)
-	    @pkg_task << dist_task
+
+            targ = {get_archive_path => [@dist_path]}
+	    #STDERR.puts "basedir: #{basedir}, fn: #@archive_path"
+            @pkg_task = ::Rant::Generators::SubFile.rant_gen(
+            	@rac, @ch, [basedir, targ].compact, &block)
+
+	    define_dist_dir_task
 
 	    @pkg_task
 	end

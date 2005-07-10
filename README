@@ -12,13 +12,15 @@ Rant currently features:
 * Defining custom tasks
 * Automated packaging, testing and RDoc generation for Ruby
   applications and libraries.
+* The <em>rant-import</em> command creates a monolithic rant script,
+  so you don't depend on an rant installation anymore.
+* Creating gzipped tar and zip archives -- without installing
+  additional software.
 * Primitive support for compiling C# sources portably with csc, cscc
   and mcs.
 * Dependency checking for C/C++ source files.
 * A _configure_ plugin for easy environment and build-parameter
   checking (but not like autoconf!) which saves data in a yaml file.
-* The <em>rant-import</em> command creates a monolithic rant script,
-  so you don't depend on an rant installation anymore.
 
 As programmers usually want to see code, here is a short and very
 basic example of rant usage:
@@ -37,7 +39,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.3.8 of Rant. Most things
+This document was written for version 0.4.0 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.
@@ -70,6 +72,8 @@ Independent from Rant? The <tt>rant-import</tt> command::
     read doc/rant-import.rdoc[link:files/doc/rant-import_rdoc.html]
 Advanced Rantfiles::
     read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Packaging (creating zip/tgz archives)::
+    read doc/package.rdoc[link:files/doc/package_rdoc.html]
 Compiling C/C++::
     read doc/c.rdoc[link:files/doc/c_rdoc.html]
 Using the Configure plugin::

@@ -630,11 +630,11 @@ module Rant
 		task_block = nil
 		desc_for_last = rac.pop_desc
 		dirs.each { |dir|
-		    pre = [path]
-		    pre.compact!
+                    pre = [path]
+                    pre.compact!
 		    if dir.equal?(dirs.last)
 			rac.cx.desc desc_for_last
-			pre.concat prerequisites if prerequisites
+                        pre = prerequisites + pre
 			task_block = block
 		    end
 		    path = path.nil? ? dir : File.join(path, dir)

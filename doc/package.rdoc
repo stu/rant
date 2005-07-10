@@ -1,0 +1,164 @@
+
+== Packaging
+
+Usually you want to create some archive file(s) to distribute your
+software. Rant supports creation of zip and gzipped tar archives. The
+good news is that you don't have to install any extra software because
+Rant integrates parts of Mauricio Julio Fernandez Pradier and Austin
+Ziegler's archive-tar-minitar and Thomas Sondergaard's rubyzip.
+
+Rant provides two techniques, which will be described in the following
+two sections.
+
+=== The Package::* generators
+
+The Package namespace provides two generators, namely
+<tt>Package::Tgz</tt> and <tt>Package::Zip</tt>. Let's look at some
+examples to create gzipped tar archives:
+
+Put this into your Rantfile:
+
+    import "package/tgz"
+    gen Package::Tgz, "foo", :files => sys["{bin,lib,test}/**/*"]
+
+This creates a file task called <tt>foo.tgz</tt>. If you run it with
+
+    % rant foo.tgz
+
+rant will create a directory called <tt>foo</tt>, link all selected
+files (in this case all files under bin/, lib/, test/ and all their
+subdirectories, recursively) to foo/ and then create the archive
+<tt>foo.tgz</tt> from the <tt>foo</tt> directory. This means that the
+archive contains exactly one toplevel directory (<tt>foo</tt>) which
+in turn contains the selected files. Most Open Source software is
+packaged up this way. Also usual is to add a version number to the
+package name:
+
+    import "package/tgz"
+    gen Package::Tgz, "foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+Now the created file task (and thus the archive file) is called
+<tt>foo-1.0.1.tgz</tt>, and the toplevel directory in the archive is
+called <tt>foo-1.0.1</tt>.
+
+TAKE CARE:: If the directory <tt>foo</tt> or whatever the name
+            of the package is, exists, it will be removed if
+            you invoke the package task!
+
+To avoid such clashes, you can tell Rant to place the package in a
+subdirectory, e.g. <tt>pkg</tt>:
+
+    import "package/tgz"
+    gen Package::Tgz, "pkg/foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+Now the task is called <tt>pkg/foo-1.0.1.tgz</tt>. Rant automatically
+creates the pkg/ directory when required. Behind the scenes, Rant
+defines a <tt>Directory</tt> task for the pkg/ directory.
+
+=== Cleaning up with AutoClean
+
+The AutoClean generator knows which files/directories have been
+created by our packaging tasks. Just put this lines into the Rantfile:
+
+    import "package/tgz", "autoclean"
+
+    gen Package::Tgz, "pkg/foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+    gen AutoClean
+
+If you invoke rant with <tt>autoclean</tt> as argument now:
+    % rant autoclean
+it will recursively remove the +pkg+ and the <tt>foo-1.0.1</tt>
+directories. This could be a problem if you have source files (or
+other precious files) in the pkg/ directory. In this case change the
+syntax to:
+
+    import "package/tgz", "autoclean"
+
+    gen Package::Tgz, "pkg", "foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+    gen AutoClean
+
+The file name for the package is still <tt>pkg/foo-1.0.1.tgz</tt> like
+in the previous example, but now rant assumes that the +pkg+ directory
+belongs to your source base and doesn't create a Directory task for
+it. If you invoke the +autoclean+ task now, it won't remove the +pkg+
+directory, just the <tt>pkg/foo-1.0.1.tgz</tt> archive and the
+<tt>pkg/foo-1.0.1</tt> directory.
+
+If you want to use AutoClean, you should definitely read
+doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+
+=== Writing a MANIFEST
+
+Rant can automatically write a +MANIFEST+ file where it lists all
+files which come into the package. Just give the <tt>:manifest</tt>
+flag:
+
+    import "package/tgz"
+    gen Package::Tgz, "pkg/foo", :manifest,
+        :version => "1.0.1",
+        :files => sys["{bin,lib,test}/**/*"]
+
+Now Rant will write/update a file called +MANIFEST+ whenever the
+package task (<tt>pkg/foo-1.0.1.tgz</tt>) is invoked. +MANIFEST+ will
+then contain a list of all files (each path on a separate line, as
+usual). Of course the +MANIFEST+ file will also be in the archive.
+
+You can use another name instead of +MANIFEST+. In the following
+example we use +contents+:
+
+    import "package/tgz"
+    gen Package::Tgz, "pkg/foo",
+        :manifest => "contents",
+        :version => "1.0.1",
+        :files => sys["{bin,lib,test}/**/*"]
+
+=== Reading a MANIFEST
+
+If you manually maintain a MANIFEST file with all files which belong
+to your software package, you can tell Rant to read it:
+
+    import "package/tgz"
+    gen Package::Tgz, "pkg/foo", :manifest, :version => "1.0.1"
+
+Because we didn't specify the list of files to package with the
+<tt>:files</tt> option, but gave the <tt>:manifest</tt> flag, Rant
+will read the list of files to package from a file called +MANIFEST+.
+
+=== Giving a non-standard file extension
+
+If you want another file extension than the default <tt>.tgz</tt> or
+<tt>.zip</tt> you can specify it with the <tt>:extension</tt> option:
+    
+    import "package/tgz"
+    gen Package::Tgz, "pkg/foo", :manifest,
+        :version => "1.0.1",
+        :extension => ".tar.gz"
+
+=== Some random notes
+
+* Handling of symbolic links is currently undefined. I hope this will
+  change in the near future.
+* Directories are not included recursively:
+        gen Package::Tgz, "foo", :files => sys["lib"]
+  Assuming +lib+ is a directory, <tt>foo.tgz</tt> will contain only
+  the directory <tt>foo/lib</tt>, no matter how many
+  files/subdirectories +lib+ contains. If you want to package +lib+
+  with all subdirectories and files it contains, use the following
+  pattern:
+        gen Package::Tgz, "foo", :files => sys["lib/**/*"]
+* Consider the directory where all files are linked to by the
+  Package::* generators as byproducts and don't rely on their
+  creation.
+
+== See also
+
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Support for C/C++::
+    doc/c.rdoc[link:files/doc/c_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

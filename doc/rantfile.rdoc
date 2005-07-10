@@ -409,7 +409,11 @@ because it refers to a main Rantfile.
 
 Advanced Rantfiles::
     doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
-Rant Overview::
-    README[link:files/README.html]
+Support for C/C++::
+    doc/c.rdoc[link:files/doc/c_rdoc.html]
+Packaging::
+    doc/package.rdoc[link:files/doc/package_rdoc.html]
 Ruby project howto::
     doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

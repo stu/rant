@@ -319,4 +319,13 @@ class TestFileList < Test::Unit::TestCase
     ensure
         FileUtils.rm_rf %w(tfl.t tfl.tt)
     end
+    def test_exclude_arrows_op
+        cx = Rant::RantApp.new.cx
+        touch_temp %w(a.t b.t) do
+            fl = cx.sys["*.t"]
+            fl.exclude "*.t"
+            fl << "a.t"
+            assert(fl.include?("a.t"))
+        end
+    end
 end

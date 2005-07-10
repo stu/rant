@@ -17,11 +17,14 @@ class Rant::Generators::SubFile
 	end
 	deps = []
 	if fine.respond_to? :to_hash
+            # hash should contain only one element
 	    fine = fine.to_hash
 	    fine.each { |k, v|
 		ch = v && next if k == :__caller__
 		fine = k
-		if v.respond_to? :to_ary
+                if Rant::FileList === v
+                    deps = v.dup
+		elsif v.respond_to? :to_ary
 		    deps.concat(v.to_ary)
 		else
 		    deps << v
@@ -34,17 +37,16 @@ class Rant::Generators::SubFile
 	    dir, file = File.split(fine.to_s)
 	    dirp = basedir ? File.join(basedir, dir) : dir
 	    unless dir == "."
-		dt = rac.resolve(dirp)
-		if dt.empty?
-		    dt = [if basedir
+                unless rac.tasks.include? dirp
+		    if basedir
 			::Rant::Generators::Directory.rant_gen(
 			    rac, ch, [basedir, dir])
 		    else
 			::Rant::Generators::Directory.rant_gen(
 			    rac, ch, [dir])
-		    end]
+		    end
 		end
-		pre.concat(dt)
+                pre << dirp
 	    end
 	    rac.cx.desc file_desc
 	    ::Rant::FileTask.new(rac, name, pre, &blk)

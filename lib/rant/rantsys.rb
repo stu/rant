@@ -57,6 +57,7 @@ module Rant
 	end
 
 	def to_ary
+            #puts caller
 	    resolve if @pending
 	    @files
 	end
@@ -82,10 +83,21 @@ module Rant
 	    end
 	end
 
-	def <<(file)
+        # Add file to filelist unless it matches an exclude pattern.
+        # Take care: Don't rely on any order when inserting a file
+        # with this method!
+	def add(file)
 	    @files << file unless file =~ ignore_rx
 	    self
 	end
+
+        # Like #add but doesn't honor exclude patterns.
+        # Returns self.
+        def <<(file)
+            #STDERR.puts caller unless String === file
+            @actions << [:apply_ary_method_1, :push, file]
+            self
+        end
 
 	def concat(ary)
 	    resolve if @pending
@@ -318,9 +330,46 @@ module Rant
 	def arglist
 	    to_ary.arglist
 	end
+
+        # Same as #uniq! but evaluation is delayed until the next read
+        # access (e.g. by calling #each). Always returns self.
+        def lazy_uniq!
+            @actions << [:apply_ary_method, :uniq!]
+            @pending = true
+            self
+        end
+
+        # Same as #sort! but evaluation is delayed until the next read
+        # access (e.g. by calling #each). Always returns self.
+        def lazy_sort!
+            @actions << [:apply_ary_method, :sort!]
+            @pending = true
+            self
+        end
+
+        private
+        def apply_ary_method(meth)
+            @files.send meth
+        end
+        def apply_ary_method_1(meth, arg1)
+            @files.send meth, arg1
+        end
     end	# class FileList
 
     class RacFileList < FileList
+
+        # Returns files if <tt>FileList === files</tt>, otherwise
+        # a new RacFileList with <tt>file.to_ary</tt> as initial set
+        # of files.
+        def self.filelist(rac, files)
+            return files if FileList === files
+            fl = self.new(rac)
+            fl.instance_eval {
+                @pending = false
+                @files = files.to_ary
+            }
+            fl
+        end
 
 	attr_reader :subdir
 	attr_reader :basedir
