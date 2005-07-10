@@ -3,9 +3,22 @@
 
 == Rant 0.4.0
 
+Unless you extended Rant with a custom generator, you can upgrade from
+0.3.8 without changing any dependent code.
+
 Incompatible changes:
 * _Internal_: A generator has to respond to +rant_gen+ instead of
   +rant_generate+.
+
+New features:
+* Creating zip and gzipped tar archives on all supported platforms
+  without installing extra software. Seamless integration with
+  rant-import.
+  Read doc/package.rdoc[link:files/doc/package_rdoc.html].
+* The standard RubyPackage tasks create zip and gzipped tar archives
+  (and optional gem packages) on all platforms, including Windows,
+  now.
+* rant-import recognizes the new directives +uncomment+ and +remove+.
 
 == Rant 0.3.8
 

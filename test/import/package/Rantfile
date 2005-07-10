@@ -43,4 +43,7 @@ gen Package::Zip, "t6", :files => %w(sub6.t)
 gen Archive::Tgz, "t7", :files => %w(sub7.t)
 gen Archive::Zip, "t7", :files => %w(sub7.t)
 
+gen Archive::Tgz, "sym", :files => sys["subs.t/**/*"]
+gen Archive::Zip, "sym", :files => sys["subs.t/**/*"]
+
 gen AutoClean

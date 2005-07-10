@@ -9,6 +9,7 @@ class TestImportPackage < Test::Unit::TestCase
 	# Ensure we run in test directory.
 	Dir.chdir $testIPackageDir
 	@pkg_dir = nil
+        @contents = {}
     end
     def teardown
 	assert_rant("autoclean")
@@ -28,7 +29,11 @@ class TestImportPackage < Test::Unit::TestCase
 	    FileUtils.cd @pkg_dir
 	end
 	files.each { |f|
-	    assert(test(?f, f), "file #{f} is missing in archive")
+            assert(test(?f, f), "file #{f} is missing in archive")
+            content = @contents[f]
+            if content
+                assert_equal(content, File.read(f))
+            end
 	}
 	dirs.each { |f|
 	    assert(test(?d, f), "dir #{f} is missing in archive")
@@ -224,6 +229,94 @@ class TestImportPackage < Test::Unit::TestCase
         check_contents(:tgz, "t7.tgz", mf, dirs)
     ensure
         FileUtils.rm_rf "sub7.t"
+    end
+    def test_tgz_follow_symlink
+        have_symlinks = true
+        FileUtils.mkdir "subs.t"
+        open "target.t", "w" do |f|
+            f.print "symlink test target file"
+        end
+        begin
+            File.symlink "../target.t", "subs.t/symlink"
+        rescue NotImplementedError
+            have_symlinks = false
+        end
+        if have_symlinks
+            assert(File.symlink?("subs.t/symlink"))
+            assert(File.exist?("subs.t/symlink"))
+            assert_rant("sym.tgz")
+            mf = %w(subs.t/symlink)
+            dirs = %w(subs.t)
+            @contents["subs.t/symlink"] = "symlink test target file"
+            check_contents(:tgz, "sym.tgz", mf, dirs)
+        else
+            STDERR.puts "*** platform doesn't support symbolic links ***"
+        end
+    ensure
+        FileUtils.rm_f %w(target.t sym.tgz)
+        FileUtils.rm_rf "subs.t"
+    end
+    def test_tgz_package_follow_symlink_dir
+        have_symlinks = true
+        FileUtils.mkdir "subs.t"
+        begin
+            File.symlink "subs.t", "sub6.t"
+        rescue NotImplementedError
+            have_symlinks = false
+        end
+        if have_symlinks
+            assert_rant("t6.tgz")
+            @pkg_dir = "t6"
+            mf = %w()
+            dirs = %w(sub6.t)
+            check_contents(:tgz, "t6.tgz", mf, dirs)
+        end
+    ensure
+        FileUtils.rm_rf %w(subs.t sub6.t)
+    end
+    def test_zip_follow_symlink
+        have_symlinks = true
+        FileUtils.mkdir "subs.t"
+        open "target.t", "w" do |f|
+            f.print "symlink test target file"
+        end
+        begin
+            File.symlink "../target.t", "subs.t/symlink"
+        rescue NotImplementedError
+            have_symlinks = false
+        end
+        if have_symlinks
+            assert(File.symlink?("subs.t/symlink"))
+            assert(File.exist?("subs.t/symlink"))
+            assert_rant("sym.zip")
+            mf = %w(subs.t/symlink)
+            dirs = %w(subs.t)
+            @contents["subs.t/symlink"] = "symlink test target file"
+            check_contents(:zip, "sym.zip", mf, dirs)
+        else
+            STDERR.puts "*** platform doesn't support symbolic links ***"
+        end
+    ensure
+        FileUtils.rm_f %w(target.t sym.zip)
+        FileUtils.rm_rf "subs.t"
+    end
+    def test_zip_package_follow_symlink_dir
+        have_symlinks = true
+        FileUtils.mkdir "subs.t"
+        begin
+            File.symlink "subs.t", "sub6.t"
+        rescue NotImplementedError
+            have_symlinks = false
+        end
+        if have_symlinks
+            assert_rant("t6.zip")
+            @pkg_dir = "t6"
+            mf = %w()
+            dirs = %w(sub6.t)
+            check_contents(:zip, "t6.zip", mf, dirs)
+        end
+    ensure
+        FileUtils.rm_rf %w(subs.t sub6.t)
     end
     def test_zip_non_recursive
         FileUtils.mkdir "sub7.t"

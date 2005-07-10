@@ -8,7 +8,7 @@ Rant integrates parts of Mauricio Julio Fernandez Pradier and Austin
 Ziegler's archive-tar-minitar and Thomas Sondergaard's rubyzip.
 
 Rant provides two techniques, which will be described in the following
-two sections.
+sections.
 
 === The Package::* generators
 
@@ -86,8 +86,8 @@ it. If you invoke the +autoclean+ task now, it won't remove the +pkg+
 directory, just the <tt>pkg/foo-1.0.1.tgz</tt> archive and the
 <tt>pkg/foo-1.0.1</tt> directory.
 
-If you want to use AutoClean, you should definitely read
-doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+<b>If you intend to use AutoClean, you should definitely read
+doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].</b>
 
 === Writing a MANIFEST
 
@@ -136,14 +136,130 @@ If you want another file extension than the default <tt>.tgz</tt> or
         :version => "1.0.1",
         :extension => ".tar.gz"
 
+=== Creating zip packages
+
+To create a zip package, use exactly the same syntax and options as
+for tgz packages. Just <tt>import "package/zip"</tt> and use the
+<tt>Pakage::Zip</tt> generator:
+
+    import "package/zip"
+    gen Package::Zip, "foo", :files => sys["{bin,lib,test}/**/*"]
+
+This has the same effect as our first example, with the only
+difference that a <tt>foo.zip</tt> archive will be created. As already
+mentioned, you can give the same options and flags as to the
+<tt>Package::Tgz</tt> generator and or course you can use both in the
+same Rantfile:
+
+    import "package/zip", "package/tgz"
+    gen Package::Zip, "foo", :files => sys["{bin,lib,test}/**/*"]
+    gen Package::Tgz, "foo", :files => sys["{bin,lib,test}/**/*"]
+
+=== The Archive::* generators
+
+Like the <tt>Package::</tt> namespace, the <tt>Archive::</tt>
+namespace also provides two generators, namely <tt>Archive::Tgz</tt>
+and <tt>Archive::Zip</tt>. They require the same syntax and recognize
+the same options. So what's the difference? The <tt>Archive::*</tt>
+generators don't move the selected files into a toplevel directory.
+Let's look at an example:
+
+    import "archive/tgz", "package/tgz"
+    gen Package::Tgz, "foo", :files => sys["{bin,lib,test}/**/*"]
+    gen Archive::Tgz, "bar", :files => sys["{bin,lib,test}/**/*"]
+
+This creates a file task <tt>foo.tgz</tt> and a file task
+<tt>bar.tgz</tt>. The difference is, that <tt>foo.tgz</tt> contains a
+toplevel directory +foo+ which in turn contains the +bin+, +lib+ and
++test+ directories, but <tt>bar.tgz</tt> directly contains the +bin+,
++lib+ and +test+ directories:
+
+Created with <tt>Package::Tgz</tt>:
+    foo.tgz
+        foo/
+            bin/
+                .
+                .
+            lib/
+                .
+                .
+            test/
+                .
+                .
+
+Created with <tt>Archive::Tgz</tt>:
+    bar.tgz
+        bin/
+            .
+            .
+        lib/
+            .
+            .
+        test/
+
+Of course the same difference is between the <tt>Package::Zip</tt> and
+<tt>Archive::Zip</tt> generators.
+
+=== Creating a shortcut, dependencies
+
+Imagine you have a package task which creates a tgz package and a task
+which should upload the package to a server. This means that the
+upload task depends on the package task. You could do this like in the
+following Rantfile:
+
+    import "package/tgz"
+    
+    gen Package::Tgz, "pkg", "foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+    task :upload => "pkg/foo-1.0.1.tgz" do |t|
+        sys "<some command to upload the archive file>"
+    end
+
+That's not very convinient and it's tedious to always update the
+dependency when you change the version number. But the package
+generator returns an object with information about the created package
+tasks:
+
+    import "package/tgz"
+    
+    pkg =
+    gen Package::Tgz, "pkg", "foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+    task :upload => pkg.path do |t|
+        sys "<some command to upload the archive file>"
+    end
+
+Here we assign this object to the +pkg+ variable. The
+<tt>pkg.path</tt> method returns the path to our tgz archive.
+
+Another handy use case is to create a shortcut:
+
+    import "package/tgz"
+    
+    pkg =
+    gen Package::Tgz, "pkg", "foo", :version => "1.0.1", :files => sys["{bin,lib,test}/**/*"]
+
+    desc "Create package for distribution."
+    task :package => pkg.path
+
+Now you can invoke the package task from the commandline:
+
+    % rant -T
+    rant package    # Create package for distribution.
+    % rant package
+    <messages about tgz creation>
+
+
 === Some random notes
 
-* Handling of symbolic links is currently undefined. I hope this will
-  change in the near future.
+* Symbolic links are always dereferenced, i.e. the file/directory the
+  link points to will be in the archive, not the symbolic link. Rant
+  will probably provide an option to store the symbolic links in the
+  future.
 * Directories are not included recursively:
         gen Package::Tgz, "foo", :files => sys["lib"]
   Assuming +lib+ is a directory, <tt>foo.tgz</tt> will contain only
-  the directory <tt>foo/lib</tt>, no matter how many
+  the empty directory <tt>foo/lib</tt>, no matter how many
   files/subdirectories +lib+ contains. If you want to package +lib+
   with all subdirectories and files it contains, use the following
   pattern:

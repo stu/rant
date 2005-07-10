@@ -152,37 +152,37 @@ The file COPYING[link:../../COPYING] in the Rant package contains a
 copy of the LGPL. Of course your Rantfiles don't need to be licenced
 under the terms of the LGPL.
 
+---
+
+The file <tt>lib/rant/archive/minitar.rb</tt> is Copyright  2004
+Mauricio Julio Fernandez Pradier and Austin Ziegler. It is licensed
+under the GNU General Public Licence or Ruby's licence.
+
+The file <tt>lib/rant/archive/rubyzip.rb</tt> and the files in the
+<tt>lib/rant/archive/rubyzip</tt> directory were written by Thomas
+Sondergaard. They are distributed under the same license as ruby. See
+http://www.ruby-lang.org/en/LICENSE.txt.
+
 == Other info
 
 Rant was started in February 2005. It has been written and is
 maintained by Stefan Lang (mailto:langstefan@gmx.at).
 
-=== Why did you write another build tool?
-
-Because I wasn't satisfied by any other build tool. Before I started
-Rant, I had to write a program in C#. The program had to run under
-Windows, but I wanted to develop under Linux. Also I decided to write
-the documentation in Docbook.
-
-So there where quite a few problems arising:
-* I had to compile with cscc on Linux.
-* compile with csc on Windows.
-* automate PDF and HTML generation from Docbook
-
-_Nant_ would have been ok to compile the C# sources. But it isn't
-suited for more general tasks as clueing togheter other programs
-(needed for Docbook processing).
-
-Then I tried to use _Rake_ and it was the other way round. I liked the
-basic concept and syntax of Rake and of course I could have written
-code for Rake (e.g. with a so called _Tasklib_) to support portable C#
-compilation. But it was a bit quirky and because I like to work with
-Ruby, I decided to write my own build tool.
+=== Credits
 
 Rant has taken the basic syntax of a _task_ and some other concepts
 from Rake.
 So thanks to Jim Weirich, the author of
 Rake[http://rubyforge.org/projects/rake].
+
+Rant comes with parts of archive-tar-minitar to create (gzipped) tar
+archives on platforms where no +tar+ command is available.
+archive-tar-minitar is developed by Mauricio Julio Fernandez Pradier
+and Austin Ziegler.
+
+Rant comes with parts of rubyzip to create zip archives on platforms
+where no +zip+ command is available. rubyzip is developed by Thomas
+Sondergaard.
 
 === Goals of Rant
 
@@ -216,3 +216,26 @@ know...
 
 If you encounter problems with Rant on any platform (with Ruby 1.8.1
 or higher) please write a bugreport!
+
+=== Why did you write another build tool?
+
+Because I wasn't satisfied by any other build tool. Before I started
+Rant, I had to write a program in C#. The program had to run under
+Windows, but I wanted to develop under Linux. Also I decided to write
+the documentation in Docbook.
+
+So there where quite a few problems arising:
+* I had to compile with cscc on Linux.
+* compile with csc on Windows.
+* automate PDF and HTML generation from Docbook
+
+_Nant_ would have been ok to compile the C# sources. But it isn't
+suited for more general tasks as clueing togheter other programs
+(needed for Docbook processing).
+
+Then I tried to use _Rake_ and it was the other way round. I liked the
+basic concept and syntax of Rake and of course I could have written
+code for Rake (e.g. with a so called _Tasklib_) to support portable C#
+compilation. But it was a bit quirky and because I like to work with
+Ruby, I decided to write my own build tool.
+

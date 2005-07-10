@@ -1,4 +1,4 @@
-import %w(rubytest rubydoc rubypackage)
+import %w(rubytest rubydoc rubypackage clean)
 
 lib_files = Dir["lib/**/*.rb"]
 dist_files = lib_files + %w(rantfile.rb README test_project_rb1.rb) + Dir["{test,bin}/*"]
@@ -25,6 +25,5 @@ gen RubyPackage, :wgrep do |t|
     t.package_task "pkg"
 end
 
-task :clean do
-    sys.rm_rf %w(doc packages)
-end
+gen Clean
+var[:clean].include "doc", "packages", "*~"

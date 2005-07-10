@@ -25,7 +25,9 @@ module Rant::Generators::Archive
 	end
 	def define_zip_task
 	    define_cmd_task { |path, t|
-		cmd = "zip -@qy #{t.name}"
+                # Add -y option to store symlinks instead of
+                # referenced files.
+		cmd = "zip -@q #{t.name}"
 		@rac.cmd_msg cmd
 		IO.popen cmd, "w" do |z|
 		    z.print IO.read(path)

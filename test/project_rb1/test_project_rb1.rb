@@ -1,6 +1,5 @@
 
 require 'test/unit'
-require 'rant/rantlib'
 require 'tutil'
 
 $testProjectRb1Dir = File.expand_path(File.dirname(__FILE__))
@@ -11,12 +10,10 @@ class TestProjectRb1 < Test::Unit::TestCase
 	    test/text test/tc_wgrep.rb README test_project_rb1.rb
 	    rantfile.rb)
 	# Ensure we run in test directory.
-	Dir.chdir($testProjectRb1Dir) unless Dir.pwd == $testProjectRb1Dir
+	Dir.chdir($testProjectRb1Dir)
     end
     def teardown
-	capture_std do
-	    assert_equal(Rant.run(%w(clean)), 0)
-	end
+        assert_rant("clean")
 	manifest = @manifest.dup
 	check_manifest "after clean: "
     end
@@ -31,9 +28,7 @@ class TestProjectRb1 < Test::Unit::TestCase
 	}
     end
     def test_doc
-	capture_std do
-	    assert_equal(Rant.run(%w(doc)), 0)
-	end
+        assert_rant("doc")
 	assert(test(?d, "doc"),
 	    "RDoc task should generate dir `doc'")
 	assert(test(?f, "doc/index.html"),
@@ -45,14 +40,10 @@ class TestProjectRb1 < Test::Unit::TestCase
 	    "README should be in html docs")
     end
     def test_test
-	capture_std do
-	    assert_equal(0, Rant.run(%w(test)))
-	end
+        assert_rant("test")
     end
     def test_package
-	capture_std do
-	    assert_equal(0, Rant.run(%w(pkg)))
-	end
+        assert_rant("pkg")
 	assert(test(?d, "packages"),
 	    "task `pkg' should create dir `packages'")
 	have_gem = false
@@ -126,12 +117,13 @@ class TestProjectRb1 < Test::Unit::TestCase
 	# TODO: some out, err checking
 	
 	# run the monolithic rant script
-	out = `#{Rant::Env::RUBY} make -T`
+        #out = `#{Rant::Env::RUBY} make -T`
+        out = run_ruby("make", "-T")
 	assert_equal(0, $?,
 	    "imported `rant -T' should return 0")
 	assert_match(/\bpkg\b/, out,
 	    "imported `rant -T' should list described task `pkg'")
     ensure
-	File.delete "make" if File.exist? "make"
+        FileUtils.rm_f "make"
     end
 end

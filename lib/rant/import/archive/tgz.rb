@@ -27,7 +27,7 @@ module Rant::Generators::Archive
         private
 	def define_tar_task
 	    define_cmd_task { |path, t|
-		@rac.cx.sys "tar --no-recursion --files-from #{path} -czf #{t.name}"
+		@rac.cx.sys "tar -h --no-recursion --files-from #{path} -czf #{t.name}"
 	    }
 	end
 	def define_minitar_task
