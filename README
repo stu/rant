@@ -39,7 +39,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.4.0 of Rant. Most things
+This document was written for version 0.4.1 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.
@@ -204,7 +204,8 @@ Rant was tested on:
 
     System		Ruby version
     =======================================================
-    Linux		1.8.2
+    Linux		1.8.1
+                        1.8.2
 			1.8.3 preview 1
 			1.9
     MacOS X		1.8.2

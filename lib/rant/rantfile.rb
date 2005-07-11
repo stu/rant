@@ -132,6 +132,7 @@ module Rant
 	# Cause task to fail. Usually called from inside the block
 	# given to +act+.
 	def fail msg = nil, orig = nil
+            msg ||= ""
 	    raise TaskFail.new(self, orig), msg, caller
 	end
 
@@ -197,11 +198,11 @@ module Rant
 	    @rac
 	end
 
-	def needed &block
+	def needed(&block)
 	    @needed = block
 	end
 
-	def act &block
+	def act(&block)
 	    @block = block
 	end
 
@@ -481,11 +482,11 @@ module Rant
 	    yield self if block_given?
 	end
 
-	def act &block
+	def act(&block)
 	    @block = block
 	end
 
-	def needed &block
+	def needed(&block)
 	    @needed = block
 	end
 	
@@ -515,7 +516,7 @@ module Rant
 
     class FileTask < Task
 
-	def initialize *args
+	def initialize(*args)
 	    super
 	    @ts = T0
 	end
@@ -647,7 +648,7 @@ module Rant
 	    end
 	end
 
-	def initialize *args
+	def initialize(*args)
 	    super
 	    @ts = T0
 	    @isdir = nil

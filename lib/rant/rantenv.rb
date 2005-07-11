@@ -1,4 +1,7 @@
-#!/usr/bin/ruby
+
+# rantenv.rb - Environment interface.
+#
+# Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
 require 'rbconfig'
 
@@ -106,17 +109,17 @@ module Rant::Console
 	    RANT_PREFIX
 	end
     end
-    def msg *text
+    def msg(*text)
         pre = msg_prefix
         text = text.join("\n" + ' ' * pre.length)
         $stderr.puts(pre + text)
     end
-    def err_msg *text
+    def err_msg(*text)
         pre = msg_prefix + ERROR_PREFIX
         text = text.join("\n" + ' ' * pre.length)
         $stderr.puts(pre + text)
     end
-    def warn_msg *text
+    def warn_msg(*text)
         pre = msg_prefix + WARN_PREFIX
         text = text.join("\n" + ' ' * pre.length)
         $stderr.puts(pre + text)

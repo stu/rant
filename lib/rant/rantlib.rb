@@ -23,6 +23,38 @@ require 'rant/rantsys'
 # this object.
 Rant::MAIN_OBJECT = self
 
+unless Process::Status.method_defined?(:success?)
+    class Process::Status
+        def success?;  exitstatus == 0; end
+    end
+end
+if VERSION < "1.8.2"
+    class Array
+        def flatten
+            cp = self.dup
+            cp.flatten!
+            cp
+        end
+        def flatten!
+            res = []
+            flattened = false
+            self.each { |e|
+                if e.respond_to? :to_ary
+                    res.concat(e.to_ary)
+                    flattened = true
+                else
+                    res << e
+                end
+            }
+            if flattened
+                replace(res)
+                flatten!
+                self
+            end
+        end
+    end
+end
+
 class Array
 
     # Concatenates all elements like #join(' ') but also puts quotes
@@ -76,7 +108,7 @@ module Rant::Lib
     #
     # Note: This method splits on the pattern <tt>:(\d+)(:|$)</tt>,
     # assuming anything before is the filename.
-    def parse_caller_elem elem
+    def parse_caller_elem(elem)
 	return { :file => "", :ln => 0 } if elem.nil?
 	if elem =~ /^(.+):(\d+)(:|$)/
 	    { :file => $1, :ln => $2.to_i }
@@ -102,17 +134,17 @@ module RantContext
     FileList = Rant::FileList
 
     # Define a basic task.
-    def task targ, &block
+    def task(targ, &block)
 	rac.task(targ, &block)
     end
 
     # Define a file task.
-    def file targ, &block
+    def file(targ, &block)
 	rac.file(targ, &block)
     end
 
     # Add code and/or prerequisites to existing task.
-    def enhance targ, &block
+    def enhance(targ, &block)
 	rac.enhance(targ, &block)
     end
 
@@ -134,7 +166,7 @@ module RantContext
 
     # Look in the subdirectories, given by args,
     # for rantfiles.
-    def subdirs *args
+    def subdirs(*args)
 	rac.subdirs(*args)
     end
 
@@ -314,7 +346,7 @@ class Rant::RantApp
     # Note: Might change before 1.0
     attr_reader :resolve_hooks
 
-    def initialize *args
+    def initialize(*args)
 	unless args.empty?
 	    STDERR.puts caller[0]
 	    STDERR.puts "Warning: Giving arguments Rant::RantApp.new " +
@@ -444,7 +476,7 @@ class Rant::RantApp
     end
 
     # Returns 0 on success and 1 on failure.
-    def run *args
+    def run(*args)
 	@run = true
 	@args.concat(args.flatten)
 	# remind pwd
@@ -511,7 +543,7 @@ class Rant::RantApp
 
     ###### methods accessible through RantContext ####################
 
-    def desc *args
+    def desc(*args)
 	if args.empty? || (args.size == 1 && args.first.nil?)
 	    @task_desc = nil
 	else
@@ -519,13 +551,13 @@ class Rant::RantApp
 	end
     end
 
-    def task targ, &block
+    def task(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
 	    Rant::Task.new(self, name, pre, &blk)
 	}
     end
 
-    def file targ, &block
+    def file(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
 	    Rant::FileTask.new(self, name, pre, &blk)
 	}
@@ -623,7 +655,7 @@ class Rant::RantApp
     # name given as only key in targ.
     # If there is no task with the given name, generate a warning
     # and a new file task.
-    def enhance targ, &block
+    def enhance(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
 	    t = resolve(name).last
 	    if t
@@ -659,7 +691,7 @@ class Rant::RantApp
     end
 
     # Search the given directories for Rantfiles.
-    def subdirs *args
+    def subdirs(*args)
 	args.flatten!
 	cinf = Rant::Lib::parse_caller_elem(caller[1])
 	ln = cinf[:ln] || 0
@@ -718,7 +750,7 @@ class Rant::RantApp
     end
 
     # Prints msg as error message and raises a RantAbortException.
-    def abort *msg
+    def abort(*msg)
 	err_msg(msg) unless msg.empty?
 	$stderr.puts caller if @opts[:trace_abort]
 	raise Rant::RantAbortException
@@ -799,7 +831,7 @@ class Rant::RantApp
 	@opts[:quiet]
     end
 
-    def pos_text file, ln
+    def pos_text(file, ln)
 	t = "in file `#{file}'"
 	if ln && ln > 0
 	    t << ", line #{ln}"
@@ -807,7 +839,7 @@ class Rant::RantApp
 	t + ": "
     end
 
-    def msg *args
+    def msg(*args)
 	verbose_level = args[0]
 	if verbose_level.is_a? Integer
 	    super(args[1..-1]) if verbose_level <= verbose
@@ -818,7 +850,7 @@ class Rant::RantApp
 
     # Print a command message as would be done from a call to a
     # Sys method.
-    def cmd_msg cmd
+    def cmd_msg(cmd)
 	puts cmd unless quiet?
     end
 
@@ -898,7 +930,7 @@ class Rant::RantApp
 
     # Invoke all tasks necessary to build +target+. Returns the number
     # of tasks invoked.
-    def make target, opt = {}
+    def make(target, opt = {})
 	opt[:force] = true if @force_targets.delete(target)
 	matching_tasks = 0
 	old_subdir = @current_subdir
@@ -921,7 +953,7 @@ class Rant::RantApp
 
     # Currently always returns an array (which might actually be a
     # an empty array, but never nil).
-    def resolve task_name, rel_project_dir = @current_subdir
+    def resolve(task_name, rel_project_dir = @current_subdir)
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
 	when nil
@@ -942,7 +974,7 @@ class Rant::RantApp
     # target. It may create one or more tasks for the target, which is
     # given as argument, on the fly and return an array of the created
     # tasks or nil.
-    def at_resolve &block
+    def at_resolve(&block)
 	@resolve_hooks << block if block
     end
     public :at_resolve
@@ -994,7 +1026,7 @@ class Rant::RantApp
 
     # Returns the value of the last expression executed in +rantfile+.
     # +rantfile+ has to be an Rant::Rantfile instance.
-    def load_file rantfile
+    def load_file(rantfile)
 	msg 1, "source #{rantfile}"
 	rv = nil
 	begin
@@ -1021,7 +1053,7 @@ class Rant::RantApp
     # If dir is nil, look in current directory.
     # Returns always an array with the pathes (not only the filenames)
     # to the rantfiles.
-    def rantfiles_in_dir dir=nil
+    def rantfiles_in_dir(dir=nil)
 	files = []
 	::Rant::RANTFILES.each { |rfn|
 	    path = dir ? File.join(dir, rfn) : rfn
@@ -1105,7 +1137,7 @@ class Rant::RantApp
     end
     public :prepare_task
 
-    def hash_task task
+    def hash_task(task)
 	n = task.full_name
 	#STDERR.puts "hash_task: `#{n}'"
 	et = @tasks[n]
@@ -1192,7 +1224,7 @@ class Rant::RantApp
     # and a boolean value as second. If the second is true,
     # the rantfile was created and added, otherwise the rantfile
     # already existed.
-    def rantfile_for_path path
+    def rantfile_for_path(path)
 	# all rantfiles have an absolute path as path attribute
 	abs_path = File.expand_path(path)
 	if @rantfiles.any? { |rf| rf.path == abs_path }

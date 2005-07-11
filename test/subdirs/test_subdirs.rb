@@ -15,7 +15,7 @@ class TestSubdirs < Test::Unit::TestCase
 	capture_std do
 	    assert_equal(0, Rant.run("clean"))
 	end
-	created = Dir["**/*t"]
+	created = Rant::FileList["**/*t"].shun(".svn")#Dir["**/*t"]
 	assert(created.empty?)
     end
     def test_load

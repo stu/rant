@@ -51,7 +51,7 @@ module Rant
 	public
 	### Methods having an equivalent in the Array class. #########
 
-	def each &block
+	def each(&block)
 	    resolve if @pending
 	    @files.each(&block)
 	end
@@ -217,7 +217,7 @@ module Rant
 	end
 	private :mk_all_rx
 
-	def select &block
+	def select(&block)
 	    d = dup
 	    d.actions << [:apply_select, block]
 	    d
@@ -395,7 +395,7 @@ module Rant
 	    Dir.chdir(@basedir) { filelist_resolve }
 	end
 
-	def each &block
+	def each(&block)
 	    old_pwd = Dir.pwd
 	    resolve if @pending
 	    Dir.chdir(@basedir)
@@ -427,7 +427,7 @@ module Rant
 	    @lists = [@cur_list]
 	end
 
-	def each_entry &block
+	def each_entry(&block)
 	    @lists.each { |list|
 		list.each(&block)
 	    }

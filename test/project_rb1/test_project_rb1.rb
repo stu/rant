@@ -19,7 +19,8 @@ class TestProjectRb1 < Test::Unit::TestCase
     end
     def check_manifest(msg_prefix = "")
 	manifest = @manifest.dup
-	Dir["**/*"].each { |e|
+        #Dir["**/*"].each { |e|
+        Rant::FileList["**/*"].shun(".svn").each { |e|
 	    assert(manifest.reject! { |mf| mf == e } ,
 		"#{msg_prefix}#{e} shouldn't exist according to manifest")
 	}

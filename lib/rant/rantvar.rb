@@ -16,7 +16,7 @@
 # If you're looking for general info about Rant, read the
 # README[link:files/README.html].
 module Rant
-    VERSION	= '0.4.0'
+    VERSION	= '0.4.1'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -259,7 +259,7 @@ module Rant
 
 	    # Use ENV instead of internal store for given vars.
 	    # Probably useful for vars like CC, CFLAGS, etc.
-	    def env *vars
+	    def env(*vars)
 		vars.flatten.each { |var|
 		    vid = RantVar.valid_vid(var)
 		    cur_val = @store[vid]
@@ -357,19 +357,6 @@ module Rant
 		end
 		def filter(val)
 		    val.to_s
-		end
-	    end
-
-	    class ::Range
-		def rant_constraint
-		    case first
-		    when ::Integer
-			IntegerInRange.new(self)
-		    when ::Float
-			FloatInRange.new(self)
-		    else
-			raise NotAConstraintFactoryError.new(self)
-		    end
 		end
 	    end
 
@@ -599,3 +586,16 @@ module Rant
 	module_function :valid_constraint?, :valid_vid
     end	# module RantVar
 end	# module Rant
+
+class Range
+    def rant_constraint
+        case first
+        when ::Integer
+            Rant::RantVar::Constraints::IntegerInRange.new(self)
+        when ::Float
+            Rant::RantVar::Constraints::FloatInRange.new(self)
+        else
+            raise NotAConstraintFactoryError.new(self)
+        end
+    end
+end

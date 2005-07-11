@@ -184,12 +184,12 @@ class Tempfile < DelegateClass(File)
 end
 
 end # module BugFix
-if __FILE__ == $0
+#if __FILE__ == $0
 #  $DEBUG = true
-  f = Tempfile.new("foo")
-  f.print("foo\n")
-  f.close
-  f.open
-  p f.gets # => "foo\n"
-  f.close!
-end
+#  f = Tempfile.new("foo")
+#  f.print("foo\n")
+#  f.close
+#  f.open
+#  p f.gets # => "foo\n"
+#  f.close!
+#end
