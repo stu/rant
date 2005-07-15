@@ -219,14 +219,28 @@ module Rant
 
 	def select(&block)
 	    d = dup
-	    d.actions << [:apply_select, block]
+            d.actions << [:apply_select, block]
+            d.pending = true
 	    d
 	end
+        alias find_all select
 
 	def apply_select blk
 	    @files = @files.select(&blk)
 	end
 	private :apply_select
+
+        def map(&block)
+            d = dup
+            d.actions << [:apply_ary_method, :map!, block]
+            d.pending = true
+            d
+        end
+        alias collect map
+
+        def sub_ext(ext, new_ext=nil)
+            map { |f| f.sub_ext ext, new_ext }
+        end
 
 	# Remove all entries which contain a directory with the
 	# given name.
@@ -268,17 +282,11 @@ module Rant
 
 	# Remove all files which have the given name.
 	def no_file(name)
-	    @actions << [:apply_no_file, name]
+            @actions << [:apply_ary_method, :reject!,
+                lambda { |entry| entry == name and test(?f, entry) }]
 	    @pending = true
 	    self
 	end
-
-	def apply_no_file(name)
-	    @files.reject! { |entry|
-		entry == name and test(?f, entry)
-	    }
-	end
-	private :apply_no_file
 
 	# Remove all entries which contain an element
 	# with the given suffix.
@@ -330,6 +338,7 @@ module Rant
 	def arglist
 	    to_ary.arglist
 	end
+        alias to_s arglist
 
         # Same as #uniq! but evaluation is delayed until the next read
         # access (e.g. by calling #each). Always returns self.
@@ -348,11 +357,11 @@ module Rant
         end
 
         private
-        def apply_ary_method(meth)
-            @files.send meth
+        def apply_ary_method(meth, block=nil)
+            @files.send meth, &block
         end
-        def apply_ary_method_1(meth, arg1)
-            @files.send meth, arg1
+        def apply_ary_method_1(meth, arg1, block=nil)
+            @files.send meth, arg1, &block
         end
     end	# class FileList
 

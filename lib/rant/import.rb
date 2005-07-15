@@ -213,7 +213,7 @@ EOF
 	    done
 	end
 
-	def msg *args
+	def msg(*args)
 	    super unless @quiet
 	end
 

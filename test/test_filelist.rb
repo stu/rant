@@ -288,6 +288,19 @@ class TestFileList < Test::Unit::TestCase
 	    assert(l1.include("b.t"))
 	end
     end
+    def test_sys_find_all_resolve
+	cx = Rant::RantApp.new.cx
+	touch_temp %w(a.t b.t) do
+	    l1 = cx.sys["*.t"]
+            l1.resolve
+	    l2 = l1.find_all { |f| f =~ /^b/ }
+	    assert_equal(2, l1.size)
+	    assert(l1.include("a.t"))
+	    assert(l1.include("b.t"))
+	    assert_equal(1, l2.size)
+	    assert(l1.include("b.t"))
+	end
+    end
     def test_sys_glob_flags
 	cx = Rant::RantApp.new.cx
 	touch_temp %w(a.t .a.t b.t .b.t) do
@@ -328,4 +341,43 @@ class TestFileList < Test::Unit::TestCase
             assert(fl.include?("a.t"))
         end
     end
+    def test_map
+        cx = Rant::RantApp.new.cx
+        touch_temp %w(a.t b.t) do
+            fl = cx.sys["*.t"]
+            l2 = fl.map { |f| f + "t" }
+            assert(Rant::FileList === l2)
+            assert_equal(2, l2.size)
+            assert(l2.include?("a.tt"))
+            assert(l2.include?("b.tt"))
+            assert_equal(2, fl.size)
+            assert(fl.include?("a.t"))
+            assert(fl.include?("b.t"))
+        end
+    end
+    def test_no_file
+        cx = Rant::RantApp.new.cx
+        touch_temp %w(a.t b.t) do
+            fl = cx.sys["*.t"]
+            fl.no_file "a.t"
+            assert_equal(1, fl.size)
+            assert(fl.include?("b.t"))
+        end
+    end
+    def test_to_s
+        cx = Rant::RantApp.new.cx
+        assert_equal("a b", cx.sys[].concat(%w(a b)).to_s)
+        assert_equal("", "#{cx.sys[]}")
+    end
+if Rant::Env.on_windows?
+    def test_to_s_quoting_spaces_win
+        cx = Rant::RantApp.new.cx
+        assert_equal('"a a" b', "#{cx.sys[].concat(["a a", "b"])}")
+    end
+else
+    def test_to_s_quoting_spaces
+        cx = Rant::RantApp.new.cx
+        assert_equal("'a a' b", "#{cx.sys[].concat(["a a", "b"])}")
+    end
+end
 end

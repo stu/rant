@@ -28,7 +28,7 @@ unless Process::Status.method_defined?(:success?)
         def success?;  exitstatus == 0; end
     end
 end
-if VERSION < "1.8.2"
+if RUBY_VERSION < "1.8.2"
     class Array
         def flatten
             cp = self.dup
@@ -798,7 +798,7 @@ class Rant::RantApp
 	tlist.each { |t|
 	    print(prefix + t.full_name.ljust(name_length) + infix)
 	    dt = t.description.sub(/\s+$/, "")
-	    puts dt.sub("\n", "\n" + ' ' * cmd_length + infix + "  ")
+	    puts dt.sub(/\n/, "\n" + ' ' * cmd_length + infix + "  ")
 	}
 	true
     end

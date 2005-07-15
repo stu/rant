@@ -14,7 +14,7 @@ class TestProject2 < Test::Unit::TestCase
     include Rant
     include ::Rant::Sys
 
-    def app *args
+    def app(*args)
 	@app = ::Rant::RantApp.new
 	@app.args.concat(args.flatten)
 	@app
