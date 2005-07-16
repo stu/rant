@@ -9,7 +9,6 @@ $testSubdirsDir = File.expand_path(File.dirname(__FILE__))
 class TestSubdirs < Test::Unit::TestCase
     def setup
 	Dir.chdir($testSubdirsDir) unless Dir.pwd == $testSubdirsDir
-	Rant.reset
     end
     def teardown
 	capture_std do

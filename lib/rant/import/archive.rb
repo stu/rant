@@ -166,7 +166,7 @@ module Rant::Generators::Archive
 	def with_manifest
 	    fl = get_files
 	    if @manifest
-		rac.make @manifest
+		rac.build @manifest
 		yield @manifest
 	    else
                 require 'rant/tempfile' #rant-import:remove

@@ -34,4 +34,33 @@ class TestDirectedRule < Test::Unit::TestCase
 	assert(test(?d, "build2.t"))
 	assert(test(?f, "build2.t/1.2a"))
     end
+=begin
+    # This would currently be to complex to implement cleanly.
+    def test_invoke_rule_in_subdir
+        FileUtils.mkdir "sub.t"
+        Dir.chdir "sub.t"
+        FileUtils.mkdir "sub.t"
+        open "Rantfile", "w" do |f|
+            f << <<-EOF
+            import "directedrule", "autoclean"
+            gen Directory, "build.t"
+            gen DirectedRule, "build.t" => ["src.t"], :a => :b do |t|
+                sys.touch t.name
+            end
+            gen AutoClean
+            subdirs "sub.t"
+            EOF
+        end
+        open "sub.t/Rantfile", "w" do |f|
+            f << <<-EOF
+            task :a => "build.t/file.a"
+            EOF
+        end
+        assert_rant(:v, "sub.t/a")
+        assert(test(?f, "sub.t/build.t/file.a"))
+    ensure
+        Dir.chdir $testImportDrDir
+        FileUtils.rm_rf "sub.t"
+    end
+=end
 end

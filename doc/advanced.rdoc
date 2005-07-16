@@ -240,12 +240,15 @@ creation would be to write a file task:
 and make all other tasks that need this version dependent on it. But
 this can get very tedious if you have many tasks that need this
 version file. Another solution is to just run the task every time the
-Rantfile is sourced. This can be achieved by placing the following
-statement after the "version" task:
-    rac.build "version"
-This tells rant to immediately invoke all tasks that are required to
-build the version file. But imagine your users just want to see the
-list of available tasks:
+Rantfile is sourced. This can be achieved by replacing the +file+
+command with the +make+ command:
+    make "version" => "config.h" do |t|
+	puts "updating version file"
+	open("w", t.name) { |f| f.puts(extract_config_version()) }
+    end
+This creates a file task like before and tells rant to immediately
+invoke all tasks that are required to build the version file. But
+imagine your users just want to see the list of available tasks:
     % rant --tasks
     updating version file
     rant foo		# build foo program
@@ -253,13 +256,11 @@ list of available tasks:
     rant clean		# remove generated files
 Hmm, we really didn't need the version to show our users the available
 tasks. To avoid this, wrap such code in an Action:
-    file "version" => "config.h" do |t|
-	puts "updating version file"
-	open("w", t.name) { |f| f.puts(extract_config_version()) }
-    end
-
     gen Action do
-	rac.build "version"
+        make "version" => "config.h" do |t|
+            puts "updating version file"
+            open("w", t.name) { |f| f.puts(extract_config_version()) }
+        end
     end
 And now on a clean source base:
     % rant --tasks

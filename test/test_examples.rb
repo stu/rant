@@ -80,6 +80,8 @@ EOF
         assert_equal(op, out)
         assert(err.empty?)
         gen_files = %w(
+            c/problem_1_1/Rantfile
+            c++/problem_1_1/Rantfile
             c/problem_1_1/c_dependencies
             c++/problem_1_1/c_dependencies
             c/problem_1_1/test
@@ -114,10 +116,12 @@ EOF
                 "#{f} should have been removed by autoclean")
         }
         if Rant::Env.find_bin("gcc")
+            FileUtils.cp "c/template.rf", "c/problem_1_1/Rantfile"
             Dir.chdir "c/problem_1_1"
             out = run_rant
             assert(out.include?("Hello, world!"))
             assert_rant("autoclean")
+            FileUtils.rm_f "Rantfile"
             Dir.chdir proj_pwd
             gen_files.each { |f|
                 assert(!test(?e, f),

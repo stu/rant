@@ -24,15 +24,13 @@ gen Package::Tgz, "pkg/c_cpp_exercises",
 
 gen Action do
     cpp_dirs.each { |dir|
-        rf = File.join dir, "Rantfile"
-        unless sys.uptodate? rf, cpp_rf_template
-            sys.cp cpp_rf_template, rf
+        make "#{dir}/Rantfile" => cpp_rf_template do |t|
+            sys.cp t.source, t.name
         end
     }
     c_dirs.each { |dir|
-        rf = File.join dir, "Rantfile"
-        unless sys.uptodate? rf, c_rf_template
-            sys.cp c_rf_template, rf
+        make "#{dir}/Rantfile" => c_rf_template do |t|
+            sys.cp t.source, t.name
         end
     }
     subdirs cpp_dirs, c_dirs

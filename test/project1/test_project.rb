@@ -8,63 +8,43 @@ $testProject1Dir = File.expand_path(File.dirname(__FILE__))
 
 class TestProject1 < Test::Unit::TestCase
     def setup
-	Dir.chdir($testProject1Dir) unless Dir.pwd == $testProject1Dir
-	Rant.reset
+	Dir.chdir($testProject1Dir)
     end
     def teardown
-	capture_std do
-	    assert_equal(Rant.run("force_clean"), 0)
-	end
+        assert_rant("force_clean")
     end
     def test_run
-	out, err = capture_std do
-	    assert_equal(Rant.run("test_touch"), 0,
-		"Exit code of rant should be 0.")
-	end
+	out, err = assert_rant("test_touch")
+            #"Exit code of rant should be 0.")
 	assert(err =~ /\[WARNING\]/,
 	    "rant should print a warning because of enhance on non-existing task")
-	Rant.reset
 	assert(File.exist?("test_touch"),
 	    "file test_touch should have been created")
-	capture_std do
-	    assert_equal(Rant.run("clean"), 0)
-	end
+        assert_rant("clean")
 	assert(!File.exist?("test_touch"))
     end
     def test_timedep
-	capture_std do
-	    assert_equal(Rant.run("create_target"), 0)
-	end
+        assert_rant("create_target")
 	assert(File.exist?("target"))
-	Rant.reset
 	timeout
-	capture_std do
-	    assert_equal(Rant.run("create_dep"), 0)
-	end
+        assert_rant("create_dep")
 	assert(File.exist?("dep"))
 	assert(Rant::Sys.uptodate?("dep", "target"),
 	    "`create_target' was run before `create_dep'")
 	timeout
-	capture_std do
-	    assert_equal(Rant.run("target"), 0)
-	end
+        assert_rant("target")
 	assert(File.exist?("target"))
 	assert(File.exist?("dep"))
 	assert(Rant::Sys.uptodate?("target", "dep"),
 	    "`target' should be newer than `dep'")
 	t1 = File.mtime "target"
-	Rant.reset
 	timeout
-	capture_std do
-	    assert_equal(Rant.run("target"), 0)
-	end
+        assert_rant("target")
 	assert_equal(t1, File.mtime("target"),
 	    "`target' was already up to date")
     end
     def test_two_deps
-	capture_std do
-	    assert_equal(Rant.run("t2"), 0)
-	end
+        assert_rant("t2")
 	assert(File.exist?("t2"),
 	    "file `t2' should have been built")
 	assert(File.exist?("dep1"),

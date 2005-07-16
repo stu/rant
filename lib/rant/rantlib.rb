@@ -264,12 +264,6 @@ module Rant
 	def rac=(app)
 	    @@rac = app
 	end
-
-	# "Clear" the current Rant application. After this call,
-	# Rant has the same state as immediately after startup.
-	def reset
-	    @@rac = nil
-	end
     end
 
 end	# module Rant
