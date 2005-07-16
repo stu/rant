@@ -10,7 +10,7 @@ module Rant
 		if !args || args.empty?
 		    self.new(app, ch, &block)
 		elsif args.size == 1
-		    name, pre, file, ln = app.normalize_task_arg(args.first, ch)
+		    name, pre = app.normalize_task_arg(args.first, ch)
 		    self.new(app, ch, name, pre, &block)
 		else
 		    app.abort(app.pos_text(file, ln),

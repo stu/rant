@@ -95,6 +95,9 @@ class String
 	    self.sub(/(\.[^.]*$)|$/, ".#{ext}")
 	end
     end
+    def to_rant_target
+        self
+    end
 end
 
 module Rant::Lib
@@ -180,6 +183,10 @@ module RantContext
 
     def var(*args, &block)
 	rac.var(*args, &block)
+    end
+
+    def make(*args, &block)
+        rac.make(*args, &block)
     end
 end	# module RantContext
 
@@ -565,15 +572,12 @@ class Rant::RantApp
 
     def gen(*args, &block)
 	# retrieve caller info
-	clr = caller[1]
-	ch = Rant::Lib::parse_caller_elem(clr)
-	name = nil
-	pre = []
+	ch = Rant::Lib::parse_caller_elem(caller[1])
 	# validate args
 	generator = args.shift
 	unless generator.respond_to? :rant_gen
 	    abort_at(ch,
-		"First argument to `gen' has to be a task-generator.")
+		"gen: First argument to has to be a task-generator.")
 	end
 	# ask generator to produce a task for this application
 	generator.rant_gen(self, ch, args, &block)
@@ -588,8 +592,7 @@ class Rant::RantApp
 	end
 	args.flatten.each { |arg|
 	    unless String === arg
-		abort(pos_text(ch[:file], ch[:ln]),
-		    "import: only strings allowed as arguments")
+                abort_at(ch, "import: only strings allowed as arguments")
 	    end
 	    unless @imports.include? arg
 		unless Rant::CODE_IMPORTS.include? arg
@@ -597,8 +600,7 @@ class Rant::RantApp
 			msg 2, "import #{arg}"
 			require "rant/import/#{arg}"
 		    rescue LoadError => e
-			abort(pos_text(ch[:file], ch[:ln]),
-			    "No such import - #{arg}")
+			abort_at(ch, "No such import - #{arg}")
 		    end
 		    Rant::CODE_IMPORTS << arg.dup
 		end
@@ -693,15 +695,12 @@ class Rant::RantApp
     # Search the given directories for Rantfiles.
     def subdirs(*args)
 	args.flatten!
-	cinf = Rant::Lib::parse_caller_elem(caller[1])
-	ln = cinf[:ln] || 0
-	file = cinf[:file]
+	ch = Rant::Lib::parse_caller_elem(caller[1])
 	args.each { |arg|
 	    if arg.respond_to? :to_str
 		arg = arg.to_str
 	    else
-		abort(pos_text(file, ln),
-		    "subdirs: arguments must be strings")
+		abort_at(ch, "subdirs: arguments must be strings")
 	    end
 	    loaded = false
 	    prev_subdir = @current_subdir
@@ -722,12 +721,12 @@ class Rant::RantApp
 		goto_project_dir prev_subdir
 	    end
 	    unless loaded || @opts[:no_warn_subdir]
-		warn_msg(pos_text(file, ln),
+		warn_msg(pos_text(ch[:file], ch[:ln]),
 		    "subdirs: No Rantfile in subdir `#{arg}'.")
 	    end
 	}
     rescue SystemCallError => e
-	abort(pos_text(file, ln), "subdirs: " + e.message)
+	abort_at(ch, "subdirs: " + e.message)
     end
 
     def sys(*args, &block)
@@ -749,7 +748,7 @@ class Rant::RantApp
 	td
     end
 
-    # Prints msg as error message and raises a RantAbortException.
+    # Prints msg as error message and raises an RantAbortException.
     def abort(*msg)
 	err_msg(msg) unless msg.empty?
 	$stderr.puts caller if @opts[:trace_abort]
@@ -833,10 +832,8 @@ class Rant::RantApp
 
     def pos_text(file, ln)
 	t = "in file `#{file}'"
-	if ln && ln > 0
-	    t << ", line #{ln}"
-	end
-	t + ": "
+        t << ", line #{ln}" if ln && ln > 0
+	t << ": "
     end
 
     def msg(*args)
@@ -885,7 +882,7 @@ class Rant::RantApp
 
     private
     def have_any_task?
-	not @rantfiles.all? { |f| f.tasks.empty? }
+        !@tasks.empty?
     end
 
     def target_list
@@ -928,9 +925,33 @@ class Rant::RantApp
 	end
     end
 
+    def make(target, *args, &block)
+        if target.respond_to? :to_rant_target
+            opt = args.shift
+            unless args.empty?
+                ch = Rant::Lib.parse_caller_elem(caller[1])
+                abort_at(ch, "make: too many arguments")
+            end
+            build(target.to_rant_target, opt||{})
+        elsif target.respond_to? :rant_gen
+            ch = Rant::Lib.parse_caller_elem(caller[1])
+            rv = target.rant_gen(self, ch, args, &block)
+            unless rv.respond_to? :to_rant_target
+                abort_at(ch, "make: invalid generator return value")
+            end
+            build(rv.to_rant_target)
+            rv
+        else
+            ch = Rant::Lib.parse_caller_elem(caller[1])
+            abort_at(ch,
+                "make: generator or target as first argument required.")
+        end
+    end
+    public :make
+
     # Invoke all tasks necessary to build +target+. Returns the number
     # of tasks invoked.
-    def make(target, opt = {})
+    def build(target, opt = {})
 	opt[:force] = true if @force_targets.delete(target)
 	matching_tasks = 0
 	old_subdir = @current_subdir
@@ -948,11 +969,10 @@ class Rant::RantApp
 	Dir.chdir old_pwd
 	matching_tasks
     end
-    public :make
-    alias build make
+    public :build
 
-    # Currently always returns an array (which might actually be a
-    # an empty array, but never nil).
+    # Currently always returns an array (which might actually be an
+    # empty array, but never nil).
     def resolve(task_name, rel_project_dir = @current_subdir)
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
@@ -960,6 +980,13 @@ class Rant::RantApp
 	    @resolve_hooks.each { |s|
 		# Note: will probably change to get more params
 		s = s[task_name]
+                #if s
+                #    puts s.size
+                #    t = s.first
+                #    puts t.full_name
+                #    puts t.name
+                #    puts t.deps
+                #end
 		return s if s
 	    }
 	    []
@@ -1070,7 +1097,7 @@ class Rant::RantApp
     def process_args
 	# WARNING: we currently have to fool getoptlong,
 	# by temporory changing ARGV!
-	# This could cause problems.
+	# This could cause problems (e.g. multithreading).
 	old_argv = ARGV.dup
 	ARGV.replace(@args.dup)
 	cmd_opts = GetoptLong.new(*OPTIONS.collect { |lst| lst[0..-2] })
@@ -1121,14 +1148,15 @@ class Rant::RantApp
 	if targ.is_a? Hash
 	    targ.reject! { |k, v| clr = v if k == :__caller__ }
 	end
-	cinf = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
+	ch = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
 
-	name, pre, file, ln = normalize_task_arg(targ, cinf)
+	name, pre = normalize_task_arg(targ, ch)
 
-	file, is_new = rantfile_for_path(file)
+	file, is_new = rantfile_for_path(ch[:file])
 	nt = yield(name, pre, block)
 	nt.rantfile = file
-	nt.line_number = ln
+        nt.project_subdir = file.project_subdir
+	nt.line_number = ch[:ln]
 	nt.description = @task_desc
 	@task_desc = nil
 	file.tasks << nt
@@ -1154,69 +1182,58 @@ class Rant::RantApp
 
     # Tries to extract task name and prerequisites from the typical
     # argument to the +task+ command. +targ+ should be one of String,
-    # Symbol or Hash. clr is the caller and is used for error
-    # reporting and debugging.
+    # Symbol or Hash. ch is the caller (hash with the elements :file
+    # and :ln) and is used for error reporting and debugging.
     #
-    # Returns four values, the first is a string which is the task name
+    # Returns two values, the first is a string which is the task name
     # and the second is an array with the prerequisites.
-    # The third is the file name of +clr+, the fourth is the line number
-    # of +clr+.
     def normalize_task_arg(targ, ch)
-	# pre 0.3.7: ch in parameter list was clr
-	# TODO: check the code calling this method so that we can
-	# assume clr is already a hash
-	#ch = Hash === clr ? clr : Rant::Lib::parse_caller_elem(clr)
-
 	name = nil
 	pre = []
-	ln, file = ch[:ln], ch[:file]
 	
 	# process and validate targ
 	if targ.is_a? Hash
 	    if targ.empty?
-		abort(pos_text(file, ln),
-		    "Empty hash as task argument, " +
+		abort_at(ch, "Empty hash as task argument, " +
 		    "task name required.")
 	    end
 	    if targ.size > 1
-		abort(pos_text(file, ln),
-		    "Too many hash elements, " +
+		abort_at(ch, "Too many hash elements, " +
 		    "should only be one.")
 	    end
 	    targ.each_pair { |k,v|
-		name = normalize_task_name(k, file, ln)
+		name = normalize_task_name(k, ch)
 		pre = v
 	    }
 	    unless ::Rant::FileList === pre
 		if pre.respond_to? :to_ary
 		    pre = pre.to_ary.dup
 		    pre.map! { |elem|
-			normalize_task_name(elem, file, ln)
+			normalize_task_name(elem, ch)
 		    }
 		else
-		    pre = [normalize_task_name(pre, file, ln)]
+		    pre = [normalize_task_name(pre, ch)]
 		end
 	    end
 	else
-	    name = normalize_task_name(targ, file, ln)
+	    name = normalize_task_name(targ, ch)
 	end
 
-	[name, pre, file, ln]
+	[name, pre]
     end
     public :normalize_task_arg
 
     # Tries to make a task name out of arg and returns
     # the valid task name. If not possible, calls abort
     # with an appropriate error message using file and ln.
-    def normalize_task_name(arg, file, ln)
+    def normalize_task_name(arg, ch)
 	return arg if arg.is_a? String
 	if Symbol === arg
 	    arg.to_s
 	elsif arg.respond_to? :to_str
 	    arg.to_str
 	else
-	    abort(pos_text(file, ln),
-		"Task name has to be a string or symbol.")
+	    abort_at(ch, "Task name has to be a string or symbol.")
 	end
     end
 

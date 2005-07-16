@@ -131,6 +131,7 @@ module Rant::Generators::Archive
 		get_archive_path
 	    end
 	end
+        alias to_rant_target path
 
 	# Path to archive without basedir.
 	def get_archive_path

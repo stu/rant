@@ -3,23 +3,18 @@ require 'rant/rantlib'
 
 module Rant
     class Generators::RubyTest
-
-	class << self
-
-	    def rant_gen(app, ch, args, &block)
-		if !args || args.empty?
-		    self.new(app, ch, &block)
-		elsif args.size == 1
-		    name, pre, file, ln =
-		    app.normalize_task_arg(args.first, ch)
-		    self.new(app, ch, name, pre, &block)
-		else
-		    app.abort(app.pos_text(file, ln),
-			"RubyTest takes only one additional argument, " +
-			"which should be like one given to the `task' command.")
-		end
-	    end
-	end
+        def self.rant_gen(app, ch, args, &block)
+            if !args || args.empty?
+                self.new(app, ch, &block)
+            elsif args.size == 1
+                name, pre = app.normalize_task_arg(args.first, ch)
+                self.new(app, ch, name, pre, &block)
+            else
+                app.abort_at(ch,
+                    "RubyTest takes only one additional argument, " +
+                    "which should be like one given to the `task' command.")
+            end
+        end
 
 	attr_accessor :verbose
 	attr_accessor :libs

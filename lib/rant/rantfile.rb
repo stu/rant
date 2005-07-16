@@ -59,24 +59,26 @@ module Rant
 	attr_accessor :rantfile
 	# The linenumber in rantfile where this task was defined.
 	attr_accessor :line_number
+	# The directory in which this task was defined, relative to
+	# the projects root directory.
+        attr_accessor :project_subdir
 	
 	def initialize
 	    @description = nil
 	    @rantfile = nil
 	    @line_number = nil
 	    @run = false
+            @project_subdir = ""
 	end
 
-	# Returns the full name of this task.
+	# Returns the name of this task.
 	def to_s
-	    full_name
+	    name
 	end
 
-	# The directory in which this task was defined, relative to
-	# the projects root directory.
-	def project_subdir
-	    @rantfile.nil? ? "" : @rantfile.project_subdir
-	end
+        def to_rant_target
+            name
+        end
 
 	# Basically project_subdir/name
 	#
@@ -555,6 +557,7 @@ module Rant
 	end
 
 	def handle_non_node(dep, opt)
+            goto_task_home # !!??
 	    unless File.exist? dep
 		err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
@@ -598,7 +601,7 @@ module Rant
 	    def rant_gen(rac, ch, args, &block)
 		case args.size
 		when 1
-		    name, pre, file, ln = rac.normalize_task_arg(args.first, ch)
+		    name, pre = rac.normalize_task_arg(args.first, ch)
 		    self.task(rac, ch, name, pre, &block)
 		when 2
 		    basedir = args.shift
@@ -608,11 +611,10 @@ module Rant
 			rac.abort_at(ch,
 			    "Directory: basedir argument has to be a string.")
 		    end
-		    name, pre, file, ln = rac.normalize_task_arg(args.first, ch)
+		    name, pre = rac.normalize_task_arg(args.first, ch)
 		    self.task(rac, ch, name, pre, basedir, &block)
 		else
-		    rac.abort(rac.pos_text(ch[:file], ch[:ln]),
-			"Directory takes one argument, " +
+		    rac.abort_at(ch, "Directory takes one argument, " +
 			"which should be like one given to the `task' command.")
 		end
 	    end
@@ -679,6 +681,7 @@ module Rant
 	end
 
 	def handle_non_node(dep, opt)
+            goto_task_home
 	    unless File.exist? dep
 		err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
@@ -850,10 +853,26 @@ module Rant
 		end
 		blk = self.new { |task_name|
 		    if target_rx =~ task_name
-			[rac.file(:__caller__ => ch,
-			    task_name => src_proc[task_name], &block)]
-		    else
-			nil
+                        have_src = true
+                        src = src_proc[task_name]
+                        if src.respond_to? :to_ary
+                            src.each { |f|
+                                if rac.resolve(f).empty? && !test(?e, f)
+                                    have_src = false
+                                    break
+                                end
+                            }
+                        else
+                            if rac.resolve(src).empty? && !test(?e, src)
+                                have_src = false
+                            end
+                        end
+                        if have_src
+                            t = rac.file(:__caller__ => ch,
+                                    task_name => src_proc[task_name], &block)
+                            t.project_subdir = rac.current_subdir
+                            [t]
+                        end
 		    end
 		}
 		blk.target_rx = target_rx

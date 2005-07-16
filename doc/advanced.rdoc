@@ -231,7 +231,7 @@ define the project version, e.g.:
     #define VERSION 2.3
 Many of your tools use this version number, so you have decided to
 duplicate it in a file called +version+, which contains just a line
-with the program version. On solution to automate the +version+ file
+with the program version. One solution to automate the +version+ file
 creation would be to write a file task:
     file "version" => "config.h" do |t|
 	puts "updating version file"
