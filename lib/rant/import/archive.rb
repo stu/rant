@@ -9,6 +9,7 @@
 
 require 'rant/rantlib'
 require 'rant/import/subfile'
+#require 'rant/tempfile' #rant-import:uncomment
 
 module Rant::Generators::Archive
     # A subclass has to provide a +define_task+ method to act as a
@@ -168,8 +169,8 @@ module Rant::Generators::Archive
 		rac.make @manifest
 		yield @manifest
 	    else
-		require 'tempfile'
-		tf = Tempfile.new "rant"
+                require 'rant/tempfile' #rant-import:remove
+		tf = Rant::Tempfile.new "rant"
 		begin
 		    fl.each { |path| tf.puts path }
 		    tf.close

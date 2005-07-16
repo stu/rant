@@ -926,13 +926,34 @@ class Rant::RantApp
     end
 
     def make(target, *args, &block)
-        if target.respond_to? :to_rant_target
+        ch = nil
+        if target.respond_to? :to_hash
+            targ = target.to_hash
+            ch = Rant::Lib.parse_caller_elem(caller[1])
+            abort_at(ch, "make: too many arguments") unless args.empty?
+            tn = nil
+            prepare_task(targ, block, ch) { |name,pre,blk|
+                tn = name
+                Rant::FileTask.new(self, name, pre, &blk)
+            }
+            build(tn)
+        elsif target.respond_to? :to_rant_target
+            rt = target.to_rant_target
             opt = args.shift
             unless args.empty?
-                ch = Rant::Lib.parse_caller_elem(caller[1])
+                ch ||= Rant::Lib.parse_caller_elem(caller[1])
                 abort_at(ch, "make: too many arguments")
             end
-            build(target.to_rant_target, opt||{})
+            if block
+                # create a file task
+                ch ||= Rant::Lib.parse_caller_elem(caller[1])
+                prepare_task(rt, block, ch) { |name,pre,blk|
+                    Rant::FileTask.new(self, name, pre, &blk)
+                }
+                build(rt)
+            else
+                build(rt, opt||{})
+            end
         elsif target.respond_to? :rant_gen
             ch = Rant::Lib.parse_caller_elem(caller[1])
             rv = target.rant_gen(self, ch, args, &block)

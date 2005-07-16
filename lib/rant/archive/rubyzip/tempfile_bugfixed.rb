@@ -7,6 +7,7 @@
 require 'delegate'
 require 'tmpdir'
 
+module Rant
 module BugFix  #:nodoc:all
 
 # A class for managing temporary files.  This library is written to be
@@ -184,6 +185,7 @@ class Tempfile < DelegateClass(File)
 end
 
 end # module BugFix
+end # module Rant
 #if __FILE__ == $0
 #  $DEBUG = true
 #  f = Tempfile.new("foo")

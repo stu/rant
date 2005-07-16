@@ -29,16 +29,11 @@
 
 require 'delegate'
 require 'singleton'
-require 'tempfile'
 require 'ftools'
 require 'zlib'
 require 'rant/archive/rubyzip/stdrubyext'
 require 'rant/archive/rubyzip/ioextras'
-
-if Tempfile.superclass == SimpleDelegator
-  require 'rant/archive/rubyzip/tempfile_bugfixed'
-  Tempfile = BugFix::Tempfile
-end
+require 'rant/tempfile'
 
 module Zlib  #:nodoc:all
   if ! const_defined? :MAX_WBITS
@@ -1270,7 +1265,7 @@ module Rant::Archive::Rubyzip
     end
     
     def get_tempfile
-      tempFile = Tempfile.new(File.basename(name), File.dirname(name))
+      tempFile = Rant::Tempfile.new(File.basename(name), File.dirname(name))
       tempFile.binmode
       tempFile
     end
@@ -1320,7 +1315,7 @@ module Rant::Archive::Rubyzip
   class ZipStreamableStream < DelegateClass(ZipEntry) #nodoc:all
     def initialize(entry)
       super(entry)
-      @tempFile = Tempfile.new(File.basename(name), File.dirname(zipfile))
+      @tempFile = Rant::Tempfile.new(File.basename(name), File.dirname(zipfile))
       @tempFile.binmode
     end
 

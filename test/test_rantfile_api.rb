@@ -14,6 +14,8 @@ class TestRantfileAPI < Test::Unit::TestCase
     end
     def teardown
 	Dir.chdir $testDir
+        assert_rant("clean")
+        assert(!test(?e, "auto.rf"))
 	FileUtils.rm_rf Dir["*.t"]
     end
     def test_action
@@ -79,5 +81,47 @@ class TestRantfileAPI < Test::Unit::TestCase
 	assert_match(/rf\.t/, err)
 	assert_match(/2/, err)
 	assert_match(/n_i_x/, err)
+    end
+    def test_make_file
+        out, err = assert_rant("make_file")
+        assert(err.empty?)
+        assert(test(?f, "make_file.t"))
+        out, err = assert_rant("make_file")
+        assert(out.empty?)
+        assert(err.empty?)
+    end
+    def test_make_files
+        out, err = assert_rant("make_files=ON")
+        assert(err.empty?)
+        assert(test(?f, "make_files.t"))
+        assert(test(?f, "make_files_dep.t"))
+        out, err = assert_rant("make_files=ON")
+        assert(out.empty?)
+    end
+    def test_dep_on_make_files_fail
+        assert_rant(:fail, "dep_on_make_files")
+        assert(!test(?e, "make_files.t"))
+        assert(!test(?e, "make_files_dep.t"))
+    end
+    def test_dep_on_make_files
+        assert_rant("dep_on_make_files", "make_files=1")
+        assert(test(?e, "make_files.t"))
+        assert(test(?e, "make_files_dep.t"))
+    end
+    def test_make_path
+        out, err = assert_rant("make_path=1")
+        assert(err.empty?)
+        assert(test(?d, "basedir.t/a/b"))
+        out, err = assert_rant("make_path=1")
+        assert(out.empty?)
+        assert(err.empty?)
+    end
+    def test_make_subfile
+        out, err = assert_rant("make_gen_with_block=1")
+        assert(err.empty?)
+        assert(test(?f, "a.t/a.t"))
+        out, err = assert_rant("make_gen_with_block=1")
+        assert(out.empty?)
+        assert(err.empty?)
     end
 end

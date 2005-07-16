@@ -1,0 +1,7 @@
+gen Rule, '.o' => '.cpp' do |t|
+  sys "g++ -c -o #{t.name} #{t.source}"
+end
+
+gen Rule, '.o' => '.c' do |t|
+  sys "gcc -c -o #{t.name} #{t.source}"
+end

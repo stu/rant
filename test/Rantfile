@@ -54,4 +54,37 @@ end
 desc "Make some path (basedir.t/a/b)."
 gen Directory, "basedir.t", "a/b"
 
+gen Action do
+    if var[:make_path]
+        make Directory, "basedir.t"
+        make "basedir.t/a/b"
+    end
+end
+
+task :make_file do |t|
+    make "make_file.t" do |t|
+        sys.touch t.name
+    end
+end
+
+file "make_files_dep.t" do |t|
+    sys.touch t.name
+end
+
+gen Action do
+    if var[:make_files]
+        make "make_files.t" => "make_files_dep.t" do |t|
+            sys.touch t.name
+        end
+    end
+    if var[:make_gen_with_block]
+        import "subfile"
+        make SubFile, "a.t/a.t" do |t|
+            sys.touch t.name
+        end
+    end
+end
+
+task :dep_on_make_files => ["make_files.t"]
+
 # vim: ft=ruby
