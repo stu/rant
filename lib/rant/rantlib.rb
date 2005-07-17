@@ -288,7 +288,7 @@ class Rant::RantApp
 	[ "--verbose",	"-v",	GetoptLong::NO_ARGUMENT,
 	    "Print more messages to stderr."			],
 	[ "--quiet",	"-q",	GetoptLong::NO_ARGUMENT,
-	    "Don't print commands."			],
+	    "Don't print commands."			        ],
 	[ "--err-commands",	GetoptLong::NO_ARGUMENT,
 	    "Print failed commands and their exit status."	],
 	[ "--directory","-C",	GetoptLong::REQUIRED_ARGUMENT,
@@ -297,7 +297,7 @@ class Rant::RantApp
 	    "Process RANTFILE instead of standard rantfiles.\n" +
 	    "Multiple files may be specified with this option"	],
 	[ "--force-run","-a",	GetoptLong::REQUIRED_ARGUMENT,
-	    "Force TARGET to be run, even if it isn't required.\n"],
+	    "Force rebuild of TARGET and all dependencies."     ],
 	[ "--tasks",	"-T",	GetoptLong::NO_ARGUMENT,
 	    "Show a list of all described tasks and exit."	],
 	
@@ -756,7 +756,7 @@ class Rant::RantApp
     end
 
     def show_help
-	puts "rant [-f RANTFILE] [OPTIONS] tasks..."
+	puts "rant [-f Rantfile] [Options] [targets]"
 	puts
 	puts "Options are:"
 	print option_listing(OPTIONS)

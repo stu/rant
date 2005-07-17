@@ -9,7 +9,7 @@ $testRantImportDir ||= File.expand_path(File.dirname(__FILE__))
 class TestRantImport < Test::Unit::TestCase
     def setup
 	# Ensure we run in test directory.
-	Dir.chdir($testRantImportDir) unless Dir.pwd == $testRantImportDir
+	Dir.chdir($testRantImportDir)
     end
     def teardown
 	Dir.chdir($testRantImportDir)
@@ -164,5 +164,39 @@ class TestRantImport < Test::Unit::TestCase
 	files = out.strip.split "\n"
 	assert_equal(1, files.size)
 	assert(files.include?("b.t/b.s.t"))
+    end
+    def test_loaded_features
+        FileUtils.mkdir "features.t"
+        Dir.chdir "features.t"
+        FileUtils.mkpath "rant/import"
+        open "rant/import/foo.rb", "w" do |f|
+            f << <<-EOF
+            def foo
+                puts "foo"
+            end
+            EOF
+        end
+        open "Rantfile", "w" do |f|
+            f << <<-EOF
+            import "foo"
+            require 'rant/import/foo'
+            task :default do
+                foo
+            end
+            EOF
+        end
+        out, err = assert_rant
+        assert_match(/foo/, out)
+        assert(err.empty?)
+        run_import("-q", "--auto", "make.rb")
+        assert_exit
+        assert(test(?f, "make.rb"))
+        out = run_ruby("make.rb")
+        assert_exit
+        assert_match(/foo/, out)
+        FileUtils.rm_rf "rant"
+        out = run_ruby("make.rb")
+        assert_exit
+        assert_match(/foo/, out)
     end
 end

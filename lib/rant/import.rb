@@ -125,6 +125,7 @@ EOH
 		mf << mono_plugins
 		mf << <<EOF
 
+$".concat([#{@included_files.map{ |f| "'" + f + ".rb'" }.join(", ")}])
 Rant::CODE_IMPORTS.concat %w(#{@included_imports.join(' ')}
     #{(@included_plugins.map do |i| "plugin/" + i end).join(' ')})
 
@@ -142,7 +143,7 @@ def require libf
     end
 end
 
-Rant.run
+exit Rant.run
 EOF
 	    }
 	    msg "Done.",
