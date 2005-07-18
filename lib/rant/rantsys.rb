@@ -356,6 +356,12 @@ module Rant
             self
         end
 
+        def lazy_map!(&block)
+            @actions << [:apply_ary_method, :map!, block]
+            @pending = true
+            self
+        end
+
         private
         def apply_ary_method(meth, block=nil)
             @files.send meth, &block

@@ -100,4 +100,25 @@ class TestSubFile < Test::Unit::TestCase
 		"#{f} should have been unlinked by AutoClean")
 	}
     end
+    def test_with_slash
+        open "with_slash.t", "w" do |f|
+            f << <<-EOF
+            import "subfile", "autoclean"
+            gen SubFile, "base.t/", "a" do |t|
+                sys.touch t.name
+            end
+            gen AutoClean
+            EOF
+        end
+        assert_rant(:fail, "-fwith_slash.t")
+        FileUtils.mkdir "base.t"
+        assert_rant("-fwith_slash.t")
+        assert(test(?f, "base.t/a"))
+        out, err = assert_rant("-fwith_slash.t")
+        assert(out.empty?)
+        assert(err.empty?)
+        assert_rant("-fwith_slash.t", "autoclean")
+        assert(test(?d, "base.t"))
+        assert(!test(?e, "base.t/a"))
+    end
 end

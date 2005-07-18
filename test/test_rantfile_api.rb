@@ -124,4 +124,19 @@ class TestRantfileAPI < Test::Unit::TestCase
         assert(out.empty?)
         assert(err.empty?)
     end
+    def test_source_self
+        open "source_self.t", "w" do |f|
+            f << <<-EOF
+            puts "test"
+            task :a
+            source "source_self.t"
+            EOF
+        end
+        out, err = nil, nil
+        th = Thread.new { out, err = assert_rant("-fsource_self.t") }
+        # OK, give it one second to complete
+        assert_equal(th, th.join(1))
+        assert_equal("test\n", out)
+        assert(err.empty?)
+    end
 end

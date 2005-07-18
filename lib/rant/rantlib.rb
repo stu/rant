@@ -517,20 +517,16 @@ class Rant::RantApp
 	goto "#"
 	@plugins.each { |plugin| plugin.rant_done }
 	return 0
-    rescue Rant::RantError
-	ch = get_ch_from_backtrace($!.backtrace)
-	if ch
-	    err_msg(pos_text(ch[:file], ch[:ln]), $!.message)
-	else
-	    err_msg $!.message, $!.backtrace[0..4]
-	end
-	$stderr.puts "rant aborted!"
-	return 1
     rescue Rant::RantAbortException
 	$stderr.puts "rant aborted!"
 	return 1
-    rescue
-	err_msg $!.message, $!.backtrace
+    rescue Exception => e
+	ch = get_ch_from_backtrace(e.backtrace)
+	if ch && !@opts[:trace_abort]
+	    err_msg(pos_text(ch[:file], ch[:ln]), e.message)
+	else
+	    err_msg e.message, e.backtrace[0..4]
+	end
 	$stderr.puts "rant aborted!"
 	return 1
     ensure
@@ -913,7 +909,7 @@ class Rant::RantApp
 	matching_tasks = 0
 	target_list.each do |target|
 	    goto "#"
-	    if make(target) == 0
+	    if build(target) == 0
 		abort("Don't know how to make `#{target}'.")
 	    end
 	end
@@ -1301,20 +1297,13 @@ class Rant::RantApp
 	t_msg = ["Task `#{e.tname}' fail."]
 	orig = e
 	loop { orig = orig.orig; break unless Rant::TaskFail === orig }
-	unless orig == e
-	    if Rant::RantError === orig
-		ch = get_ch_from_backtrace(orig.backtrace)
-		if ch
-		    msg << pos_text(ch[:file], ch[:ln])
-		    msg << orig.message
-		else
-		    msg << orig.message << orig.backtrace[0..4]
-		end
-	    elsif Rant::CommandError === orig
-		msg << orig.message if @opts[:err_commands]
-	    elsif orig && !(Rant::RantAbortException === orig)
-		msg << orig.message << orig.backtrace[0..4]
-	    end
+	if orig && orig != e && !(Rant::RantAbortException === orig)
+            ch = get_ch_from_backtrace(orig.backtrace)
+            msg << pos_text(ch[:file], ch[:ln]) if ch
+            unless Rant::CommandError === orig && !@opts[:err_commands]
+                msg << orig.message
+                msg << orig.backtrace[0..4] unless ch
+            end
 	end
 	err_msg msg unless msg.empty?
 	err_msg t_msg

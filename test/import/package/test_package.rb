@@ -274,6 +274,16 @@ class TestImportPackage < Test::Unit::TestCase
     ensure
         FileUtils.rm_rf %w(subs.t sub6.t)
     end
+    def test_tgz_package_double
+        assert_rant("pkg.t/double.tgz")
+        out, err = assert_rant("pkg.t/double.tgz")
+        assert(out.empty?)
+        assert(err.empty?)
+        mf = %w(Rantfile)
+        dirs = %w()
+        @pkg_dir = "double"
+        check_contents(:tgz, "pkg.t/double.tgz", mf, dirs)
+    end
     def test_zip_follow_symlink
         have_symlinks = true
         FileUtils.mkdir "subs.t"

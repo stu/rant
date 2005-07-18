@@ -1,6 +1,22 @@
 
 = Rant NEWS
 
+== Rant 0.4.2
+
+This is mainly a bugfix release and thus fully backwards compatible to
+0.4.0.
+
+Fixes and minor improvements:
+* Fixes for Ruby 1.8.1 compatibility.
+* Fixes for Rules and multiple buildfiles per project.
+* rant-import created scripts append inlined files to
+  $LOADED_FEATURES.
+
+New features:
+* The +make+ command.
+* New method +sub_ext+ for filelists.
+Read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+
 == Rant 0.4.0
 
 Unless you extended Rant with a custom generator, you can upgrade from

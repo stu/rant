@@ -77,6 +77,10 @@ is a brief overview:
     # create a manifest file
     open("MANIFEST", "w") { |f| f.puts fl }
 
+    sources = sys["*.c"]
+    # substitute all filename extensions with .o
+    objs = sources.sub_ext "o"
+
 Additionally, you can use all methods available for an array. Lookup
 docs with ri for array methods:
     % ri Array

@@ -74,4 +74,46 @@ class TestDirTask < Test::Unit::TestCase
 	assert_match(%r{basedir.t/a/b\s*#.*Make some path}, out)
 	assert_rant("clean")
     end
+    def test_basedir_with_slash
+        open "dir_with_slash.t", "w" do |f|
+            f << <<-EOF
+            import "autoclean"
+            file "a.t/b/c" => "a.t/b" do |t|
+                sys.touch t.name
+            end
+            gen Directory, "a.t/", "b"
+            gen AutoClean
+            EOF
+        end
+        assert_rant(:fail, "-fdir_with_slash.t")
+        assert(!test(?e, "a.t"))
+        FileUtils.mkdir "a.t"
+        assert_rant("-fdir_with_slash.t")
+        assert(test(?f, "a.t/b/c"))
+        out, err = assert_rant("-fdir_with_slash.t")
+        assert(out.empty?)
+        assert(err.empty?)
+        assert_rant("-fdir_with_slash.t", "autoclean")
+        assert(test(?d, "a.t"))
+        assert(!test(?e, "a.t/b"))
+    end
+    def test_with_slash
+        open "dir_with_slash.t", "w" do |f|
+            f << <<-EOF
+            import "autoclean"
+            file "a.t/b" => "a.t" do |t|
+                sys.touch t.name
+            end
+            gen Directory, "a.t/"
+            gen AutoClean
+            EOF
+        end
+        assert_rant("-fdir_with_slash.t")
+        assert(test(?f, "a.t/b"))
+        out, err = assert_rant("-fdir_with_slash.t")
+        assert(out.empty?)
+        assert(err.empty?)
+        assert_rant("-fdir_with_slash.t", "autoclean")
+        assert(!test(?e, "a.t"))
+    end
 end

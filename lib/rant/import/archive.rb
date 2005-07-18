@@ -158,7 +158,9 @@ module Rant::Generators::Archive
             else
                 fl = Rant::RacFileList.filelist(@rac, fl)
 	    end
-            @res_files = fl.lazy_uniq!.lazy_sort!
+            # remove leading `./' relicts
+            @res_files = fl.lazy_map! { |fn| fn.sub(/^\.\/(?=.)/,'') }
+            @res_files.lazy_uniq!.lazy_sort!
 	end
 
 	# Creates an (eventually) temporary manifest file and yields
