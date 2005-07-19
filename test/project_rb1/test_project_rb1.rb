@@ -29,16 +29,33 @@ class TestProjectRb1 < Test::Unit::TestCase
 	}
     end
     def test_doc
-        assert_rant("doc")
-	assert(test(?d, "doc"),
-	    "RDoc task should generate dir `doc'")
-	assert(test(?f, "doc/index.html"),
-	    "doc/index.html should exist after `doc'")
-	fl = Dir["doc/files/**/*"]
-	assert(fl.find { |f| f =~ /wgrep/ },
-	    "lib/wgrep.rb should get documented")
-	assert(fl.find { |f| f =~ /README/ },
-	    "README should be in html docs")
+        have_rdoc = true
+        begin
+            require 'rdoc/rdoc'
+        rescue LoadError
+            have_rdoc = false
+        end
+        if have_rdoc
+            assert_rant("doc")
+            assert(test(?d, "doc"),
+                "RDoc task should generate dir `doc'")
+            assert(test(?f, "doc/index.html"),
+                "doc/index.html should exist after `doc'")
+            fl = Dir["doc/files/**/*"]
+            assert(fl.find { |f| f =~ /wgrep/ },
+                "lib/wgrep.rb should get documented")
+            assert(fl.find { |f| f =~ /README/ },
+                "README should be in html docs")
+        else
+            STDERR.puts "*** rdoc not available ***"
+            out, err = assert_rant(:fail, "doc")
+            lines = err.split(/\n/)
+            lines.reject! { |s| s.strip.empty? }
+            assert_equal(4, lines.size)
+            assert_match(/ERROR.*in file.*line \d+/, lines[0])
+            assert_match(/RDoc not available/, lines[1])
+            assert_match(/doc.*fail/, lines[2])
+        end
     end
     def test_test
         assert_rant("test")

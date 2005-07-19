@@ -298,7 +298,7 @@ EOF
 		next if line =~ /^#! ?(\/|\\)?\w/
                 # uncomment line if +uncomment+ directive given
                 if line =~ /^\s*#.*#\s?rant-import:\s?uncomment\s*$/
-                    line.sub! '#', ''
+                    line.sub!(/#/, '')
                 end
                 # skip line if +remove+ directive given
                 next if line =~ /#\s?rant-import:\s?remove\s*$/

@@ -23,9 +23,17 @@ require 'rant/rantsys'
 # this object.
 Rant::MAIN_OBJECT = self
 
-unless Process::Status.method_defined?(:success?)
+unless Process::Status.method_defined?(:success?) # new in 1.8.2
     class Process::Status
         def success?;  exitstatus == 0; end
+    end
+end
+unless Regexp.respond_to? :union # new in 1.8.1
+    def Regexp.union(*patterns)
+        # let's hope it comes close to ruby-1.8.1 and upwards...
+        return /(?!)/ if patterns.empty?
+        # i guess the options are lost
+        Regexp.new(patterns.join("|"))
     end
 end
 if RUBY_VERSION < "1.8.2"
@@ -51,6 +59,13 @@ if RUBY_VERSION < "1.8.2"
                 flatten!
                 self
             end
+        end
+    end
+end
+if RUBY_VERSION < "1.8.1"
+    module FileUtils
+        def fu_list(arg)
+            arg.respond_to?(:to_ary) ? arg.to_ary : [arg]
         end
     end
 end

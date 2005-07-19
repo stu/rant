@@ -3,8 +3,11 @@ require 'test/unit'
 require 'rant/rantlib'
 require 'tutil'
 
-$examplesDir ||= File.expand_path(
-    File.join(File.dirname(File.dirname(__FILE__)), "doc", "examples"))
+#$examplesDir ||= File.expand_path(
+#    File.join(File.dirname(File.dirname(__FILE__)), "doc", "examples"))
+$examplesDir ||= File.join(
+    File.dirname(File.dirname(File.expand_path(__FILE__))),
+    "doc", "examples")
 
 $cc_is_gcc ||= Rant::Env.find_bin("cc") && Rant::Env.find_bin("gcc")
 class TestExamples < Test::Unit::TestCase
@@ -97,7 +100,7 @@ EOF
         if Rant::Env.find_bin("gcc") && Rant::Env.find_bin("g++")
             out = run_rant
             assert_exit
-            assert_equal(2, out.scan("Hello, world!").size)
+            assert_equal(2, out.scan(/Hello\, world\!/).size)
             out, err = assert_rant("build")
             assert(out.empty?)
             assert(err.empty?)

@@ -1,6 +1,8 @@
 
 = TODO
 
+== Don't use testrb as testrunner for RubyTest.
+
 == Solve archiving dependency problem
 Because of timed depdencies, the archiving tasks don't recognize if
 the only change is that a file was removed. The only exception is a

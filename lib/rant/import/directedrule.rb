@@ -105,7 +105,7 @@ class Rant::Generators::DirectedRule
     def define_hook
 	@rac.resolve_hooks << self
     end
-    def each_target &block
+    def each_target(&block)
 	@rac.cx.sys["#@target_dir/*"].each { |entry|
 	    yield entry if entry =~ @target_rx
 	}

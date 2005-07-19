@@ -65,7 +65,11 @@ module Rant
 		# We delay the require of the RDoc code until it is
 		# actually needed, so it will be only loaded if the
 		# rdoc task has to be run.
-		require 'rdoc/rdoc'
+                begin
+                    require 'rdoc/rdoc'
+                rescue LoadError
+                    app.abort_at(ch, "RDoc not available.")
+                end
 		args = self.rdoc_args
 		app.cmd_msg "rdoc #{args.join(' ')}" if @verbose
 		begin

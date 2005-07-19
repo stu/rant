@@ -49,9 +49,14 @@ module Test
             def assert_exit(status = 0)
                 assert_equal(status, $?.exitstatus)
             end
-	end
-    end
-end
+            if RUBY_VERSION < "1.8.1"
+                def assert_raise(*args, &block)
+                    assert_raises(*args, &block)
+                end
+            end
+	end # class TestCase
+    end # module Unit
+end # module Test
 
 RANT_BIN = File.expand_path(
     File.join(File.dirname(__FILE__), "..", "run_rant"))
