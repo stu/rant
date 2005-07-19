@@ -169,34 +169,71 @@ class TestRantImport < Test::Unit::TestCase
         FileUtils.mkdir "features.t"
         Dir.chdir "features.t"
         FileUtils.mkpath "rant/import"
-        open "rant/import/foo.rb", "w" do |f|
+        open "rant/import/t_loaded_features_foo.rb", "w" do |f|
             f << <<-EOF
-            def foo
-                puts "foo"
+            def t_loaded_features_foo
+                puts "t_loaded_features_foo"
             end
             EOF
         end
         open "Rantfile", "w" do |f|
             f << <<-EOF
-            import "foo"
-            require 'rant/import/foo'
+            import "t_loaded_features_foo"
+            require 'rant/import/t_loaded_features_foo'
             task :default do
-                foo
+                t_loaded_features_foo
             end
             EOF
         end
         out, err = assert_rant
-        assert_match(/foo/, out)
+        assert_match(/t_loaded_features_foo/, out)
         assert(err.empty?)
         run_import("-q", "--auto", "make.rb")
         assert_exit
         assert(test(?f, "make.rb"))
         out = run_ruby("make.rb")
         assert_exit
-        assert_match(/foo/, out)
+        assert_match(/t_loaded_features_foo/, out)
         FileUtils.rm_rf "rant"
         out = run_ruby("make.rb")
         assert_exit
-        assert_match(/foo/, out)
+        assert_match(/t_loaded_features_foo/, out)
+    end
+    def test_init_import
+        FileUtils.mkdir "init.t"
+        Dir.chdir "init.t"
+        FileUtils.mkpath "rant/import"
+        open "rant/import/t_init_import_foo.rb", "w" do |f|
+            f << <<-EOF
+            module Rant
+                def self.init_import_t_init_import_foo(rac, *rest)
+                    puts "init import t_init_import_foo"
+                    rac.cx.var["t_init_import_foo"] = "t_init_import_foo init"
+                end
+            end
+            EOF
+        end
+        open "Rantfile", "w" do |f|
+            f << <<-EOF
+            import "t_init_import_foo"
+            task :a do |t|
+                puts var[:t_init_import_foo]
+            end
+            import "t_init_import_foo"
+            EOF
+        end
+        out, err = assert_rant
+        assert_match(/\Ainit import t_init_import_foo\nt_init_import_foo init\n\n?\Z/m, out)
+        assert(err.empty?)
+        run_import("-q", "--auto", "make.rb")
+        assert_exit
+        assert(test(?f, "make.rb"))
+        out = run_ruby("make.rb")
+        assert_exit
+        assert_match(/\Ainit import t_init_import_foo\nt_init_import_foo init\n\n?\Z/m, out)
+        FileUtils.rm_rf "rant"
+        out = run_ruby("make.rb")
+        assert_exit
+        assert_match(/\Ainit import t_init_import_foo\nt_init_import_foo init\n\n?\Z/m, out)
     end
 end

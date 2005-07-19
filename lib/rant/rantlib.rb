@@ -594,6 +594,8 @@ class Rant::RantApp
 		    end
 		    Rant::CODE_IMPORTS << arg.dup
 		end
+                init_msg = "init_import_#{arg.gsub(/[^\w]/, '__')}"
+                Rant.send init_msg, self if Rant.respond_to? init_msg
 		@imports << arg.dup
 	    end
 	}

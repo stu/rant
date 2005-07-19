@@ -16,7 +16,7 @@
 # If you're looking for general info about Rant, read the
 # README[link:files/README.html].
 module Rant
-    VERSION	= '0.4.2'
+    VERSION	= '0.4.3'
 
     # Those are the filenames for rantfiles.
     # Case matters!
@@ -52,7 +52,7 @@ module Rant
     end
 
     module MetaUtils
-	# Creates two accessor methods:
+	# Creates three accessor methods:
 	#    obj.attr_name::	Return value of instance variable
 	#			@attr_name
 	#    obj.attr_name = val::	Set value instance variable
@@ -72,6 +72,24 @@ module Rant
 	    EOD
 	    nil
 	end
+        # Creates three accessor methods:
+        #   obj.attr_name?::    Return value, true or false
+        #   obj.attr_name::     Set attribute to true
+        #   obj.no_attr_name::  Set attribute to false
+        def rant_flag attr_name
+            attr_name = valid_attr_name attr_name
+            module_eval <<-EOD
+                def #{attr_name}?
+                    @#{attr_name}
+                end
+                def #{attr_name}
+                    @#{attr_name} = true
+                end
+                def no_#{attr_name}
+                    @#{attr_name} = false
+                end
+            EOD
+        end
 	# Creates accessor methods like #rant_attr for the attribute
 	# attr_name. Additionally, values are converted with to_str
 	# before assignment to instance variables happens.
