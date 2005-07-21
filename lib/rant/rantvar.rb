@@ -332,6 +332,14 @@ module Rant
 		!self[vid].nil?
 	    end
 
+            def _set(vid, val) #:nodoc:
+                @store[vid] = val
+            end
+
+            def _get(vid) #:nodoc:
+                @store[vid]
+            end
+
 	end	# class Space
 
 	module Constraint

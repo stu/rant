@@ -91,7 +91,7 @@ class Rant::Generators::C::Dependencies
 		f_task = tmp_rac.tasks[cf.to_str]
 		deps = f_task ? f_task.prerequisites : nil
 		if !deps or File.mtime(cf) > depfile_ts
-		    rac.cmd_msg "parsing #{cf}"
+		    rac.cmd_msg "scanning #{cf}"
 		    std_includes, local_includes = 
 			::Rant::C::Include.parse_includes(File.read(cf))
 		    deps = []

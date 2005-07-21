@@ -1,0 +1,9 @@
+
+@opt_out = "-o $(OUT)"
+@opt_object = "-c"
+@opt_debug = "-g"
+@opt_optimize = "-O2"
+@opt_optimize_level = "-O$(OPT_LEVEL)"
+@opt_include_dir = "-I$(INCLUDE_DIR)"
+
+# vim:ft=ruby

@@ -1,0 +1,8 @@
+
+import "metadata"
+
+task :dummy
+
+p var[:__meta_data__].fetch("cmd", "a")
+var[:__meta_data__].set("cmd", "touch a", "a")
+p var[:__meta_data__].fetch("cmd", "a")

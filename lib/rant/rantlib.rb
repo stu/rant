@@ -209,12 +209,12 @@ class RantAppContext
     include RantContext
 
     def initialize(app)
-	@rac = app
+	@__rac__ = app
     end
 
     # +rac+ stands for "rant compiler"
     def rac
-	@rac
+	@__rac__
     end
 
     def method_missing(sym, *args)
@@ -546,6 +546,8 @@ class Rant::RantApp
 	return 1
     ensure
 	# TODO: exception handling!
+        hooks = var._get("__at_return__")
+        hooks.each { |hook| hook.call } if hooks
 	@plugins.each { |plugin| plugin.rant_plugin_stop }
 	@plugins.each { |plugin| plugin.rant_quit }
 	# restore pwd
@@ -1033,6 +1035,18 @@ class Rant::RantApp
 	@resolve_hooks << block if block
     end
     public :at_resolve
+
+    # block will be called before this rac returns from #run
+    # pwd will be the projects root directory
+    def at_return(&block)
+        hooks = var._get("__at_return__")
+        if hooks
+            hooks << block
+        else
+            var._set("__at_return__", [block])
+        end
+    end
+    public :at_return
 
     # Returns a list with all tasks for which yield
     # returns true.
