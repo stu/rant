@@ -64,7 +64,7 @@ Running rant now:
     mytask
 
 Add prerequisites to create relations between tasks:
-    task :first => [:t1, :t2] do
+    task :first => [:t1, :t2] do |t|
 	puts t.name
     end
     task :t1 do |t|

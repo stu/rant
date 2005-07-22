@@ -31,7 +31,12 @@ module Rant
 
             # Fetch the meta value associated with the given key for
             # target in dir. Note that the value will probably end in
-            # a newline.
+            # a newline. Very important is, that the +dir+ (third
+            # argument, relative to the projects root directory) has
+            # to be the current working directory! An example:
+            #   project root directory: /home/foo/myproject
+            #   dir:                    bar
+            #   => Dir.pwd has to be:   /home/foo/myproject/bar
             #
             # Returns nil only if the value doesn't exist.
             def fetch(key, target, dir=@rac.current_subdir)
@@ -88,6 +93,7 @@ module Rant
             # assumes that dir is already the current working
             # directory
             def read_meta_file_in_dir(dir)
+                #puts "in dir: #{dir}, pwd: #{Dir.pwd}"
                 @read_dirs[dir] = true
                 #fn = dir.empty? ? META_FN : File.join(dir, META_FN)
                 fn = META_FN
@@ -99,7 +105,7 @@ module Rant
                     # Rant versions can add version and other
                     # information
                     invalid_format(fn) unless f.readline == "Rant\n"
-                    unless f.eof?
+                    until f.eof?
                         target_name = f.readline.chomp!
                         dstore[target_name] = read_target_data(f)
                     end
