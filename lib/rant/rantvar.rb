@@ -340,6 +340,10 @@ module Rant
                 @store[vid]
             end
 
+            def _init(vid, val) #:nodoc:
+                @store[vid] ||= val
+            end
+
 	end	# class Space
 
 	module Constraint
