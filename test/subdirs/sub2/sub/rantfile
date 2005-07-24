@@ -15,11 +15,6 @@ gen Task, "gt" => "dt" do |t|
     t.act { sys.touch t.name }
 end
 
-gen LightTask, "lt" do |lt|
-    lt.needed { !test(?f, lt.name) }
-    lt.act { sys.touch lt.name }
-end
-
 task :create_param do
     sys.touch var[:param]
 end

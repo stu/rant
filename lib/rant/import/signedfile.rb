@@ -162,7 +162,7 @@ module Rant
             def handle_node(dep, dep_str, opt)
                 # calculate checksum for plain file
                 if test(?f, dep_str)
-                    @cur_checksums << @sigs.signature_for_file(path)
+                    @cur_checksums << @sigs.signature_for_file(dep_str)
                 end
                 up = dep.invoke(opt)
                 goto_task_home

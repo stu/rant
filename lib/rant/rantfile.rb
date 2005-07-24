@@ -168,76 +168,6 @@ module Rant
 	end
     end	# module Node
 
-    # A very lightweight task for special purposes.
-    class LightTask
-	include Node
-
-	class << self
-	    def rant_gen(rac, ch, args, &block)
-		unless args.size == 1
-		    rac.abort("LightTask takes only one argument " +
-			"which has to be the taskname (string or symbol)")
-		end
-		rac.prepare_task({args.first => [], :__caller__ => ch},
-			block) { |name,pre,blk|
-		    # TODO: ensure pre is empty
-		    self.new(rac, name, &blk)
-		}
-	    end
-	end
-
-	def initialize(rac, name)
-	    super()
-	    @rac = rac or raise ArgumentError, "no rac given"
-	    @name = name
-	    @needed = nil
-	    @block = nil
-	    @done = false
-	    yield self if block_given?
-	end
-
-	def rac
-	    @rac
-	end
-
-	def needed(&block)
-	    @needed = block
-	end
-
-	def act(&block)
-	    @block = block
-	end
-
-	def needed?
-	    return false if done?
-	    return true if @needed.nil?
-	    goto_task_home
-	    @needed.arity == 0 ? @needed.call : @needed[self]
-	end
-
-	def invoke(opt = INVOKE_OPT)
-	    return circular_dep if @run
-	    @run = true
-	    begin
-		return needed? if opt[:needed?]
-		# +run+ already calls +goto_task_home+
-		#goto_task_home
-		if opt[:force] && !@done or needed?
-		    run
-		    @done = true
-		end
-	    rescue CommandError => e
-		err_msg e.message if rac[:err_commands]
-		self.fail(nil, e)
-	    rescue SystemCallError => e
-		err_msg e.message
-		self.fail(nil, e)
-	    ensure
-		@run = false
-	    end
-	end
-    end	# LightTask
-
     class Task
 	include Node
 	include Console
@@ -797,7 +727,6 @@ module Rant
 
     module Generators
 	Task = ::Rant::Task
-	LightTask = ::Rant::LightTask
 	Directory = ::Rant::DirTask
 	SourceNode = ::Rant::SourceNode
 

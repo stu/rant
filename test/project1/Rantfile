@@ -100,15 +100,6 @@ file "inc" => "incdep" do |t|
     sys.touch t.name
 end
 
-gen LightTask, :lighttask do |t|
-    t.needed do
-	!test ?f, "lt_target"
-    end
-    t.act do
-	sys.touch "lt_target"
-    end
-end
-
 gen Task, :task_one do |t|
     t.needed do
 	!test ?f, "one_target"
