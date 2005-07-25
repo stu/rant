@@ -51,14 +51,14 @@ class TestMetaData < Test::Unit::TestCase
             f << <<-EOF
             import "metadata"
             task :dummy
-            puts var[:__meta_data__].fetch("x", "a")
-            puts var[:__meta_data__].fetch("y", "a")
-            puts var[:__meta_data__].fetch("x", "b")
-            #STDERR.puts(var[:__meta_data__].instance_variable_get(:@store).inspect)
-            var[:__meta_data__].set("x", "1\n2\n\n", "a")
-            var[:__meta_data__].set("y", "3\n4", "a")
-            var[:__meta_data__].set("x", "5", "b")
-            #STDERR.puts(var[:__meta_data__].instance_variable_get(:@store).inspect)
+            puts var[:__metadata__].fetch("x", "a")
+            puts var[:__metadata__].fetch("y", "a")
+            puts var[:__metadata__].fetch("x", "b")
+            #STDERR.puts(var[:__metadata__].instance_variable_get(:@store).inspect)
+            var[:__metadata__].set("x", "1\n2\n\n", "a")
+            var[:__metadata__].set("y", "3\n4", "a")
+            var[:__metadata__].set("x", "5", "b")
+            #STDERR.puts(var[:__metadata__].instance_variable_get(:@store).inspect)
             EOF
         end
         out, err = assert_rant

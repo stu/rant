@@ -93,7 +93,7 @@ class Rant::Generators::DirectedRule
 		# pre 0.3.7
 		#[@rac.file(:__caller__ => @ch, name => src, &@block)]
 		[@rac.prepare_task({name => src}, @block, @ch) { |name,pre,blk|
-		    ::Rant::AutoSubFileTask.new(@rac, name, pre, &blk)
+		    @rac.node_factory.auto_subfile(@rac, name, pre, blk)
 		}]
 	    else
 		nil

@@ -7,7 +7,7 @@ module Rant
     
     def self.init_import_metadata(rac, *rest)
         mi = MetaData::Interface.new(rac)
-        rac.var._set("__meta_data__", mi)
+        rac.var._set("__metadata__", mi)
         rac.at_return(&mi.method(:save))
     end
     

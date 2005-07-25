@@ -3,14 +3,14 @@ import "metadata"
 
 task :dummy
 
-p var[:__meta_data__].fetch("cmd", "a")
-var[:__meta_data__].set("cmd", "touch a", "a")
+p var[:__metadata__].fetch("cmd", "a")
+var[:__metadata__].set("cmd", "touch a", "a")
 
 if var[:subdir]
     subdirs "sub"
     rac.goto "sub"
-        p var[:__meta_data__].fetch("cmd", "b", "sub")
+        p var[:__metadata__].fetch("cmd", "b", "sub")
     rac.goto "#"
 else
-    p var[:__meta_data__].fetch("cmd", "a")
+    p var[:__metadata__].fetch("cmd", "a")
 end

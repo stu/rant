@@ -6,7 +6,7 @@
 module Rant
     def self.init_import_signedfile(rac, *rest)
         rac.import "signature/md5" unless rac.var._get("__signature__")
-        rac.import "metadata" unless rac.var._get("__meta_data__")
+        rac.import "metadata" unless rac.var._get("__metadata__")
     end
     module Generators
         class SignedFile
@@ -92,7 +92,7 @@ module Rant
                     @cur_checksums.sort!
                     check_str = @cur_checksums.join
                     @cur_checksums = nil
-                    metadata = @rac.var._get("__meta_data__")
+                    metadata = @rac.var._get("__metadata__")
                     old_check_str = metadata.fetch(key, @name)
                     old_target_str = metadata.fetch(target_key, @name)
                     if File.exist?(@name)

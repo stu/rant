@@ -49,7 +49,7 @@ class Rant::Generators::SubFile
                 pre << dirp
 	    end
 	    rac.cx.desc file_desc
-	    ::Rant::FileTask.new(rac, name, pre, &blk)
+	    rac.node_factory.file(rac, name, pre, blk)
 	}
     end
 end

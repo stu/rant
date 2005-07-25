@@ -3,15 +3,15 @@ gen Task, "b" do |t|
     t.needed {
         #puts Dir.pwd
         #puts rac.current_subdir
-        rv = var[:__meta_data__].fetch("cmd", "b") != "create b"
-        #p var[:__meta_data__].fetch("cmd", "b")
-        #p var[:__meta_data__].instance_variable_get(:@read_dirs)
-        #p var[:__meta_data__].instance_variable_get(:@store)
+        rv = var[:__metadata__].fetch("cmd", "b") != "create b"
+        #p var[:__metadata__].fetch("cmd", "b")
+        #p var[:__metadata__].instance_variable_get(:@read_dirs)
+        #p var[:__metadata__].instance_variable_get(:@store)
         rv
     }
     t.act {
         sys.touch t.name
-        var[:__meta_data__].set("cmd", "create b", "b")
-        #p var[:__meta_data__].instance_variable_get(:@store)
+        var[:__metadata__].set("cmd", "create b", "b")
+        #p var[:__metadata__].instance_variable_get(:@store)
     }
 end

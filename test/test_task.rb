@@ -138,7 +138,7 @@ class TestTask < Test::Unit::TestCase
 	enhance_run = false
 	t_run = false
 	t2_run = false
-	app.gen Rant::Task, :t do |t|
+	app.gen Rant::Generators::Task, :t do |t|
 	    t.needed { true }
 	    t.act {
 		assert(t2_run,
@@ -146,7 +146,7 @@ class TestTask < Test::Unit::TestCase
 		t_run = true
 	    }
 	end
-	app.gen Rant::Task, :t2 do |t|
+	app.gen Rant::Generators::Task, :t2 do |t|
 	    t.needed { true }
 	    t.act { t2_run = true }
 	end

@@ -362,6 +362,8 @@ class Rant::RantApp
     # Note: Might change before 1.0
     attr_reader :resolve_hooks
 
+    attr_accessor :node_factory
+
     def initialize(*args)
 	unless args.empty?
 	    STDERR.puts caller[0]
@@ -396,6 +398,8 @@ class Rant::RantApp
 	@orig_pwd = nil
 	@current_subdir = ""
 	@resolve_hooks = []
+
+        @node_factory = Rant::DefaultNodeFactory.new
     end
 
     def [](opt)
@@ -567,13 +571,13 @@ class Rant::RantApp
 
     def task(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
-	    Rant::Task.new(self, name, pre, &blk)
+            @node_factory.task(self, name, pre, blk)
 	}
     end
 
     def file(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
-	    Rant::FileTask.new(self, name, pre, &blk)
+            @node_factory.file(self, name, pre, blk)
 	}
     end
 
@@ -680,7 +684,7 @@ class Rant::RantApp
 	    end
 	    warn_msg "enhance \"#{name}\": no such task",
 		"Generating a new file task with the given name."
-	    Rant::FileTask.new(self, name, pre, &blk)
+            @node_factory.file(self, name, pre, blk)
 	}
     end
 
@@ -943,7 +947,7 @@ class Rant::RantApp
             tn = nil
             prepare_task(targ, block, ch) { |name,pre,blk|
                 tn = name
-                Rant::FileTask.new(self, name, pre, &blk)
+                @node_factory.file(self, name, pre, blk)
             }
             build(tn)
         elsif target.respond_to? :to_rant_target
@@ -957,7 +961,7 @@ class Rant::RantApp
                 # create a file task
                 ch ||= Rant::Lib.parse_caller_elem(caller[1])
                 prepare_task(rt, block, ch) { |name,pre,blk|
-                    Rant::FileTask.new(self, name, pre, &blk)
+                    @node_factory.file(self, name, pre, blk)
                 }
                 build(rt)
             else

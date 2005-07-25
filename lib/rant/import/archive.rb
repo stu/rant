@@ -187,7 +187,7 @@ module Rant::Generators::Archive
 	def define_manifest_task
 	    return @manifest_task if @manifest_task
 	    @manifest_task =
-		@rac.gen ::Rant::Task, @manifest do |t|
+		@rac.gen ::Rant::Generators::Task, @manifest do |t|
 		    def t.each_target
 			goto_task_home
 			yield name

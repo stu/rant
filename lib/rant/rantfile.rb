@@ -6,6 +6,28 @@
 require 'rant/rantenv'
 
 module Rant
+
+    class DefaultNodeFactory
+        def task(rac, name, pre, blk)
+            Task.new(rac, name, pre, &blk)
+        end
+        def file(rac, name, pre, blk)
+            FileTask.new(rac, name, pre, &blk)
+        end
+        def dir(rac, name, pre, blk)
+            DirTask.new(rac, name, pre, &blk)
+        end
+        def source(rac, name, pre, blk)
+            SourceNode.new(rac, name, pre, &blk)
+        end
+        def custom(rac, name, pre, blk)
+            UserTask.new(rac, name, pre, &blk)
+        end
+        def auto_subfile(rac, name, pre, blk)
+            AutoSubFileTask.new(rac, name, pre, &blk)
+        end
+    end
+
     class TaskFail < StandardError
 	def initialize(*args)
 	    @task = args.shift
@@ -157,15 +179,6 @@ module Rant
 	    false
 	end
 	private :circular_dep
-
-	# Tasks are hashed by their full_name.
-	def hash
-	    full_name.hash
-	end
-
-	def eql? other
-	    Node === other and full_name.eql? other.full_name
-	end
     end	# module Node
 
     class Task
@@ -173,17 +186,6 @@ module Rant
 	include Console
 
 	T0 = Time.at(0).freeze
-
-	class << self
-	    def rant_gen(rac, ch, args, &block)
-		if args.size == 1
-		    UserTask.rant_gen(rac, ch, args, &block)
-		else
-		    rac.abort("Task generator currently takes only one" +
-			" argument. (generates a UserTask)")
-		end
-	    end
-	end
 
 	def initialize(rac, name, prerequisites = [], &block)
 	    super()
@@ -364,7 +366,7 @@ module Rant
 		    end
 		else
 		    t = t.to_s if Symbol === t
-		    if t == my_full_name
+		    if t == my_full_name #TODO
 			nil
 		    else
 			#STDERR.puts "selecting `#{t}'"
@@ -390,19 +392,6 @@ module Rant
     # A UserTask is equivalent to a Task, but it additionally takes a
     # block (see #needed) which is used to determine if it is needed?.
     class UserTask < Task
-
-	class << self
-	    def rant_gen(rac, ch, args, &block)
-		unless args.size == 1
-		    rac.abort("UserTask takes only one argument " +
-			"which has to be like one given to the " +
-			"`task' function")
-		end
-		rac.prepare_task(args.first, nil, ch) { |name,pre,blk|
-		    self.new(rac, name, pre, &block)
-		}
-	    end
-	end
 
 	def initialize(*args)
 	    super
@@ -518,68 +507,6 @@ module Rant
     # directory.
     class DirTask < Task
 
-	class << self
-
-	    # Generate a task for making a directory path.
-	    # Prerequisites can be given, which will be added as
-	    # prerequistes for the _last_ directory.
-	    #
-	    # A special feature is used if you provide a block: The
-	    # block will be called after complete directory creation.
-	    # After the block execution, the modification time of the
-	    # directory will be updated.
-	    def rant_gen(rac, ch, args, &block)
-		case args.size
-		when 1
-		    name, pre = rac.normalize_task_arg(args.first, ch)
-		    self.task(rac, ch, name, pre, &block)
-		when 2
-		    basedir = args.shift
-		    if basedir.respond_to? :to_str
-			basedir = basedir.to_str
-		    else
-			rac.abort_at(ch,
-			    "Directory: basedir argument has to be a string.")
-		    end
-		    name, pre = rac.normalize_task_arg(args.first, ch)
-		    self.task(rac, ch, name, pre, basedir, &block)
-		else
-		    rac.abort_at(ch, "Directory takes one argument, " +
-			"which should be like one given to the `task' command.")
-		end
-	    end
-
-	    # Returns the task which creates the last directory
-	    # element (and has all other necessary directories as
-	    # prerequisites).
-	    def task(rac, ch, name, prerequisites=[], basedir=nil, &block)
-		dirs = ::Rant::Sys.split_path(name)
-		if dirs.empty?
-		    rac.abort_at(ch,
-			"Not a valid directory name: `#{name}'")
-		end
-		path = basedir
-		last_task = nil
-		task_block = nil
-		desc_for_last = rac.pop_desc
-		dirs.each { |dir|
-                    pre = [path]
-                    pre.compact!
-		    if dir.equal?(dirs.last)
-			rac.cx.desc desc_for_last
-                        pre = prerequisites + pre
-			task_block = block
-		    end
-		    path = path.nil? ? dir : File.join(path, dir)
-		    last_task = rac.prepare_task({:__caller__ => ch,
-			    path => pre}, task_block) { |name,pre,blk|
-			self.new(rac, name, pre, &blk)
-		    }
-		}
-		last_task
-	    end
-	end
-
 	def initialize(*args)
 	    super
 	    @ts = T0
@@ -646,18 +573,6 @@ module Rant
     #	gen SourceNode, "myext.c" => %w(ruby.h myext.h)
     class SourceNode
 	include Node
-
-	def self.rant_gen(rac, ch, args)
-	    unless args.size == 1
-		rac.abort_at(ch, "SourceNode takes one argument.")
-	    end
-	    if block_given?
-		rac.abort_at(ch, "SourceNode doesn't take a block.")
-	    end
-	    rac.prepare_task(args.first, nil, ch) { |name, pre, blk|
-		new(rac, name, pre, &blk)
-	    }
-	end
 
 	def initialize(rac, name, prerequisites = [])
 	    super()
@@ -726,9 +641,97 @@ module Rant
     end # class SourceNode
 
     module Generators
-	Task = ::Rant::Task
-	Directory = ::Rant::DirTask
-	SourceNode = ::Rant::SourceNode
+        #Task = ::Rant::Task
+        #Directory = ::Rant::DirTask
+        #SourceNode = ::Rant::SourceNode
+
+        class Task
+	    def self.rant_gen(rac, ch, args, &block)
+		unless args.size == 1
+		    rac.abort("Task takes only one argument " +
+			"which has to be like one given to the " +
+			"`task' function")
+		end
+		rac.prepare_task(args.first, nil, ch) { |name,pre,blk|
+		    rac.node_factory.custom(rac, name, pre, block)
+		}
+	    end
+        end
+
+        class Directory
+	    # Generate a task for making a directory path.
+	    # Prerequisites can be given, which will be added as
+	    # prerequistes for the _last_ directory.
+	    #
+	    # A special feature is used if you provide a block: The
+	    # block will be called after complete directory creation.
+	    # After the block execution, the modification time of the
+	    # directory will be updated.
+	    def self.rant_gen(rac, ch, args, &block)
+		case args.size
+		when 1
+		    name, pre = rac.normalize_task_arg(args.first, ch)
+		    self.task(rac, ch, name, pre, &block)
+		when 2
+		    basedir = args.shift
+		    if basedir.respond_to? :to_str
+			basedir = basedir.to_str
+		    else
+			rac.abort_at(ch,
+			    "Directory: basedir argument has to be a string.")
+		    end
+		    name, pre = rac.normalize_task_arg(args.first, ch)
+		    self.task(rac, ch, name, pre, basedir, &block)
+		else
+		    rac.abort_at(ch, "Directory takes one argument, " +
+			"which should be like one given to the `task' command.")
+		end
+	    end
+
+	    # Returns the task which creates the last directory
+	    # element (and has all other necessary directories as
+	    # prerequisites).
+	    def self.task(rac, ch, name, prerequisites=[], basedir=nil, &block)
+		dirs = ::Rant::Sys.split_path(name)
+		if dirs.empty?
+		    rac.abort_at(ch,
+			"Not a valid directory name: `#{name}'")
+		end
+		path = basedir
+		last_task = nil
+		task_block = nil
+		desc_for_last = rac.pop_desc
+		dirs.each { |dir|
+                    pre = [path]
+                    pre.compact!
+		    if dir.equal?(dirs.last)
+			rac.cx.desc desc_for_last
+                        pre = prerequisites + pre
+			task_block = block
+		    end
+		    path = path.nil? ? dir : File.join(path, dir)
+		    last_task = rac.prepare_task({:__caller__ => ch,
+			    path => pre}, task_block) { |name,pre,blk|
+			rac.node_factory.dir(rac, name, pre, blk)
+		    }
+		}
+		last_task
+	    end
+        end
+
+        class SourceNode
+            def self.rant_gen(rac, ch, args)
+                unless args.size == 1
+                    rac.abort_at(ch, "SourceNode takes one argument.")
+                end
+                if block_given?
+                    rac.abort_at(ch, "SourceNode doesn't take a block.")
+                end
+                rac.prepare_task(args.first, nil, ch) { |name, pre, blk|
+                    rac.node_factory.source(rac, name, pre, blk)
+                }
+            end
+        end
 
 	class Rule < ::Proc
 	    # Generate a rule by installing an at_resolve hook for
