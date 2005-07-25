@@ -10,8 +10,10 @@
 require 'getoptlong'
 require 'rant/rantvar'
 require 'rant/rantenv'
-require 'rant/rantfile'
 require 'rant/rantsys'
+require 'rant/node'
+require 'rant/import/nodes/default' # could be optimized away
+require 'rant/coregen'
 
 # There is one problem with executing Rantfiles in a special context:
 # In the top-level execution environment, there are some methods
@@ -286,6 +288,16 @@ end	# module Rant
 class Rant::RantApp
     include Rant::Console
 
+    class AutoLoadNodeFactory
+        def initialize(rac)
+            @rac = rac
+        end
+        def method_missing(sym, *args, &block)
+            @rac.import "nodes/default"
+            @rac.node_factory.send(sym, *args, &block)
+        end
+    end
+
     # Important: We try to synchronize all tasks referenced indirectly
     # by @rantfiles with the task hash @tasks. The task hash is
     # intended for fast task lookup per task name.
@@ -399,7 +411,7 @@ class Rant::RantApp
 	@current_subdir = ""
 	@resolve_hooks = []
 
-        @node_factory = Rant::DefaultNodeFactory.new
+        @node_factory = AutoLoadNodeFactory.new(self)
     end
 
     def [](opt)
@@ -571,13 +583,13 @@ class Rant::RantApp
 
     def task(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
-            @node_factory.task(self, name, pre, blk)
+            @node_factory.new_task(self, name, pre, blk)
 	}
     end
 
     def file(targ, &block)
 	prepare_task(targ, block) { |name,pre,blk|
-            @node_factory.file(self, name, pre, blk)
+            @node_factory.new_file(self, name, pre, blk)
 	}
     end
 
@@ -684,7 +696,7 @@ class Rant::RantApp
 	    end
 	    warn_msg "enhance \"#{name}\": no such task",
 		"Generating a new file task with the given name."
-            @node_factory.file(self, name, pre, blk)
+            @node_factory.new_file(self, name, pre, blk)
 	}
     end
 
@@ -947,7 +959,7 @@ class Rant::RantApp
             tn = nil
             prepare_task(targ, block, ch) { |name,pre,blk|
                 tn = name
-                @node_factory.file(self, name, pre, blk)
+                @node_factory.new_file(self, name, pre, blk)
             }
             build(tn)
         elsif target.respond_to? :to_rant_target
@@ -961,7 +973,7 @@ class Rant::RantApp
                 # create a file task
                 ch ||= Rant::Lib.parse_caller_elem(caller[1])
                 prepare_task(rt, block, ch) { |name,pre,blk|
-                    @node_factory.file(self, name, pre, blk)
+                    @node_factory.new_file(self, name, pre, blk)
                 }
                 build(rt)
             else

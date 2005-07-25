@@ -3,183 +3,32 @@
 #
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
-require 'rant/rantenv'
-
 module Rant
 
+    def self.init_import_nodes__default(rac, *rest)
+        rac.node_factory = DefaultNodeFactory.new
+    end
+
     class DefaultNodeFactory
-        def task(rac, name, pre, blk)
+        def new_task(rac, name, pre, blk)
             Task.new(rac, name, pre, &blk)
         end
-        def file(rac, name, pre, blk)
+        def new_file(rac, name, pre, blk)
             FileTask.new(rac, name, pre, &blk)
         end
-        def dir(rac, name, pre, blk)
+        def new_dir(rac, name, pre, blk)
             DirTask.new(rac, name, pre, &blk)
         end
-        def source(rac, name, pre, blk)
+        def new_source(rac, name, pre, blk)
             SourceNode.new(rac, name, pre, &blk)
         end
-        def custom(rac, name, pre, blk)
+        def new_custom(rac, name, pre, blk)
             UserTask.new(rac, name, pre, &blk)
         end
-        def auto_subfile(rac, name, pre, blk)
+        def new_auto_subfile(rac, name, pre, blk)
             AutoSubFileTask.new(rac, name, pre, &blk)
         end
     end
-
-    class TaskFail < StandardError
-	def initialize(*args)
-	    @task = args.shift
-	    #super(args.shift)
-	    @orig = args.shift
-	end
-	def task
-	    @task
-	end
-	def tname
-	    @task ? @task.name : nil
-	end
-	# the exception which caused the task to fail
-	def orig
-	    @orig
-	end
-    end
-
-    class Rantfile
-
-	attr_reader :tasks, :path
-	attr_accessor :project_subdir
-	
-	def initialize(path)
-	    @path = path or raise ArgumentError, "path required"
-	    @tasks = []
-	    @project_subdir = nil
-	end
-	def to_s
-	    @path
-	end
-    end	# class Rantfile
-
-    # Any +object+ is considered a _task_ if
-    # <tt>Rant::Node === object</tt> is true.
-    #
-    # Most important classes including this module are the Rant::Task
-    # class and the Rant::FileTask class.
-    module Node
-
-	INVOKE_OPT = {}.freeze
-
-	# Name of the task, this is always a string.
-	attr_reader :name
-	# A reference to the Rant compiler this task belongs to.
-	attr_reader :rac
-	# Description for this task.
-	attr_accessor :description
-	# The rantfile this task was defined in.
-	# Should be a Rant::Rantfile instance.
-	attr_accessor :rantfile
-	# The linenumber in rantfile where this task was defined.
-	attr_accessor :line_number
-	# The directory in which this task was defined, relative to
-	# the projects root directory.
-        attr_accessor :project_subdir
-	
-	def initialize
-	    @description = nil
-	    @rantfile = nil
-	    @line_number = nil
-	    @run = false
-            @project_subdir = ""
-	end
-
-	# Returns the name of this task.
-	def to_s
-	    name
-	end
-
-        def to_rant_target
-            name
-        end
-
-	# Basically project_subdir/name
-	#
-	# The Rant compiler (or application) references tasks by their
-	# full_name.
-	def full_name
-	    sd = project_subdir
-	    sd.empty? ? name : File.join(sd, name)
-	end
-
-	# Change current working directory to the directory this task
-	# was defined in.
-	#
-	# Important for subclasses: Call this method always before
-	# invoking code from Rantfiles (e.g. task action blocks).
-	def goto_task_home
-	    @rac.goto_project_dir project_subdir
-	end
-
-	def done?
-	    @done
-	end
-
-	def needed?
-	    !done?
-	end
-
-	# True during invoke. Used to encounter circular dependencies.
-	def run?
-	    @run
-	end
-
-	# +opt+ is a Hash and shouldn't be modified.
-	# All objects implementing the Rant::Node protocol should
-	# know about the following +opt+ values:
-	# <tt>:needed?</tt>::
-	#	Just check if this task is needed.  Should do the same
-	#	as calling Node#needed?
-	# <tt>:force</tt>::
-	#	Run task action even if needed? is false.
-	# Returns true if task action was run.
-	def invoke(opt = INVOKE_OPT)
-	    return circular_dep if run?
-	    @run = true
-	    begin
-		return needed? if opt[:needed?]
-		self.run if opt[:force] || self.needed?
-	    ensure
-		@run = false
-	    end
-	end
-
-	# Cause task to fail. Usually called from inside the block
-	# given to +act+.
-	def fail msg = nil, orig = nil
-            msg ||= ""
-	    raise TaskFail.new(self, orig), msg, caller
-	end
-
-	# Change pwd to task home directory and yield for each created
-	# file/directory.
-	#
-	# Override in subclasses if your task instances create files.
-	def each_target
-	end
-
-	def run
-	    return unless @block
-	    goto_task_home
-	    @block.arity == 0 ? @block.call : @block[self]
-	end
-	private :run
-
-	def circular_dep
-	    rac.warn_msg "Circular dependency on task `#{full_name}'."
-	    false
-	end
-	private :circular_dep
-    end	# module Node
 
     class Task
 	include Node
@@ -573,7 +422,6 @@ module Rant
     #	gen SourceNode, "myext.c" => %w(ruby.h myext.h)
     class SourceNode
 	include Node
-
 	def initialize(rac, name, prerequisites = [])
 	    super()
 	    @rac = rac
@@ -584,12 +432,10 @@ module Rant
 	    # dependencies:
 	    @ts = nil
 	end
-
 	# Use this readonly!
 	def prerequisites
 	    @pre
 	end
-
 	# Note: The timestamp will only be calculated once!
 	def timestamp
 	    # Circular dependencies don't generate endless
@@ -629,201 +475,11 @@ module Rant
 	    }
 	    @ts
 	end
-
 	def needed?
 	    false
 	end
-
 	def invoke(opt = INVOKE_OPT)
 	    false
 	end
-
     end # class SourceNode
-
-    module Generators
-        #Task = ::Rant::Task
-        #Directory = ::Rant::DirTask
-        #SourceNode = ::Rant::SourceNode
-
-        class Task
-	    def self.rant_gen(rac, ch, args, &block)
-		unless args.size == 1
-		    rac.abort("Task takes only one argument " +
-			"which has to be like one given to the " +
-			"`task' function")
-		end
-		rac.prepare_task(args.first, nil, ch) { |name,pre,blk|
-		    rac.node_factory.custom(rac, name, pre, block)
-		}
-	    end
-        end
-
-        class Directory
-	    # Generate a task for making a directory path.
-	    # Prerequisites can be given, which will be added as
-	    # prerequistes for the _last_ directory.
-	    #
-	    # A special feature is used if you provide a block: The
-	    # block will be called after complete directory creation.
-	    # After the block execution, the modification time of the
-	    # directory will be updated.
-	    def self.rant_gen(rac, ch, args, &block)
-		case args.size
-		when 1
-		    name, pre = rac.normalize_task_arg(args.first, ch)
-		    self.task(rac, ch, name, pre, &block)
-		when 2
-		    basedir = args.shift
-		    if basedir.respond_to? :to_str
-			basedir = basedir.to_str
-		    else
-			rac.abort_at(ch,
-			    "Directory: basedir argument has to be a string.")
-		    end
-		    name, pre = rac.normalize_task_arg(args.first, ch)
-		    self.task(rac, ch, name, pre, basedir, &block)
-		else
-		    rac.abort_at(ch, "Directory takes one argument, " +
-			"which should be like one given to the `task' command.")
-		end
-	    end
-
-	    # Returns the task which creates the last directory
-	    # element (and has all other necessary directories as
-	    # prerequisites).
-	    def self.task(rac, ch, name, prerequisites=[], basedir=nil, &block)
-		dirs = ::Rant::Sys.split_path(name)
-		if dirs.empty?
-		    rac.abort_at(ch,
-			"Not a valid directory name: `#{name}'")
-		end
-		path = basedir
-		last_task = nil
-		task_block = nil
-		desc_for_last = rac.pop_desc
-		dirs.each { |dir|
-                    pre = [path]
-                    pre.compact!
-		    if dir.equal?(dirs.last)
-			rac.cx.desc desc_for_last
-                        pre = prerequisites + pre
-			task_block = block
-		    end
-		    path = path.nil? ? dir : File.join(path, dir)
-		    last_task = rac.prepare_task({:__caller__ => ch,
-			    path => pre}, task_block) { |name,pre,blk|
-			rac.node_factory.dir(rac, name, pre, blk)
-		    }
-		}
-		last_task
-	    end
-        end
-
-        class SourceNode
-            def self.rant_gen(rac, ch, args)
-                unless args.size == 1
-                    rac.abort_at(ch, "SourceNode takes one argument.")
-                end
-                if block_given?
-                    rac.abort_at(ch, "SourceNode doesn't take a block.")
-                end
-                rac.prepare_task(args.first, nil, ch) { |name, pre, blk|
-                    rac.node_factory.source(rac, name, pre, blk)
-                }
-            end
-        end
-
-	class Rule < ::Proc
-	    # Generate a rule by installing an at_resolve hook for
-	    # +rac+.
-	    def self.rant_gen(rac, ch, args, &block)
-		unless args.size == 1
-		    rac.abort_at(ch, "Rule takes only one argument.")
-		end
-		arg = args.first
-		target = nil
-		src_arg = nil
-		if Symbol === arg
-		    target = ".#{arg}"
-		elsif arg.respond_to? :to_str
-		    target = arg.to_str
-		elsif Regexp === arg
-		    target = arg
-		elsif Hash === arg && arg.size == 1
-		    arg.each_pair { |target, src_arg| }
-		    src_arg = src_arg.to_str if src_arg.respond_to? :to_str
-		    target = target.to_str if target.respond_to? :to_str
-		    src_arg = ".#{src_arg}" if Symbol === src_arg
-		    target = ".#{target}" if Symbol === target
-		else
-		    rac.abort_at(ch, "Rule argument " +
-			"has to be a hash with one key-value pair.")
-		end
-		esc_target = nil
-		target_rx = case target
-		when String
-		    esc_target = Regexp.escape(target)
-		    /#{esc_target}$/
-		when Regexp
-		    target
-		else
-		    rac.abort_at(ch, "rule target has " +
-			"to be a string or regular expression")
-		end
-		src_proc = case src_arg
-		when String
-		    unless String === target
-			rac.abort(ch, "rule target has to be a string " +
-			    "if source is a string")
-		    end
-		    lambda { |name| name.sub(/#{esc_target}$/, src_arg) }
-		when Proc: src_arg
-		when nil: lambda { |name| [] }
-		else
-		    rac.abort_at(ch, "rule source has to be " +
-			"String or Proc")
-		end
-		blk = self.new { |task_name|
-		    if target_rx =~ task_name
-                        have_src = true
-                        src = src_proc[task_name]
-                        if src.respond_to? :to_ary
-                            src.each { |f|
-                                if rac.resolve(f).empty? && !test(?e, f)
-                                    have_src = false
-                                    break
-                                end
-                            }
-                        else
-                            if rac.resolve(src).empty? && !test(?e, src)
-                                have_src = false
-                            end
-                        end
-                        if have_src
-                            t = rac.file(:__caller__ => ch,
-                                    task_name => src_proc[task_name], &block)
-                            t.project_subdir = rac.current_subdir
-                            [t]
-                        end
-		    end
-		}
-		blk.target_rx = target_rx
-		rac.resolve_hooks << blk
-		nil
-	    end
-	    attr_accessor :target_rx
-	end	# class Rule
-
-	class Action
-	    def self.rant_gen(rac, ch, args, &block)
-		unless args.empty?
-		    rac.warn_msg(rac.pos_text(ch[:file], ch[:ln]),
-			"Action doesn't take arguments.")
-		end
-		unless (rac[:tasks] || rac[:stop_after_load])
-		    yield
-		end
-	    end
-	end
-    end	# module Generators
 end # module Rant

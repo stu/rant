@@ -3,6 +3,8 @@
 
 require 'rant/plugin_methods'
 require 'rant/cs_compiler'
+# TODO
+require 'rant/import/nodes/default'
 
 module Rant
 

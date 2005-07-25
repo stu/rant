@@ -61,7 +61,7 @@ class TestSys < Test::Unit::TestCase
     # ...
     def test_standalone
 	out = `#{Rant::Sys.sp(Rant::Env::RUBY)} -I#{Rant::Sys.sp(RANT_DEV_LIB_DIR)} standalone.rf`
-	assert(0, $?)
+        assert_exit
 	assert_match(/^t_standalone/, out)
     end
 end

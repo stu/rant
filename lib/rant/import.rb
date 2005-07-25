@@ -103,6 +103,10 @@ module Rant
 		@imports.concat(@rantapp.imports)
 		@plugins.concat(@rantapp.plugins.map { |p| p.name })
 	    end
+
+            #unless @imports.include? "nodes/default"
+                #@imports.unshift "nodes/default"
+            #end
 	    
 	    if File.exist?(@mono_fn) && !@force
 		abort("#{@mono_fn} exists. Rant won't overwrite this file.",
