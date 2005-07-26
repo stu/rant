@@ -1,0 +1,41 @@
+
+import "nodes/signed", "autoclean"
+
+var :content => "1\n"
+
+task :a => "f1.t"
+
+file "f1.t" do |t|
+    write_content(t.name)
+end
+
+gen Directory, "d1.t"
+
+gen Directory, "base.t", "s/s" => ["a.t", "f1.t"] do |t|
+    fn = t.name + "/t"
+    puts "copying to #{fn}"
+    open fn, "w" do |f|
+        f.write(File.read(t.source))
+        f.write(File.read("f1.t"))
+    end
+end
+
+if var["subfile"]
+    import "subfile"
+    gen SubFile, "d2.t/f" => "f1.t" do |t|
+        sys.cp t.source, t.name
+    end
+end
+
+file "f2.t" => ["base.t/s/s"] do |t|
+    sys.cp "#{t.source}/t", t.name
+end
+
+def write_content(fn)
+    puts "writing #{fn}"
+    open fn, "w" do |f|
+        f.write var[:content]
+    end
+end
+
+gen AutoClean

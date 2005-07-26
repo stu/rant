@@ -17,7 +17,7 @@ module Rant
                     rac.abort_at(ch, "SignedFile: too many arguments")
                 end
                 rac.prepare_task(args.first, block, ch) { |name,pre,blk|
-                    SignedFile.new(rac, name, pre, &blk)
+                    self.new(rac, name, pre, &blk)
                 }
             end
 
@@ -86,6 +86,7 @@ module Rant
                     key = "prerequisites_sig_#{@sigs.name}"
                     target_key = "target_sig_#{@sigs.name}"
                     up = signed_process_prerequisites(opt)
+                    up ||= opt[:force]
                     if @needed_blk
                         up = true if @needed_blk.call(self)
                     end
@@ -95,11 +96,13 @@ module Rant
                     metadata = @rac.var._get("__metadata__")
                     old_check_str = metadata.fetch(key, @name)
                     old_target_str = metadata.fetch(target_key, @name)
-                    if File.exist?(@name)
+                    # check explicitely for plain file, thus allow the
+                    # target of a SignedFile to be a directory ;)
+                    if test(?f, @name)
                         target_str = @sigs.signature_for_file(@name)
                     else
-                        target_str = nil
-                        up = true
+                        target_str = ""
+                        up ||= !File.exist?(@name)
                     end
                     check_str_changed = old_check_str != check_str
                     target_changed = old_target_str != target_str
@@ -108,8 +111,8 @@ module Rant
                     return false unless up
                     # run action and save checksums
                     run
-                    target_str = File.exist?(@name) ?
-                        @sigs.signature_for_file(@name) : "0"
+                    target_str = test(?f, @name) ?
+                        @sigs.signature_for_file(@name) : ""
                     target_changed = target_str != old_target_str
                     if target_changed
                         metadata.set(target_key, target_str, @name)
@@ -171,9 +174,19 @@ module Rant
             end
             def handle_node(dep, dep_str, opt)
                 up = dep.invoke(opt)
-                # calculate checksum for plain file
-                if test(?f, dep_str)
+                if dep.respond_to? :signature
+                    @cur_checksums << dep.signature
+                elsif test(?d, dep_str)
+                    @cur_checksums << @sigs.signature_for_string(dep_str)
+                elsif File.exist?(dep_str)
+                    # calculate checksum for plain file
                     @cur_checksums << @sigs.signature_for_file(dep_str)
+                end
+                if dep.respond_to? :related_sources
+                    dep.goto_task_home
+                    dep.related_sources.each { |f|
+                        handle_file(f)
+                    }
                 end
                 goto_task_home
                 up
@@ -182,8 +195,39 @@ module Rant
                 @cur_checksums << @sigs.signature_for_file(path)
             end
             def handle_dir(path)
-                @cur_checksums << @sigs.signature_for_dir(path)
+                @cur_checksums << @sigs.signature_for_string(path)
             end
         end # class SignedFile
+
+        class AutoSubSignedFile < SignedFile
+            include AutoInvokeDirNode
+        end
+
+        class SignedDirectory < SignedFile
+            def respond_to?(meth)
+                if meth == :signature
+                    @block
+                else
+                    super
+                end
+            end
+            def signature
+                goto_task_home
+                sigs = @rac.var._get("__signature__")
+                md = @rac.var._get("__metadata__")
+                key = "prerequisites_sig_#{sigs.name}"
+                md.fetch(key, @name)
+            end
+            private
+            def run
+                goto_task_home
+                @rac.cx.sys.mkdir @name unless test ?d, @name
+                if @block
+                    @block.arity == 0 ? @block.call : @block[self]
+                    # for compatibility with mtime based tasks
+                    @rac.cx.sys.touch @name
+                end
+            end
+        end # class SignedDirectory
     end # module Generators
 end # module Rant

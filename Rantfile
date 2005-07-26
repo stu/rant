@@ -1,6 +1,8 @@
 
 # Rantfile for Rant :)
 
+import "nodes/signed"
+
 import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper)
 
 task :default => :test

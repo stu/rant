@@ -2,7 +2,6 @@
 require 'test/unit'
 require 'tutil'
 
-
 $testImportSignedFileDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestSignedFile < Test::Unit::TestCase
@@ -229,6 +228,7 @@ class TestSignedFile < Test::Unit::TestCase
         out, err = assert_rant(:fail, "s1.t")
         assert(out.empty?)
         assert_match(/ERROR.*s1\.t/, err)
+        assert(!test(?e, ".rant.meta"))
     end
     def test_sub1
         out, err = assert_rant("sub1/s1.t")
@@ -240,5 +240,102 @@ class TestSignedFile < Test::Unit::TestCase
         assert(out.empty?)
         assert_equal("1\n", File.read("f2.t"))
         assert_equal("1\n", File.read("sub1/s1.t"))
+    end
+    def test_rant_import
+        run_import "--auto", "-q", "make.t"
+        assert_exit
+        out = run_ruby("make.t", "sub1/s1.t")
+        assert_exit
+        assert(test(?f, "f2.t"))
+        assert(test(?f, "sub1/s1.t"))
+        out = run_ruby("make.t", "sub1/s1.t")
+        assert(out.empty?)
+        assert_equal("1\n", File.read("f2.t"))
+        assert_equal("1\n", File.read("sub1/s1.t"))
+    ensure
+        FileUtils.rm_f "make.t"
+    end
+    def test_dep_on_mtime_dirnode
+        out, err = assert_rant("d1.t/f13.t")
+        assert(err.empty?)
+        assert(!out.empty?)
+        assert(test(?f, "d1.t/f13.t"))
+        assert_equal("1\n", File.read("d1.t/f13.t"))
+        out, err = assert_rant("d1.t/f13.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    end
+    def test_dep_on_dir
+        FileUtils.mkdir "d2.t"
+        FileUtils.mkdir "d3.t"
+        out, err = assert_rant("d2.t/f14.t")
+        assert(err.empty?)
+        assert(!out.empty?)
+        assert(test(?f, "d2.t/f14.t"))
+        assert_equal("1\n", File.read("d2.t/f14.t"))
+        out, err = assert_rant("d2.t/f14.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        out, err = assert_rant("d2.t/f14.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        out, err = assert_rant("d3.t/f14.t", "dn2=d3.t")
+        assert(err.empty?)
+        assert_equal("writing d3.t/f14.t\n", out)
+        assert(test(?f, "d3.t/f14.t"))
+        assert_equal("1\n", File.read("d3.t/f14.t"))
+        out, err = assert_rant("d3.t/f14.t", "dn2=d3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        out, err = assert_rant("d3.t/f14.t", "dn2=d3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    ensure
+        FileUtils.rm_rf %w(d2.t d3.t)
+    end
+    def test_force
+        out, err = assert_rant("f3.t")
+        assert(test(?f, "f2.t"))
+        assert(test(?f, "f3.t"))
+        assert(err.empty?)
+        assert_equal("writing f2.t\nwriting f3.t\n", out)
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        out, err = assert_rant("-af3.t")
+        assert_equal("writing f2.t\nwriting f3.t\n", out)
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    end
+    def test_dep_on_self
+        out, err = nil, nil
+        th = Thread.new { out, err = assert_rant("f15.t") }
+        assert_equal(th, th.join(0.5))
+        assert_match(/WARNING/, err)
+        assert_match(/f15\.t/, err)
+        assert(test(?f, "f15.t"))
+        th = Thread.new { assert_rant("f15.t") }
+        assert_equal(th, th.join(0.5))
+        assert_match(/WARNING/, err)
+        assert_match(/f15\.t/, err)
+    end
+    def test_circular_dependency
+        out, err = nil, nil
+        th = Thread.new { out, err = assert_rant("f17.t") }
+        assert_equal(th, th.join(0.5))
+        assert_match(/WARNING/, err)
+        assert_match(/f17\.t/, err)
+        assert(test(?f, "f16.t"))
+        assert(test(?f, "f17.t"))
+    end
+    def test_mkdir
+        out, err = assert_rant("f18.t")
+        assert(err.empty?)
+        assert(!out.empty?)
+        assert(test(?d, "f18.t"))
+        out, err = assert_rant("f18.t")
+        assert(err.empty?)
+        assert(out.empty?)
     end
 end

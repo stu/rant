@@ -1,6 +1,44 @@
 
 = TODO
 
+== Semantics of directories as prerequisites of file creating nodes.
+
+Currently there are two so called "file creating" nodes: FileTask and
+SignedFile. The following treatments of a directory as prerequisite
+are possible:
+
+1. Current behaviour:
+   FileTask::   If a directory node exists, invoke it and compare if
+                the modification time of the directory is newer than
+                the target file.
+   SignedFile:: If a directory node exists, invoke it. If the
+                invocation return true, rebuild target file. If no
+                directory node exists, create a signature of the
+                directory by reading its entries and check this
+                signature against the signature of the last time the
+                target file was built.
+
+2. Just check if a directory node exists and invoke it. Trigger target
+   rebuild if +invoke+ returns true. If no node exists do nothing
+   special, the directory doesn't trigger a target file rebuild.
+
+I'm currently in favour of #2.
+
+---
+*Update*
+
+Current behaviour:
+FileTask::      If a directory node exists, invoke it and compare if
+                the modification time of the directory is newer than
+                the target file. If no node exists, just compare the
+                modification time.
+SignedFile::    If a directory node exists, invoke it and trigger a
+                rebuild if +invoke+ returns true. Anyway create a
+                signature of the path, which results in a rebuild if
+                the directory path changes once. This could be
+                considered an inconsistency since path/name changes of
+                other prerequisites don't trigger a rebuild.
+
 == Don't use testrb as testrunner for RubyTest.
 
 == Solve archiving dependency problem

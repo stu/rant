@@ -51,6 +51,33 @@ gen SignedFile, "f12.t" do |t|
     write_content(t.name)
 end
 
+gen Directory, "d1.t"
+
+gen SignedFile, "d1.t/f13.t" => "d1.t" do |t|
+    write_content(t.name)
+end
+
+var :dn2 => "d2.t"
+gen SignedFile, "#{var :dn2}/f14.t" => var[:dn2] do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f15.t" => "f15.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f16.t" => "f17.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f17.t" => "f16.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f18.t" do |t|
+    sys.mkdir t.name
+end
+
 subdirs "sub1"
 
 gen AutoClean

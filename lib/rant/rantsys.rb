@@ -510,6 +510,13 @@ module Rant
 	def fu_output_message(msg)	#:nodoc:
 	    ::Rant.rac.cmd_msg msg if ::Rant.rac
 	end
+        private :fu_output_message
+
+        def fu_each_src_dest(src, *rest)
+            src = src.to_ary if src.respond_to? :to_ary
+            super(src, *rest)
+        end
+        private :fu_each_src_dest
 
 	# Run an external command. When given one argument, this is
 	# subject to shell interpretation. Otherwise the first

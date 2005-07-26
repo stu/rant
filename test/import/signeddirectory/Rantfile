@@ -1,0 +1,15 @@
+
+import "signeddirectory", "autoclean"
+
+gen SignedDirectory, "d1.t"
+
+gen SignedDirectory, "d2.t" do |t|
+    sys.touch "#{t.name}/a"
+end
+
+gen SignedDirectory, "d3.t" => sys["{a,b,c}.t"] do |t|
+    sys.rm_f sys["#{t.name}/*"]
+    sys.cp t.prerequisites, t.name
+end
+
+gen AutoClean

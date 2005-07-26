@@ -1,5 +1,5 @@
 
-# rantfile.rb - Define task core for rant.
+# default.rb - Default node types for Rant.
 #
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
@@ -338,17 +338,20 @@ module Rant
 	end
     end	# class FileTask
 
-    class AutoSubFileTask < FileTask
+    module AutoInvokeDirNode
 	private
 	def run
-	    dir, = File.split(name)
-	    unless dir == "."
-		dt = @rac.resolve(dir, project_subdir).last
-		dt.invoke if DirTask === dt
-	    end
-	    super
+            goto_task_home
+	    dir = File.dirname(name)
+            @rac.build dir unless dir == "."
+            return unless @block
+            @block.arity == 0 ? @block.call : @block[self]
 	end
-    end	# class AutoSubFileTask
+    end
+
+    class AutoSubFileTask < FileTask
+        include AutoInvokeDirNode
+    end
 
     # An instance of this class is a task to create a _single_
     # directory.
@@ -479,5 +482,8 @@ module Rant
 	def invoke(opt = INVOKE_OPT)
 	    false
 	end
+        def related_sources
+            @pre
+        end
     end # class SourceNode
 end # module Rant

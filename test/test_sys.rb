@@ -64,4 +64,22 @@ class TestSys < Test::Unit::TestCase
         assert_exit
 	assert_match(/^t_standalone/, out)
     end
+    def test_cp_with_filelist
+        rac = Rant::RantApp.new
+        rac[:quiet] = true
+        open "a.t", "w" do |f|
+            f.puts "a"
+        end
+        open "b.t", "w" do |f|
+            f.puts "b"
+        end
+        FileUtils.mkdir "cp.t"
+        assert_nothing_raised {
+            rac.cx.sys.cp rac.cx.sys["a.t","b.t"], "cp.t"
+            assert_equal("a\n", File.read("cp.t/a.t"))
+            assert_equal("b\n", File.read("cp.t/b.t"))
+        }
+    ensure
+        FileUtils.rm_rf %w(cp.t a.t b.t)
+    end
 end
