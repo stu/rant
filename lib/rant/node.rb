@@ -6,11 +6,14 @@
 module Rant
 
     class TaskFail < StandardError
-	def initialize(*args)
-	    @task = args.shift
-	    #super(args.shift)
-	    @orig = args.shift
+	def initialize(task, orig, msg)
+	    @task = task
+	    @orig = orig
+            @msg = msg
 	end
+        def exception
+            self
+        end
 	def task
 	    @task
 	end
@@ -21,6 +24,9 @@ module Rant
 	def orig
 	    @orig
 	end
+        def msg
+            @msg
+        end
     end
 
     class Rantfile
@@ -44,6 +50,8 @@ module Rant
     module Node
 
 	INVOKE_OPT = {}.freeze
+
+	T0 = Time.at(0).freeze
 
 	# Name of the task, this is always a string.
 	attr_reader :name
@@ -131,8 +139,7 @@ module Rant
 	# Cause task to fail. Usually called from inside the block
 	# given to +act+.
 	def fail msg = nil, orig = nil
-            msg ||= ""
-	    raise TaskFail.new(self, orig), msg, caller
+            raise TaskFail.new(self, orig, msg)
 	end
 
 	# Change pwd to task home directory and yield for each created

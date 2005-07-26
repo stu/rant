@@ -108,7 +108,8 @@ module Rant
                     return false unless up
                     # run action and save checksums
                     run
-                    target_str = @sigs.signature_for_file(@name)
+                    target_str = File.exist?(@name) ?
+                        @sigs.signature_for_file(@name) : "0"
                     target_changed = target_str != old_target_str
                     if target_changed
                         metadata.set(target_key, target_str, @name)
@@ -117,12 +118,21 @@ module Rant
                         metadata.set(key, check_str, @name)
                     end
                     return target_changed
+                rescue TaskFail => e
+                    raise
                 rescue Exception => e
                     self.fail(nil, e)
                 ensure
                     @sigs = nil
                     @run = false
                 end
+            end
+            def each_target
+                goto_task_home
+                yield @name
+            end
+            def timestamp
+                File.exist?(@name) ? File.mtime(@name) : T0
             end
             private
             # returns true if update required
@@ -145,7 +155,7 @@ module Rant
                             elsif File.exist?(dep_str)
                                 handle_file(dep_str)
                             else
-                                err_msg @rac.pos_text(rantfile.path, line_number),
+                                rac.err_msg @rac.pos_text(rantfile.path, line_number),
                                     "in prerequisites: no such file or task: `#{dep_str}'"
                                 self.fail
                             end
@@ -160,11 +170,11 @@ module Rant
                 up
             end
             def handle_node(dep, dep_str, opt)
+                up = dep.invoke(opt)
                 # calculate checksum for plain file
                 if test(?f, dep_str)
                     @cur_checksums << @sigs.signature_for_file(dep_str)
                 end
-                up = dep.invoke(opt)
                 goto_task_home
                 up
             end

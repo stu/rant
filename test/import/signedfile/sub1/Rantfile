@@ -1,0 +1,4 @@
+
+gen SignedFile, "s1.t" => "#f2.t" do |t|
+    write_content(t.name)
+end

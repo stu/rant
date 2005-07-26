@@ -61,12 +61,10 @@ class Rant::Generators::AutoClean
 	end
     end
     def self.clean(rac, entry)
-	if test ?e, entry
-	    if test ?f, entry
-		rac.cx.sys.rm_f entry
-	    else
-		rac.cx.sys.rm_rf entry
-	    end
-	end
+        if test ?f, entry
+            rac.cx.sys.rm_f entry
+        elsif test ?e, entry
+            rac.cx.sys.rm_rf entry
+        end
     end
 end

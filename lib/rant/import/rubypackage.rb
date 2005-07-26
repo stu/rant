@@ -201,7 +201,8 @@ class Rant::Generators::RubyPackage
 
     def pkg_dir_task
 	return if @pkg_dir_task
-	@pkg_dir_task = @app.gen(Rant::Generators::Directory, @pkg_dir)
+	@pkg_dir_task =
+            Rant::Generators::Directory.rant_gen(@app, @ch, [@pkg_dir])
     end
 
     # Create task for gem building. If tname is a true value, a

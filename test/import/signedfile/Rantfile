@@ -1,0 +1,63 @@
+
+import "signedfile", "autoclean"
+
+var :content => "1\n"
+
+gen SignedFile, "f1.t"
+
+gen SignedFile, "f2.t" do |t|
+    write_content(t.name)
+end
+
+desc "create f3.t"
+gen SignedFile, "f3.t" => "f2.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f4.t" => ["f3.t"] do |t|
+    write_content(t.name)
+end
+
+file "f5.t" => "f2.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f6.t" => "f5.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f7.t" => ["a.t", "f2.t", "b.t"] do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f8.t" => "f1.t" do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f9.t" => "f1.t" do |t|
+    t.fail "need #{t.source}" unless test(?f, t.source)
+    write_content(t.name)
+end
+
+gen SignedFile, "f10.t" do |t|
+    puts "should create f10.t"
+end
+
+gen SignedFile, "f11.t" => ["sub1/s1.t", "f12.t"] do |t|
+    write_content(t.name)
+end
+
+gen SignedFile, "f12.t" do |t|
+    write_content(t.name)
+end
+
+subdirs "sub1"
+
+gen AutoClean
+
+def write_content(fn)
+    puts "writing #{fn}"
+    open fn, "w" do |f|
+        f.write(var[:content])
+    end
+end

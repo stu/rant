@@ -1352,6 +1352,11 @@ class Rant::RantApp
                 msg << orig.backtrace[0..4] unless ch
             end
 	end
+        if e.msg && !e.msg.empty?
+            ch = get_ch_from_backtrace(e.backtrace)
+            t_msg.unshift(e.msg)
+            t_msg.unshift(pos_text(ch[:file], ch[:ln])) if ch
+        end
 	err_msg msg unless msg.empty?
 	err_msg t_msg
     end

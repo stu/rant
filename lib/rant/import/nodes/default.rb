@@ -34,8 +34,6 @@ module Rant
 	include Node
 	include Console
 
-	T0 = Time.at(0).freeze
-
 	def initialize(rac, name, prerequisites = [], &block)
 	    super()
 	    @rac = rac || Rant.rac
