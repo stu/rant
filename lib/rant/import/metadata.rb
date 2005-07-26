@@ -9,6 +9,7 @@ module Rant
         mi = MetaData::Interface.new(rac)
         rac.var._set("__metadata__", mi)
         rac.at_return(&mi.method(:save))
+        rac.var._init("__autoclean_common__", []) << MetaData::META_FN
     end
     
     module MetaData

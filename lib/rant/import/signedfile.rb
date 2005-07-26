@@ -143,7 +143,7 @@ module Rant
                 up = false
                 # set with already handled prerequisites, don't
                 # handle on prerequisite multiple times
-                handled = {}
+                handled = {@name => true}
                 my_subdir = project_subdir
                 @pre.each { |dep|
                     dep_str = dep.to_rant_target

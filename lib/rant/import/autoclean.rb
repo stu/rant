@@ -58,6 +58,17 @@ class Rant::Generators::AutoClean
 		    end
 		}
 	    end
+            common = rac.var._get("__autoclean_common__")
+            if common
+                rac.rantfiles.each{ |rf|
+                    sd = rf.project_subdir
+                    common.each { |fn|
+                        path = sd.empty? ? fn : File.join(sd, fn)
+                        clean rac, path
+                    }
+                }
+            end
+            t.goto_task_home
 	end
     end
     def self.clean(rac, entry)

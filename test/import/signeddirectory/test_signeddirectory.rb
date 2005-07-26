@@ -11,8 +11,6 @@ class TestSignedDirectory < Test::Unit::TestCase
     end
     def teardown
 	Dir.chdir($testImportSignedDirectoryDir)
-        #FileUtils.rm_rf Dir["*.t"]
-        FileUtils.rm_f ".rant.meta" # TODO: enhance AutoClean
         assert_rant("autoclean")
         assert(Dir["*.t"].empty?)
         assert(!test(?e, ".rant.meta"))
