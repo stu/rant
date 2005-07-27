@@ -65,7 +65,15 @@ module Rant
                     pre.compact!
 		    if dir.equal?(dirs.last)
 			rac.cx.desc desc_for_last
-                        pre = prerequisites + pre
+
+                        # add prerequisites to pre
+                        # if prerequisites is a FileList: there is
+                        # only one save (no later removal) way to add
+                        # an entry: with <<
+                        dp = prerequisites.dup
+                        pre.each { |elem| dp << elem }
+                        pre = dp
+
 			task_block = block
 		    end
 		    path = path.nil? ? dir : File.join(path, dir)

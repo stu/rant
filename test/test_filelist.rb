@@ -158,6 +158,20 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(1, l2.size)
 	end
     end
+    def test_3addition
+        cx = Rant::RantApp.new.cx
+        touch_temp %w(a.t1 a.t2 b.t2) do
+            l1 = cx.sys["a*"]
+            l1.exclude "*.t2"
+            l2 = cx.sys["*.t2"]
+            l3 = l1 + l2
+            %w(a.t1 a.t2 b.t2).each { |fn|
+                assert(l3.include(fn), "#{fn} missing")
+            }
+            l3.lazy_uniq!
+            assert_equal(3, l3.size)
+        end
+    end
     def test_add_array
 	touch_temp %w(1.t 2.t) do
 	    l1 = fl "*.t"
@@ -165,7 +179,18 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(2, l1.size)
 	    assert_equal(3, l2.size)
 	    assert(l2.include?("x"))
+            assert_equal("x", l2.last)
 	end
+    end
+    def test_2add_array
+        touch_temp %w(a.t) do
+            l1 = fl("*.t")
+            l1.resolve
+            a = %w(x)
+            l2 = l1 + a
+            a << "y"
+            assert_equal(%w(a.t x), l2.to_ary)
+        end
     end
     def test_glob
 	touch_temp %w(t.t1 t.t2) do
@@ -341,6 +366,15 @@ class TestFileList < Test::Unit::TestCase
             assert(fl.include?("a.t"))
         end
     end
+    def test_ignore_and_shift_op
+        cx = Rant::RantApp.new.cx
+        cx.var[:ignore] << /CVS/
+        touch_temp %w(CVS.t a.t a.tt) do
+            fl = cx.sys["*.t"] << "CVS"
+            fl.include "*.tt"
+            assert_equal(%w(a.t CVS a.tt), fl.to_a)
+        end
+    end
     def test_map
         cx = Rant::RantApp.new.cx
         touch_temp %w(a.t b.t) do
@@ -368,6 +402,16 @@ class TestFileList < Test::Unit::TestCase
         cx = Rant::RantApp.new.cx
         assert_equal("a b", cx.sys[].concat(%w(a b)).to_s)
         assert_equal("", "#{cx.sys[]}")
+    end
+    def test_var_ignore_and_dup
+        cx = Rant::RantApp.new.cx
+        cx.var[:ignore] << "a.t"
+        touch_temp %w(a.t b.t a.tt) do
+            fl = cx.sys["*.t"] + cx.sys["*.tt"]
+            assert_equal(2, fl.size)
+            assert(fl.include?("b.t"))
+            assert(fl.include?("a.tt"))
+        end
     end
 if Rant::Env.on_windows?
     def test_to_s_quoting_spaces_win

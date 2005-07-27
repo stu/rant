@@ -19,7 +19,8 @@ module Rant
 	# Initialized to 0.
 	attr_accessor :glob_flags
 	
-	attr_reader :ignore_rx
+	attr_accessor :ignore_rx
+        protected :ignore_rx=
 
 	class << self
 	    def [](*patterns)
@@ -33,6 +34,7 @@ module Rant
 	    @actions = patterns.map { |pat| [:apply_include, pat] }
 	    @ignore_rx = nil
 	    @pending = true
+            @keep = {}
 	    yield self if block_given?
 	end
 
@@ -41,6 +43,7 @@ module Rant
 	    c.files = @files.dup
 	    c.actions = @actions.dup
 	    c.ignore_rx = @ignore_rx.dup if @ignore_rx
+            c.instance_variable_set(:@keep, @keep.dup)
 	    c
 	end
 
@@ -67,35 +70,32 @@ module Rant
 	end
 
 	def +(other)
-	    case other
-	    when Array
-		c = dup
-		c.files.concat(other)
-		c
-	    when FileList
+            if FileList === other
 		c = other.dup
 		c.actions.concat(@actions)
 		c.files.concat(@files)
 		c.pending = !c.actions.empty?
 		c
-	    else
+            elsif other.respond_to? :to_ary
+		c = dup
+                c.actions <<
+                    [:apply_ary_method_1, :concat, other.to_ary.dup]
+                c.pending = true
+		c
+            else
 		raise "argument has to be an Array or FileList"
-	    end
+            end
 	end
 
-        # Add file to filelist unless it matches an exclude pattern.
-        # Take care: Don't rely on any order when inserting a file
-        # with this method!
-	def add(file)
-	    @files << file unless file =~ ignore_rx
-	    self
-	end
-
-        # Like #add but doesn't honor exclude patterns.
+        # Use this method to append +file+ to this list. +file+ will
+        # stay in this list even if it matches an exclude or ignore
+        # pattern.
+        #
         # Returns self.
         def <<(file)
-            #STDERR.puts caller unless String === file
             @actions << [:apply_ary_method_1, :push, file]
+            @keep[file] = true
+            @pending = true
             self
         end
 
@@ -132,7 +132,7 @@ module Rant
 	    @actions.clear
 	    ix = ignore_rx
 	    if ix
-		@files.reject! { |f| f =~ ix }
+		@files.reject! { |f| f =~ ix && !@keep[f] }
 	    end
 	end
 
@@ -182,14 +182,14 @@ module Rant
 
 	def apply_exclude(pattern)
 	    @files.reject! { |elem|
-		File.fnmatch? pattern, elem, @glob_flags
+		File.fnmatch?(pattern, elem, @glob_flags) && !@keep[elem]
 	    }
 	end
 	private :apply_exclude
 
 	def apply_exclude_rx(rx)
 	    @files.reject! { |elem|
-		elem =~ rx
+		elem =~ rx && !@keep[elem]
 	    }
 	end
 	private :apply_exclude_rx
@@ -262,12 +262,13 @@ module Rant
 	    entry = nil
 	    unless name
 		@files.reject! { |entry|
-		    test(?d, entry)
+		    test(?d, entry) && !@keep[entry]
 		}
 		return
 	    end
 	    elems = nil
 	    @files.reject! { |entry|
+                next if @keep[entry]
 		elems = Sys.split_path(entry)
 		i = elems.index(name)
 		if i
@@ -283,7 +284,9 @@ module Rant
 	# Remove all files which have the given name.
 	def no_file(name)
             @actions << [:apply_ary_method, :reject!,
-                lambda { |entry| entry == name and test(?f, entry) }]
+                lambda { |entry|
+                    entry == name && !@keep[entry] && test(?f, entry)
+                }]
 	    @pending = true
 	    self
 	end
@@ -302,7 +305,7 @@ module Rant
 	    @files.reject! { |entry|
 		elems = Sys.split_path(entry)
 		elems.any? { |elem|
-		    elem =~ /#{suffix}$/
+		    elem =~ /#{suffix}$/ && !@keep[entry]
 		}
 	    }
 	end
@@ -321,7 +324,7 @@ module Rant
 	    @files.reject! { |entry|
 		elems = Sys.split_path(entry)
 		elems.any? { |elem|
-		    elem =~ /^#{prefix}/
+		    elem =~ /^#{prefix}/ && !@keep[entry]
 		}
 	    }
 	end
@@ -356,6 +359,8 @@ module Rant
             self
         end
 
+        # Same as #map! but evaluation is delayed until the next read
+        # access (e.g. by calling #each). Always returns self.
         def lazy_map!(&block)
             @actions << [:apply_ary_method, :map!, block]
             @pending = true

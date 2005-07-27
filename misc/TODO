@@ -1,6 +1,21 @@
 
 = TODO
 
+== Deprecate plugin API
+
+... and provide alternatives for the Configure and CSharp plugins.
+
+== FileList
+
+FileList objects need a method which adds a file which won't be
+removed by any pattern (also not affected by var[:ignore]).
+
+---
+Done (0.4.3).
+
+Use FileList#<< to append a single entry which won't be removed by
+exclude/ignore patterns.
+
 == Semantics of directories as prerequisites of file creating nodes.
 
 Currently there are two so called "file creating" nodes: FileTask and
