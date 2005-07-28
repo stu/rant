@@ -57,6 +57,20 @@ file "f6.t" => "c5.t" do |t|
     write_content(t.name)
 end
 
+gen Rule, ".r.t" => ".t" do |t|
+    sys.cp t.source, t.name
+end
+
+gen Rule, ".r.t" => ".tt" do |t|
+    sys.cp t.source, t.name
+end
+
+gen SourceNode, "c7.t" => ["f1.t", "c8.t"]
+
+file "f7.t" => "c7.t" do |t|
+    sys.cp t.source, t.name
+end
+
 subdirs "sub1"
 
 def write_content(fn)

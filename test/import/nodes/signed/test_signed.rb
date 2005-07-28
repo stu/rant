@@ -13,6 +13,9 @@ class TestNodesSigned < Test::Unit::TestCase
 	Dir.chdir($testImportNodesSignedDir)
         assert_rant("autoclean")
         assert(Dir["*.t"].empty?)
+        assert(Dir["*.tt"].empty?)
+        assert(Dir["sub1/*.t"].empty?)
+        assert(Dir["sub1/*.tt"].empty?)
         assert(!test(?e, ".rant.meta"))
     end
     def write(fn, str)
@@ -276,5 +279,104 @@ class TestNodesSigned < Test::Unit::TestCase
         FileUtils.rm_f "sub1/c2.t"
         FileUtils.rm_f "c5.t"
         FileUtils.rm_f "c6.t"
+    end
+    def test_rule
+        write("sub1/c1.t", "c\n")
+        write("sub1/c2.t", "c\n")
+        write("c5.t", "c\n")
+        write("c6.t", "c\n")
+        out, err = assert_rant("c5.r.t")
+        assert(err.empty?)
+        assert_match(/cp.*c5\.t.*c5\.r\.t\n/, out)
+        assert(test(?f, "c5.r.t"))
+        assert_equal("c\n", File.read("c5.r.t"))
+        out, err = assert_rant("c5.r.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("sub1/c2.t", "c2\n")
+        out, err = assert_rant("c5.r.t")
+        assert(err.empty?)
+        assert_match(/cp.*c5\.t.*c5\.r\.t\n/, out)
+        assert_equal("c\n", File.read("c5.r.t"))
+        out, err = assert_rant("c5.r.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("autoclean")
+        assert(test(?f, "sub1/c1.t"))
+        assert(test(?f, "sub1/c2.t"))
+        assert(test(?f, "c5.t"))
+        assert(test(?f, "c6.t"))
+        assert(!test(?e, "c5.r.t"))
+    ensure
+        FileUtils.rm_f "sub1/c1.t"
+        FileUtils.rm_f "sub1/c2.t"
+        FileUtils.rm_f "c5.t"
+        FileUtils.rm_f "c6.t"
+    end
+    def test_2rule
+        write("1.tt", "t\n")
+        out, err = assert_rant("1.r.t")
+        assert(err.empty?)
+        assert_match(/cp.*1\.tt.*1\.r\.t/, out)
+        assert(test(?f, "1.r.t"))
+        assert_equal("t\n", File.read("1.r.t"))
+        out, err = assert_rant("1.r.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("1.tt", "r\n")
+        out, err = assert_rant("1.r.t")
+        assert(err.empty?)
+        assert_match(/cp.*1\.tt.*1\.r\.t/, out)
+        assert(test(?f, "1.r.t"))
+        assert_equal("r\n", File.read("1.r.t"))
+        out, err = assert_rant("1.r.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    ensure
+        FileUtils.rm_f "1.tt"
+    end
+    def test_source_node_with_file_pre
+        write("c7.t", "c\n")
+        write("c8.t", "c\n")
+        out, err = assert_rant("f7.t")
+        assert(err.empty?)
+        assert_match(/cp.*c7\.t.*f7\.t/, out)
+        out, err = assert_rant("f7.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("c8.t", "c8\n")
+        out, err = assert_rant("f7.t")
+        assert(err.empty?)
+        assert_match(/cp.*c7\.t.*f7\.t/, out)
+        out, err = assert_rant("f7.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("-af1.t", "content=2")
+        assert_equal("2", File.read("f1.t"))
+        out, err = assert_rant("f7.t")
+        assert(err.empty?)
+        assert_match(/cp.*c7\.t.*f7\.t/, out)
+        out, err = assert_rant("f7.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("autoclean")
+        assert(test(?f, "c7.t"))
+        assert(test(?f, "c8.t"))
+        assert(!test(?e, "f7.t"))
+    ensure
+        FileUtils.rm_f "c7.t"
+        FileUtils.rm_f "c8.t"
+    end
+    def test_source_node_no_invoke_pre
+        write("c7.t", "c\n")
+        write("c8.t", "c\n")
+        out, err = assert_rant("c7.t")
+        assert(err.empty?)
+        assert(!test(?e, "f1.t"),
+            "SourceNode#invoke shouldn't invoke prerequisites")
+        assert(out.empty?)
+    ensure
+        FileUtils.rm_f "c7.t"
+        FileUtils.rm_f "c8.t"
     end
 end

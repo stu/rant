@@ -137,6 +137,13 @@ module Rant
             def timestamp
                 File.exist?(@name) ? File.mtime(@name) : T0
             end
+            def signature
+                goto_task_home
+                sigs = @rac.var._get("__signature__")
+                md = @rac.var._get("__metadata__")
+                key = "target_sig_#{sigs.name}"
+                md.fetch(key, @name)
+            end
             private
             # returns true if update required
             def signed_process_prerequisites(opt)
