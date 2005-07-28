@@ -172,21 +172,15 @@ module Rant
                 }
                 up
             end
-            def handle_node(dep, dep_str, opt)
-                up = dep.invoke(opt)
-                if dep.respond_to? :signature
-                    @cur_checksums << dep.signature
-                elsif test(?d, dep_str)
-                    @cur_checksums << @sigs.signature_for_string(dep_str)
-                elsif File.exist?(dep_str)
+            def handle_node(node, dep_str, opt)
+                up = node.invoke(opt)
+                if node.respond_to? :signature
+                    @cur_checksums << node.signature
+                elsif test(?f, dep_str)
                     # calculate checksum for plain file
-                    @cur_checksums << @sigs.signature_for_file(dep_str)
-                end
-                if dep.respond_to? :related_sources
-                    dep.goto_task_home
-                    dep.related_sources.each { |f|
-                        handle_file(f)
-                    }
+                    handle_file(dep_str)
+                elsif File.exist?(dep_str)
+                    @cur_checksums << @sigs.signature_for_string(dep_str)
                 end
                 goto_task_home
                 up

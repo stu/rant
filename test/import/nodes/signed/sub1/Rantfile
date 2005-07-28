@@ -1,0 +1,2 @@
+
+gen SourceNode, "c1.t" => "c2.t"

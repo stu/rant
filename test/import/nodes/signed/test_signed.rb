@@ -115,4 +115,166 @@ class TestNodesSigned < Test::Unit::TestCase
         FileUtils.rm_f "a.t"
         FileUtils.rm_rf "base.t"
     end
+    def test_source_node_single_fail
+        out, err = assert_rant(:fail, "f3.t")
+        assert(out.empty?)
+        assert(!test(?e, "f3.t"))
+        assert(!test(?e, "c1.t"))
+        assert(!test(?e, ".rant.meta"))
+        lines = err.split(/\n/)
+        assert(lines.size < 5)
+        assert_match(/ERROR.*Rantfile.*34/, lines[0])
+        assert_match(/SourceNode.*c1\.t/, lines[1])
+        assert_match(/Task.*f3\.t.*fail/, lines[2])
+    end
+    def test_source_node_single
+        write("c1.t", "c\n")
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(test(?f, "f3.t"))
+        assert_equal("c\n", File.read("f3.t"))
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("autoclean")
+        assert(!test(?e, "f3.t"))
+        assert(test(?f, "c1.t"))
+        assert_equal("c\n", File.read("c1.t"))
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(test(?f, "f3.t"))
+        assert_equal("c\n", File.read("f3.t"))
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("c1.t", "c1\n")
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert_equal("writing f3.t\n", out)
+        assert_equal("c1\n", File.read("f3.t"))
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    ensure
+        FileUtils.rm_f "c1.t"
+    end
+    def test_source_node_fail
+        write("c1.t", "c\n")
+        write("c2.t", "c\n")
+        out, err = assert_rant(:fail, "f4.t")
+        assert(test(?f, "f3.t"))
+        assert_equal("writing f3.t\n", out)
+        lines = err.split(/\n/)
+        assert(lines.size < 5)
+        assert_match(/ERROR.*Rantfile.*36/, lines[0])
+        assert_match(/SourceNode.*c3\.t/, lines[1])
+        assert_match(/Task.*f4\.t.*fail/, lines[2])
+        out, err = assert_rant("f3.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    ensure
+        FileUtils.rm_f "c1.t"
+        FileUtils.rm_f "c2.t"
+    end
+    def test_source_node
+        write("c1.t", "c\n")
+        write("c2.t", "c\n")
+        write("c3.t", "c\n")
+        out, err = assert_rant("f4.t")
+        assert(err.empty?)
+        assert(!out.empty?)
+        assert(test(?f, "f3.t"))
+        assert(test(?f, "f4.t"))
+        assert_equal("c\nc\n", File.read("f4.t"))
+        out, err = assert_rant("f4.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("c3.t", "c3\n")
+        out, err = assert_rant("f4.t")
+        assert(err.empty?)
+        assert_equal("writing f4.t\n", out)
+        assert_equal("c\nc\n", File.read("f4.t"))
+        out, err = assert_rant("f4.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("autoclean")
+        assert(test(?f, "c1.t"))
+        assert(test(?f, "c2.t"))
+        assert(test(?f, "c3.t"))
+        assert(!test(?e, "f3.t"))
+        assert(!test(?e, "f4.t"))
+    ensure
+        FileUtils.rm_f "c1.t"
+        FileUtils.rm_f "c2.t"
+        FileUtils.rm_f "c3.t"
+    end
+    def test_2source_node
+        write("c1.t", "c\n")
+        write("c2.t", "c\n")
+        write("c3.t", "c\n")
+        write("c4.t", "c\n")
+        out, err = assert_rant("f5.t")
+        assert(err.empty?)
+        assert(test(?f, "f5.t"))
+        assert_match(/cp.*c2\.t.*f5\.t/, out)
+        assert_equal("c\n", File.read("f5.t"))
+        out, err = assert_rant("f5.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("c3.t", "c3\n")
+        out, err = assert_rant("f5.t")
+        assert(err.empty?)
+        assert_match(/cp.*c2\.t.*f5\.t/, out)
+        assert_equal("c\n", File.read("f5.t"))
+        out, err = assert_rant("f5.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("autoclean")
+        assert(test(?f, "c1.t"))
+        assert(test(?f, "c2.t"))
+        assert(test(?f, "c3.t"))
+        assert(test(?f, "c4.t"))
+        assert(!test(?e, "f5.t"))
+    ensure
+        FileUtils.rm_f "c1.t"
+        FileUtils.rm_f "c2.t"
+        FileUtils.rm_f "c3.t"
+        FileUtils.rm_f "c4.t"
+    end
+    def test_source_node_in_subdir
+        write("sub1/c1.t", "c\n")
+        write("sub1/c2.t", "c\n")
+        write("c5.t", "c\n")
+        write("c6.t", "c\n")
+        out, err = assert_rant("f6.t")
+        assert(err.empty?)
+        assert_equal("writing f6.t\n", out)
+        assert(test(?f, "f6.t"))
+        assert_equal("1\n", File.read("f6.t"))
+        out, err = assert_rant("f6.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        write("sub1/c2.t", "c2\n")
+        out, err = assert_rant("f6.t")
+        assert(err.empty?)
+        assert_equal("writing f6.t\n", out)
+        assert_equal("1\n", File.read("f6.t"))
+        out, err = assert_rant("f6.t")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("autoclean")
+        assert(test(?f, "sub1/c1.t"))
+        assert(test(?f, "sub1/c2.t"))
+        assert(test(?f, "c5.t"))
+        assert(test(?f, "c6.t"))
+        assert(!test(?e, "f6.t"))
+    ensure
+        FileUtils.rm_f "sub1/c1.t"
+        FileUtils.rm_f "sub1/c2.t"
+        FileUtils.rm_f "c5.t"
+        FileUtils.rm_f "c6.t"
+    end
 end

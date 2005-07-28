@@ -466,6 +466,7 @@ module Rant
 		    nodes.each { |node|
 			if node.respond_to? :timestamp
 			    node_ts = node.timestamp
+                            goto_task_home
 			    @ts = node_ts if node_ts > @ts
 			else
 			    rac.abort(rac.pos_text(@rantfile, @line_number),

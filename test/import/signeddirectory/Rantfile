@@ -1,5 +1,5 @@
 
-import "signeddirectory", "autoclean"
+import "signedfile", "autoclean"
 
 gen SignedDirectory, "d1.t"
 

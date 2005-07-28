@@ -1,5 +1,5 @@
 
-import "nodes/signed", "autoclean"
+import "md5", "autoclean"
 
 var :content => "1\n"
 
@@ -30,6 +30,34 @@ end
 file "f2.t" => ["base.t/s/s"] do |t|
     sys.cp "#{t.source}/t", t.name
 end
+
+gen SourceNode, "c1.t"
+
+gen SourceNode, "c2.t" => ["c1.t", "c3.t"]
+
+file "f3.t" => "c1.t" do |t|
+    var[:content] = File.read(t.source)
+    write_content(t.name)
+end
+
+file "f4.t" => ["f3.t", "c2.t"] do |t|
+    var[:content] = t.deps.inject("") { |c, fn| c + File.read(fn) }
+    write_content(t.name)
+end
+
+gen SourceNode, "c4.t" => "c2.t"
+
+file "f5.t" => "c2.t" do |t|
+    sys.cp t.source, t.name
+end
+
+gen SourceNode, "c5.t" => ["sub1/c1.t", "c6.t"]
+
+file "f6.t" => "c5.t" do |t|
+    write_content(t.name)
+end
+
+subdirs "sub1"
 
 def write_content(fn)
     puts "writing #{fn}"
