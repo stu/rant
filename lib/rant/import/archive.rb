@@ -160,6 +160,14 @@ module Rant::Generators::Archive
 	    end
             # remove leading `./' relicts
             @res_files = fl.lazy_map! { |fn| fn.sub(/^\.\/(?=.)/,'') }
+            if defined?(@dist_path) && @dist_path
+                # Remove entries from the dist_path directory, which
+                # would create some sort of weird recursion.
+                #
+                # Normally, the Rantfile writer should care himself,
+                # but since I tapped into this trap frequently now...
+                @res_files.exclude(/^#{Regexp.escape @dist_path}/)
+            end
             @res_files.lazy_uniq!.lazy_sort!
 	end
 
@@ -249,12 +257,12 @@ module Rant::Generators::Archive
 	def define_task_for_dir(&block)
 	    return @pkg_task if @pkg_task
 
-            get_files # set @res_files
 	    @dist_dirname = File.split(name).last
 	    @dist_dirname << "-#@version" if @version
 	    @dist_root, = File.split path
 	    @dist_path = (@dist_root == "." ?
 		@dist_dirname : File.join(@dist_root, @dist_dirname))
+            get_files # set @res_files
 
             targ = {get_archive_path => [@dist_path]}
 	    #STDERR.puts "basedir: #{basedir}, fn: #@archive_path"

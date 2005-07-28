@@ -1,5 +1,5 @@
 
-import %w(md5 directedrule autoclean)
+import %w(directedrule autoclean)
 
 desc "Build foo."
 file :foo => "obj/libfoo.a" do |t|

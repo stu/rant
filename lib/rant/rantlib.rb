@@ -332,6 +332,7 @@ class Rant::RantApp
 	# internal use. A private option is distuingished from others
 	# by having +nil+ as description!
 
+        [ "--import",   "-i",   GetoptLong::REQUIRED_ARGUMENT, nil ],
 	[ "--stop-after-load",	GetoptLong::NO_ARGUMENT, nil	],
 	# Print caller to $stderr on abort.
 	[ "--trace-abort",	GetoptLong::NO_ARGUMENT, nil	],
@@ -1177,6 +1178,8 @@ class Rant::RantApp
 		@arg_rantfiles << value
 	    when "--force-run"
 		@force_targets << value
+            when "--import"
+                import value
 	    else
 		# simple switch
 		@opts[opt.sub(/^--/, '').tr('-', "_").to_sym] = true
