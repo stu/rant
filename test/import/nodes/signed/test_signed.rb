@@ -379,4 +379,77 @@ class TestNodesSigned < Test::Unit::TestCase
         FileUtils.rm_f "c7.t"
         FileUtils.rm_f "c8.t"
     end
+    def test_file_last_pre_in_subdir
+        out, err = assert_rant("f8.t", "content=8")
+        assert(err.empty?)
+        assert(test(?f, "sub1/f1.t"))
+        assert(test(?f, "f8.t"))
+        assert(!test(?e, "f1.t"))
+        assert_equal("8", File.read("sub1/f1.t"))
+        assert_equal("8", File.read("f8.t"))
+        out, err = assert_rant("f8.t")
+        assert(err.empty?)
+        assert(out.empty?)
+    end
+    def test_rant_import_auto
+        out = run_import("-q", "--auto", "make.t")
+        assert_exit
+        FileUtils.mkdir "base.t"
+        write("a.t", "a\n")
+        out = run_ruby("make.t", "--tasks")
+        assert_exit
+        lines = out.split(/\n/)
+        assert_equal(2, lines.size)
+        assert_match(/f1\.t/, lines.first)
+        assert_match(/f8\.t.*copy f1\.t from sub1 to f8\.t/, lines[1])
+        out = run_ruby("make.t", "f2.t")
+        assert_exit
+        assert(test(?f, "base.t/s/s/t"))
+        assert(test(?f, "f2.t"))
+        assert_equal(File.read("base.t/s/s/t"), File.read("f2.t"))
+        out = run_ruby("make.t", "f2.t")
+        assert_exit
+        assert(out.empty?)
+        run_ruby("make.t", "autoclean")
+        assert_exit
+        assert(test(?f, "a.t"))
+        assert(!test(?e, "base.t/s"))
+        assert(!test(?e, "f2.t"))
+    ensure
+        FileUtils.rm_rf "base.t"
+        FileUtils.rm_f "a.t"
+        FileUtils.rm_f "make.t"
+    end
+    def test_rant_import
+        run_import("-q", "-imd5,autoclean", "make.t")
+        assert_exit
+        write("sub1/c1.t", "c\n")
+        write("sub1/c2.t", "c\n")
+        write("c5.t", "c\n")
+        write("c6.t", "c\n")
+        out = run_ruby("make.t", "f6.t")
+        assert_equal("writing f6.t", out.strip)
+        assert(test(?f, "f6.t"))
+        assert_equal("1\n", File.read("f6.t"))
+        out = run_ruby("make.t", "f6.t")
+        assert(out.strip.empty?)
+        write("sub1/c2.t", "c2\n")
+        out = run_ruby("make.t", "f6.t")
+        assert_equal("writing f6.t", out.strip)
+        assert_equal("1\n", File.read("f6.t"))
+        out = run_ruby("make.t", "f6.t")
+        assert(out.empty?)
+        run_ruby("make.t", "autoclean")
+        assert(test(?f, "sub1/c1.t"))
+        assert(test(?f, "sub1/c2.t"))
+        assert(test(?f, "c5.t"))
+        assert(test(?f, "c6.t"))
+        assert(!test(?e, "f6.t"))
+    ensure
+        FileUtils.rm_f "make.t"
+        FileUtils.rm_f "sub1/c1.t"
+        FileUtils.rm_f "sub1/c2.t"
+        FileUtils.rm_f "c5.t"
+        FileUtils.rm_f "c6.t"
+    end
 end

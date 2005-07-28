@@ -41,4 +41,56 @@ class TestImportCDependenciesOnTheFly < Test::Unit::TestCase
 	assert_rant("-frf.t")
 	assert(File.mtime("bar.t") > old_mtime)
     end
+    def write(fn, content)
+        open fn, "w" do |f|
+            f.write content
+        end
+    end
+    def test_md5
+        write "include/a.tt", <<-EOF
+            void abc(void);
+        EOF
+        write "a.tt", <<-EOF
+            #include "a.tt"
+        EOF
+        write "rf.t", <<-EOF
+            import "md5", "c/dependencies", "autoclean"
+            gen C::Dependencies,
+                :search => ["include"],
+                :sources => ["a.tt", "include/a.tt"]
+            gen Action do source "c_dependencies" end
+            gen AutoClean
+            file "a.out" => "a.tt" do |t|
+                sys.cp t.source, t.name
+            end
+        EOF
+        out, err = assert_rant("-frf.t", "a.out")
+        assert(err.empty?)
+        assert(!out.empty?)
+        assert(test(?f, "c_dependencies"))
+        assert(test(?f, "a.out"))
+        assert_equal(File.read("a.tt"), File.read("a.out"))
+        out, err = assert_rant("-frf.t", "a.out")
+        assert(err.empty?)
+        assert(out.empty?)
+        write "include/a.tt", <<-EOF
+            int abc(void);
+        EOF
+        out, err = assert_rant("-frf.t", "a.out")
+        assert(err.empty?)
+        assert(!out.empty?)
+        assert(test(?f, "c_dependencies"))
+        assert(test(?f, "a.out"))
+        assert_equal(File.read("a.tt"), File.read("a.out"))
+        out, err = assert_rant("-frf.t", "a.out")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("-frf.t", "autoclean")
+        assert(!test(?e, ".rant.meta"))
+        assert(!test(?e, "a.out"))
+        assert(test(?f, "include/a.tt"))
+        assert(test(?f, "a.tt"))
+    ensure
+        FileUtils.rm_f %w(include/a.tt a.tt rf.t a.out .rant.meta)
+    end
 end

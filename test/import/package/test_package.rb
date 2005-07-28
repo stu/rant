@@ -91,6 +91,32 @@ class TestImportPackage < Test::Unit::TestCase
     ensure
 	FileUtils.rm_rf "sub/f5"
     end
+    def test_tgz_sync_manifest_md5
+	assert_rant("-imd5", "t2.tgz")
+	mf = %w(sub/f1 sub2/f1 m2.tgz.t)
+	dirs = %w(sub sub2)
+	check_manifest("m2.tgz.t", mf)
+	check_contents(:tgz, "t2.tgz", mf, dirs, "m2.tgz.t")
+	out, err = assert_rant("t2.tgz")
+	assert(out.strip.empty?)
+	assert(err.strip.empty?)
+	FileUtils.touch "sub/f5"
+	out, err = assert_rant("-imd5", "t2.tgz")
+	assert_match(/writing m2\.tgz\.t.*\n.*tar/m, out)
+	check_contents(:tgz, "t2.tgz", mf + %w(sub/f5), dirs, "m2.tgz.t")
+	FileUtils.rm "sub/f5"
+	out, err = assert_rant("-imd5", "t2.tgz")
+	assert_match(/writing m2\.tgz\.t.*\n.*tar/m, out)
+	check_contents(:tgz, "t2.tgz", mf, dirs, "m2.tgz.t")
+	# test autoclean
+	assert_rant("-imd5", "autoclean")
+	assert(!test(?e, "m2.tgz.t"))
+	# hmm.. the tgz will be removed by check_contents anyway...
+	assert(!test(?e, "t2.tgz"))
+        assert(!test(?e, ".rant.meta"))
+    ensure
+	FileUtils.rm_rf "sub/f5"
+    end
     def test_tgz_files_array
 	assert_rant("t3.tgz")
 	mf = %w(Rantfile sub/f1)
@@ -411,6 +437,24 @@ class TestImportPackage < Test::Unit::TestCase
     ensure
 	FileUtils.rm_rf "zip.t"
     end
+    def test_zip_with_basedir_md5
+	assert_rant(:fail, "-imd5", "zip.t/t4-1.0.0.zip")
+	assert(!test(?d, "zip.t"))
+	FileUtils.mkdir "zip.t"
+	assert_rant(:x, "-imd5", "zip.t/t4-1.0.0.zip")
+	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
+	dirs = %w(sub sub2)
+	check_contents(:zip, "zip.t/t4-1.0.0.zip", mf, dirs, "MANIFEST")
+	out, err = assert_rant("-imd5", "zip.t/t4-1.0.0.zip")
+        assert(err.empty?)
+        assert(out.empty?)
+	assert_rant("-imd5", "autoclean")
+	assert(test(?d, "zip.t"))
+	assert(!test(?e, ".rant.meta"))
+	assert(!test(?e, "zip.t/t4-1.0.0.zip"))
+    ensure
+	FileUtils.rm_rf "zip.t"
+    end
     def test_zip_from_manifest
 	assert_rant(:x, "t1.zip")
 	mf = %w(Rantfile sub/f1 sub2/f1 MANIFEST)
@@ -431,5 +475,87 @@ class TestImportPackage < Test::Unit::TestCase
 	mf = %w(Rantfile sub/f1)
 	dirs = %w(sub)
 	check_contents(:zip, "t3.zip", mf, dirs)
+    end
+    def write(fn, str)
+        open fn, "w" do |f|
+            f.write str
+        end
+    end
+    def test_md5_zip_package
+        write("sub/pkg.t", "abc\n")
+        write("sub2/a.t", "a\n")
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.zip")
+        assert(err.empty?)
+        mf = %w(sub/f1 sub2/f1 sub2/a.t)
+        dirs = %w(sub sub2)
+        @pkg_dir = "m1"
+        check_contents(:zip, "pkg.t/m1.zip", mf, dirs)
+        FileUtils.rm "sub/pkg.t"
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.zip")
+        assert(err.empty?)
+        assert(out.empty?)
+        FileUtils.rm "sub2/a.t"
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.zip")
+        assert(err.empty?)
+        assert(!out.empty?)
+        mf = %w(sub/f1 sub2/f1)
+        dirs = %w(sub sub2)
+        @pkg_dir = "m1"
+        check_contents(:zip, "pkg.t/m1.zip", mf, dirs)
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.zip")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("-fmd5.rf", "clean")
+        assert(!test(?e, "pkg.t"))
+        assert(!test(?e, ".rant.meta"))
+    ensure
+        FileUtils.rm_f %w(.rant.meta sub1/pkg.t sub2/a.t)
+    end
+    def test_md5_tgz_package
+        write("sub/pkg.t", "abc\n")
+        write("sub2/a.t", "a\n")
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.tgz")
+        assert(err.empty?)
+        mf = %w(sub/f1 sub2/f1 sub2/a.t)
+        dirs = %w(sub sub2)
+        @pkg_dir = "m1"
+        check_contents(:tgz, "pkg.t/m1.tgz", mf, dirs)
+        FileUtils.rm "sub/pkg.t"
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.tgz")
+        assert(err.empty?)
+        assert(out.empty?)
+        FileUtils.rm "sub2/a.t"
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.tgz")
+        assert(err.empty?)
+        assert(!out.empty?)
+        mf = %w(sub/f1 sub2/f1)
+        dirs = %w(sub sub2)
+        @pkg_dir = "m1"
+        check_contents(:tgz, "pkg.t/m1.tgz", mf, dirs)
+        out, err = assert_rant("-fmd5.rf", "pkg.t/m1.tgz")
+        assert(err.empty?)
+        assert(out.empty?)
+        assert_rant("-fmd5.rf", "clean")
+        assert(!test(?e, "pkg.t"))
+        assert(!test(?e, ".rant.meta"))
+    ensure
+        FileUtils.rm_f %w(.rant.meta sub1/pkg.t sub2/a.t)
+    end
+    def test_rant_import_md5_empty_archive_tgz
+        write("empty.rf", <<-EOF)
+            import "md5", "archive/tgz"
+            gen Archive::Tgz, "empty.t", :files => []
+        EOF
+        run_import("-q", "-fempty.rf", "--auto", "make.t")
+        assert_exit
+        out = run_ruby("make.t", "-fempty.rf", "empty.t.tgz")
+        assert_exit
+        mf = %w()
+        dirs = %w()
+        check_contents(:tgz, "empty.t.tgz", mf, dirs)
+        out = run_ruby("make.t", "-fempty.rf", "empty.t.tgz")
+        assert(out.empty?)
+    ensure
+        FileUtils.rm_f %w(make.t empty.rf empty.t.tgz)
     end
 end

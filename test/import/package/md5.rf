@@ -1,0 +1,10 @@
+
+import %w(md5 package/zip package/tgz autoclean)
+
+gen Package::Zip, "pkg.t/m1", :files => sys["sub*/*"].shun("pkg.t")
+
+gen Package::Tgz, "pkg.t/m1", :files => sys["sub*/*"].shun("pkg.t")
+
+gen AutoClean, "clean"
+
+# vim:ft=ruby

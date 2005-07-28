@@ -111,6 +111,7 @@ module Rant
                     return false unless up
                     # run action and save checksums
                     run
+                    goto_task_home
                     target_str = test(?f, @name) ?
                         @sigs.signature_for_file(@name) : ""
                     target_changed = target_str != old_target_str
@@ -221,10 +222,10 @@ module Rant
             end
             private
             def run
-                goto_task_home
                 @rac.cx.sys.mkdir @name unless test ?d, @name
                 if @block
                     @block.arity == 0 ? @block.call : @block[self]
+                    goto_task_home
                     # for compatibility with mtime based tasks
                     @rac.cx.sys.touch @name
                 end

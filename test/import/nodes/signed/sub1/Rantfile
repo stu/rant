@@ -1,2 +1,6 @@
 
 gen SourceNode, "c1.t" => "c2.t"
+
+file "f1.t" do |t|
+    write_content(t.name)
+end

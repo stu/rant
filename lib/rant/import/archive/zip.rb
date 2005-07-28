@@ -42,6 +42,8 @@ module Rant::Generators::Archive
 	end
         def rubyzip fn, files, opts = {:recurse => false}
             require 'rant/archive/rubyzip'
+            # rubyzip creates only a new file if fn doesn't exist
+            @rac.sys.rm_f fn if test ?e, fn
             @rac.cmd_msg "rubyzip #{fn}"
             Rant::Archive::Rubyzip::ZipFile.open fn,
                 Rant::Archive::Rubyzip::ZipFile::CREATE do |z|

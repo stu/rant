@@ -12,6 +12,8 @@ module Rant::Generators::Package
 		fn = @dist_dirname + (@extension ? @extension : "")
 		old_pwd = Dir.pwd
 		Dir.chdir @dist_root
+                # zip adds to existing archive
+                @rac.cx.sys.rm_f fn if test ?e, fn
 		# zip options:
 		#   y: store symlinks instead of referenced files
 		#   r: recurse into directories

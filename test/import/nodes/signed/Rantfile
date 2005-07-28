@@ -17,7 +17,7 @@ gen Directory, "base.t", "s/s" => ["a.t", "f1.t"] do |t|
     open fn, "w" do |f|
         f.write(File.read(t.source))
         f.write(File.read("f1.t"))
-    end
+    end; sys.cd "sub1"
 end
 
 if var["subfile"]
@@ -68,6 +68,12 @@ end
 gen SourceNode, "c7.t" => ["f1.t", "c8.t"]
 
 file "f7.t" => "c7.t" do |t|
+    sys.cp t.source, t.name
+    sys.cd "sub1"
+end
+
+desc "copy f1.t from sub1 to f8.t"
+file "f8.t" => "sub1/f1.t" do |t|
     sys.cp t.source, t.name
 end
 
