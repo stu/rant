@@ -167,7 +167,7 @@ class TestImportPackage < Test::Unit::TestCase
 	out, err = assert_rant("sub.t/pkg.tgz")
 	assert(!out.empty?)
 	out, err = assert_rant("sub.t/pkg.tgz")
-	assert(out.empty?)
+	assert(out.strip.empty?)
 	assert(test(?d, "sub.t/pkg"))
 	@pkg_dir = "pkg"
 	mf = %w(sub/f1)

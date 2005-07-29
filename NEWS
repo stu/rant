@@ -1,6 +1,20 @@
 
 = Rant NEWS
 
+== Rant 0.4.4
+
+Besides internal changes, this release is backwards compatible to
+0.4.2.
+
+Fixes and minor improvements:
+* Rant is Ruby 1.8.0 compatible now.
+* Fixes for filelists.
+* A fix for Directory generator (and thus dependent features).
+
+New features:
+* Optional recognition of file changes based on MD5 checksums.
+  Read doc/md5.rdoc[link:files/doc/md5_rdoc.html] for documentation.
+
 == Rant 0.4.2
 
 This is mainly a bugfix release and thus fully backwards compatible to

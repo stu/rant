@@ -16,6 +16,8 @@ Rant currently features:
   so you don't depend on an rant installation anymore.
 * Creating gzipped tar and zip archives -- without installing
   additional software.
+* Optional recognition of file changes based on MD5 checksums instead
+  of file modification times.
 * Primitive support for compiling C# sources portably with csc, cscc
   and mcs.
 * Dependency checking for C/C++ source files.
@@ -28,7 +30,7 @@ basic example of rant usage:
 A file called +Rantfile+ contains the code:
 
     file "backup/data" => "data" do |t|
-	sys.cp "data", t.name
+	sys.cp t.source, t.name
     end
 
 Running rant in the directory of this file:
@@ -39,7 +41,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.4.2 of Rant. Most things
+This document was written for version 0.4.4 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.
@@ -49,9 +51,10 @@ documentation of your Rant version.
 The newest version of this document can be found at
 http://make.rubyforge.org.
 
-For further information, feature requests, bugreports or comments
-visit the
-{RubyForge site for Rant}[http://rubyforge.org/projects/make/].
+For further information, feature requests, bugreports or comments join
+the mailing list
+{make-cafe}[http://rubyforge.org/mailman/listinfo/make-cafe] or visit
+the {RubyForge site for Rant}[http://rubyforge.org/projects/make/].
 
 Also feel free to contact the author directly by sending an email to
 mailto:langstefan@gmx.at.
@@ -74,6 +77,8 @@ Advanced Rantfiles::
     read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
 Packaging (creating zip/tgz archives)::
     read doc/package.rdoc[link:files/doc/package_rdoc.html]
+Using MD5 checksums instead of file modification times::
+    read doc/md5.rdoc[link:files/doc/md5_rdoc.html]
 Compiling C/C++::
     read doc/c.rdoc[link:files/doc/c_rdoc.html]
 Using the Configure plugin::
@@ -216,7 +221,7 @@ Rant was tested on:
 It *should* run on most platforms where Ruby runs, but you never
 know...
 
-If you encounter problems with Rant on any platform (with Ruby 1.8.1
+If you encounter problems with Rant on any platform (with Ruby 1.8.0
 or higher) please write a bugreport!
 
 === Why did you write another build tool?

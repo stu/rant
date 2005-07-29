@@ -198,6 +198,7 @@ def unpack_archive(atype, archive)
     end
 end
 def minitar_unpack(archive)
+    require 'zlib'
     require 'rant/archive/minitar'
     tgz = Zlib::GzipReader.new(File.open(archive, 'rb'))
     # unpack closes tgz

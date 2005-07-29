@@ -1,0 +1,49 @@
+
+== Using MD5 checksums to detect file changes
+
+Most build tools rely on the modification time of a file which is
+updated usually when a program writes to the file. But this is not
+always as accurate as one would like, e.g. when you edit a C source
+file to simple change/add a comment, the compiler will probably
+produce the same object file as before. The build tool recognizes that
+the file modification time of the object file is newer than that of
+the target program and rebuilds the target program.
+
+With MD5 checksums instead of file modification times, the build tool
+recognizes that the object file didn't change and thus the target
+program doesn't need to be rebuilt.
+
+Even worse is the case where the file modification time isn't updated
+or is corrupted and the build tool thinks a source file hasn't changed
+were in fact it has! In other words, with MD5 checksums, the build
+tool recognizes when the *contents* of a file changes.
+
+To enable this nice feature for your project, put this single line at
+the top (before other +import+, +task+, +file+ or +gen+ statements) of
+the Rantfile:
+
+    import "md5"
+
+Note that Rant saves the checksums after a build in a file called
+<tt>.rant.meta</tt>. If you remove this file, Rant looses all
+information about the last builds, and so will rebuild all targets on
+invocation.
+
+If you want to switch back to modification time based builds, simply
+remove the <tt>import "md5"</tt> statement and remove the file
+<tt>.rant.meta</tt>.
+
+== See also
+
+Writing an Rantfile::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Support for C/C++::
+    doc/c.rdoc[link:files/doc/c_rdoc.html]
+Packaging::
+    doc/package.rdoc[link:files/doc/package_rdoc.html]
+Ruby project howto::
+    doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

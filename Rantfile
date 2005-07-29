@@ -2,7 +2,6 @@
 # Rantfile for Rant :)
 
 import "md5"
-
 import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper)
 
 task :default => :test
@@ -10,6 +9,10 @@ task :default => :test
 dist_files = sys["{bin,lib,test,doc,misc}/**/*"]
 dist_files.shun("html", "coverage")
 dist_files += sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
+
+# remove when compiler stuff is getting useful...
+dist_files.exclude "lib/rant/compiler*", "lib/rant/import/c/program.rb"
+
 rdoc_opts = %w(-S -c UTF-8 --title Rant --main README)
 
 gen RubyPackage, "rant" do |t|

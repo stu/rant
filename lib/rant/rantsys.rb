@@ -565,7 +565,7 @@ module Rant
 	    else
 		begin
 		    ln(*args)
-		rescue Errno::EOPNOTSUPP
+		rescue Exception #Errno::EOPNOTSUPP
 		    Sys.symlink_supported = false
 		    cp(*args)
 		end
