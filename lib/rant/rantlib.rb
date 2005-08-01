@@ -1104,10 +1104,18 @@ class Rant::RantApp
 	    rf
 	}
 	if @rantfiles.empty?
-	    abort("No Rantfile in current directory (" + Dir.pwd + ")",
-		"looking for " + Rant::RANTFILES.join(", ") +
-		"; case matters!")
-	end
+            require 'pathname'
+            cur_dir = Pathname.new(Dir.pwd)
+            unless cur_dir.root?
+                FileUtils.cd cur_dir.parent
+                load_rantfiles
+            else  
+                abort("No Rantfile in current directory (" + Dir.pwd + ")",
+                    "looking for " + Rant::RANTFILES.join(", ") +
+                    "; case matters!")
+            end	
+        end
+        @opts[:directory] = Dir.pwd
     end
 
     # Returns the value of the last expression executed in +rantfile+.

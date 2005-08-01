@@ -9,6 +9,7 @@ task :default => :test
 dist_files = sys["{bin,lib,test,doc,misc}/**/*"]
 dist_files.shun("html", "coverage")
 dist_files += sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
+hp_files = sys["doc/homepage/*"]
 
 # remove when compiler stuff is getting useful...
 dist_files.exclude "lib/rant/compiler*", "lib/rant/import/c/program.rb"
@@ -38,6 +39,31 @@ gen RubyDoc do |g|
     g.files.concat sys["NEWS", "**/README"].no_dir("pkg").no_dir("test")
     g.files.concat sys["doc/**/*.rdoc"]
     g.opts = rdoc_opts + %w(-T doc/jamis.rb)
+end
+
+html_index = "doc/html/index.html"
+api_index = html_index.sub("index", "api")
+
+enhance "doc/html/index.html" do
+    sys.rm_f api_index # remove old RDoc index page
+    make "hp2doc"
+end
+
+task "hp2doc" do
+    if test(?f, html_index) && !test(?f, api_index)
+        sys.mv html_index, api_index
+    end
+    sys.cp hp_files, "doc/html"
+end
+
+desc "Publish html docs on make.rubyfore.org.",
+     "Note: scp will prompt for rubyforge password."
+task "publish-docs" => :doc do
+    sys "scp -r doc/html/* langi@rubyforge.org:/var/www/gforge-projects/make/"
+end
+
+task "publish-hp" do
+    sys "scp -r doc/homepage/* langi@rubyforge.org:/var/www/gforge-projects/make/"
 end
 
 desc "Run basic tests."
@@ -119,12 +145,6 @@ gen AutoClean, :clean
 var[:clean].include %w(
     InstalledFiles .config bench-rant bench-depsearch test/coverage
 )
-
-desc "Publish html docs on make.rubyfore.org.",
-     "Note: scp will prompt for rubyforge password."
-task "publish-docs" => :doc do
-    sys "scp -r doc/html/* langi@rubyforge.org:/var/www/gforge-projects/make/"
-end
 
 # Just for quick visual testing of rant...
 task :please_fail do |t|
