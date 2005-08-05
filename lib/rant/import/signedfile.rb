@@ -135,7 +135,7 @@ module Rant
                 goto_task_home
                 yield @name
             end
-            def timestamp
+            def timestamp(opt = INVOKE_OPT)
                 File.exist?(@name) ? File.mtime(@name) : T0
             end
             def signature

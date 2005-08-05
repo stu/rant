@@ -312,14 +312,14 @@ module Rant
 	    end
 	end
 
-	def timestamp
+	def timestamp(opt = INVOKE_OPT)
 	    File.exist?(@name) ? File.mtime(@name) : T0
 	end
 
 	def handle_timestamped(dep, opt)
 	    return true if dep.invoke opt
 	    #puts "***`#{dep.name}' requires update" if dep.timestamp > @ts
-	    dep.timestamp > @ts
+	    dep.timestamp(opt) > @ts
 	end
 
 	def handle_non_node(dep, opt)
@@ -384,7 +384,7 @@ module Rant
 
 	def handle_timestamped(dep, opt)
 	    return @block if dep.invoke opt
-	    @block && dep.timestamp > @ts
+	    @block && dep.timestamp(opt) > @ts
 	end
 
 	def handle_non_node(dep, opt)
@@ -438,7 +438,7 @@ module Rant
 	    @pre
 	end
 	# Note: The timestamp will only be calculated once!
-	def timestamp
+	def timestamp(opt = INVOKE_OPT)
 	    # Circular dependencies don't generate endless
 	    # recursion/loops because before calling the timestamp
 	    # method of any other node, we set @ts to some non-nil
@@ -464,8 +464,9 @@ module Rant
 		    end
 		else
 		    nodes.each { |node|
+                        node.invoke(opt)
 			if node.respond_to? :timestamp
-			    node_ts = node.timestamp
+			    node_ts = node.timestamp(opt)
                             goto_task_home
 			    @ts = node_ts if node_ts > @ts
 			else

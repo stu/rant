@@ -3,7 +3,7 @@
 Since +alias+ is a Ruby keyword, we could use +nick+ to create task
 alises.
 Other choices: short, cut, name, label, syn, synonym, ident, term,
-    shortcut, abbreviation
+    shortcut, abbreviation, link
 
 == Here docs
 Don't use here documents in the Rant sources, imports and plugins.

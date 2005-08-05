@@ -160,4 +160,34 @@ class TestSourceNode < Test::Unit::TestCase
 	    assert_equal(th, th.join(0.5))
 	end
     end
+    def test_file_pre
+        @rf = <<-EOF
+        import "autoclean"
+        file "f.t" => "a.t" do |t|
+            sys.touch t.name
+        end
+        gen SourceNode, "a.t" => ["b.t", "c.t"]
+        file "b.t" do |t|
+            sys.touch t.name
+        end
+        gen AutoClean
+        EOF
+        FileUtils.touch "c.t"
+        FileUtils.touch "a.t"
+        tmp_rf do
+            out, err = assert_rant("-frf.t")
+            assert(err.empty?)
+            assert(!out.empty?)
+            assert(test(?f, "f.t"))
+            assert(test(?f, "b.t"))
+            out, err = assert_rant("-frf.t")
+            assert(err.empty?)
+            assert(out.empty?)
+            assert_rant("-frf.t", "autoclean")
+            assert(!test(?f, "f.t"))
+            assert(!test(?f, "b.t"))
+            assert(test(?f, "a.t"))
+            assert(test(?f, "c.t"))
+        end
+    end
 end
