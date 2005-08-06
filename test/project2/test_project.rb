@@ -51,8 +51,7 @@ class TestProject2 < Test::Unit::TestCase
     end
     def test_load_rantfile
 	capture_std do
-	    app("b_f2")
-	    @app.rootdir = $testProject2Dir
+	    app("b_f2", "-C", $testProject2Dir)
 	    assert_equal(:return_val, @app.source("buildfile"),
 		"source should return value of last expression in Rantfile")
 	    assert_equal(@app.run, 0)
@@ -77,11 +76,9 @@ class TestProject2 < Test::Unit::TestCase
     end
     def test_opth_directory
 	app %w(insub1_s1f1)
-	#Rant[:directory] = "sub1"
 	@app[:verbose] = 2
-	@app[:directory] = "sub1"
 	capture_std do
-	    assert_equal(@app.run, 0)
+	    assert_equal(@app.run("-Csub1"), 0)
 	end
 	assert(Dir.pwd !~ /sub1$/,
 	    "rant should cd to original dir before returning from `run'")

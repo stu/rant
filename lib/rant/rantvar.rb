@@ -20,12 +20,14 @@ module Rant
 
     # Those are the filenames for rantfiles.
     # Case matters!
+    ROOT_RANTFILE = "root.rant"
+    SUB_RANTFILE = "sub.rant"
     RANTFILES	= [	"Rantfile",
 			"rantfile",
-			"Rantfile.rb",
-			"rantfile.rb"
+                        ROOT_RANTFILE,
+			"Rantfile.rb",  # deprecate?
+			"rantfile.rb"   # deprecate?
 		  ]
-    SUB_RANTFILES = ["subrant"]
     
     # Names of plugins and imports for which code was loaded.
     # Files that where loaded with the `import' commant are directly

@@ -54,7 +54,10 @@ class TestSys < Test::Unit::TestCase
 	out, err = capture_std do
 	    assert_equal(1, Rant.run("-fname_error.rf"))
 	end
-	assert_match(/Name\s*Error/i, err.split("\n").first)
+        lines = err.split(/\n/)
+        assert_equal(3, lines.size)
+        assert_match(/\bname_error\.rf\b.*\b1\b/, lines[0])
+	assert_match(/Name\s*Error/i, lines[1])
     ensure
 	File.delete "name_error.rf" if File.exist? "name_error.rf"
     end

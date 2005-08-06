@@ -374,6 +374,9 @@ class Rant::RantApp
     #
     # Note: Might change before 1.0
     attr_reader :resolve_hooks
+    # Root directory of project. Will be initialized to working
+    # directory in #initialize.
+    attr_reader :rootdir
 
     attr_accessor :node_factory
 
@@ -391,15 +394,15 @@ class Rant::RantApp
 	@rantfiles = []
 	@tasks = {}
 	@opts = {
-	    :verbose	=> 0,
-	    :quiet	=> false,
-	    :directory	=> "",
+	    :verbose        => 0,
+	    :quiet          => false,
 	}
+        @rootdir = Dir.pwd      # root directory of project
 	@arg_rantfiles = []	# rantfiles given in args
 	@arg_targets = []	# targets given in args
-	@force_targets = []
-	@run = false
-	@done = false
+	@force_targets = []     # targets given with -a option
+	@run = false            # run method was called at least once
+	@done = false           # run method was successful
 	@plugins = []
 	@var = Rant::RantVar::Space.new
 	@var.query :ignore, :AutoList, []
@@ -408,7 +411,6 @@ class Rant::RantApp
 	#@task_show = nil
 	@task_desc = nil
 
-	@orig_pwd = nil
 	@current_subdir = ""
 	@resolve_hooks = []
 
@@ -420,27 +422,7 @@ class Rant::RantApp
     end
 
     def []=(opt, val)
-	case opt
-	when :directory
-	    self.rootdir = val
-	else
-	    @opts[opt] = val
-	end
-    end
-
-    def rootdir
-	@opts[:directory]
-    end
-
-    def rootdir=(newdir)
-	if @run
-	    raise "rootdir of rant application can't " +
-		"be changed after calling `run'"
-	end
-	unless String === newdir
-	    raise "rootdir has to be a String"
-	end
-	@opts[:directory] = newdir.dup
+        @opts[opt] = val
     end
 
     ### support for subdirectories ###################################
@@ -508,26 +490,19 @@ class Rant::RantApp
 	@done
     end
 
+    # Run this Rant application with the given arguments. The process
+    # working directory after this method returns, will be the same as
+    # before invocation.
+    #
     # Returns 0 on success and 1 on failure.
     def run(*args)
 	@run = true
 	@args.concat(args.flatten)
 	# remind pwd
-	@orig_pwd = Dir.pwd
+	orig_pwd = @rootdir = Dir.pwd
 	# Process commandline.
 	process_args
-	# Set pwd.
-	opts_dir = @opts[:directory]
-	if !(opts_dir.empty? || opts_dir.nil?)
-	    opts_dir = File.expand_path(opts_dir)
-	    unless test(?d, opts_dir)
-		abort("No such directory - #{opts_dir}")
-	    end
-	    Dir.chdir(opts_dir) if opts_dir != @orig_pwd
-	    @opts[:directory] = opts_dir
-	else
-	    @opts[:directory] = @orig_pwd
-	end
+        Dir.chdir(@rootdir)
 	# read rantfiles
 	load_rantfiles
 
@@ -541,12 +516,10 @@ class Rant::RantApp
 	end
 	# run tasks
 	run_tasks
-	goto "#"
 	raise Rant::RantDoneException
     rescue Rant::RantDoneException
 	@done = true
 	# Notify plugins
-	goto "#"
 	@plugins.each { |plugin| plugin.rant_done }
 	return 0
     rescue Rant::RantAbortException
@@ -568,7 +541,7 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_plugin_stop }
 	@plugins.each { |plugin| plugin.rant_quit }
 	# restore pwd
-	Dir.pwd != @orig_pwd && Dir.chdir(@orig_pwd)
+        Dir.chdir orig_pwd
 	Rant.rac = self.class.new
     end
 
@@ -731,24 +704,33 @@ class Rant::RantApp
 	    loaded = false
 	    prev_subdir = @current_subdir
 	    begin
-		#puts "* subdir *",
-		#    "  rootdir:        #{rootdir}",
-		#    "  current subdir: #@current_subdir",
-		#    "  pwd:            #{Dir.pwd}",
-		#    "  arg:            #{arg}"
+                #puts "* subdir *",
+                #    "  rootdir:        #{rootdir}",
+                #    "  current subdir: #@current_subdir",
+                #    "  pwd:            #{Dir.pwd}",
+                #    "  arg:            #{arg}"
 		goto arg
-		rantfiles_in_dir.each { |f|
-		    loaded = true
-		    rf, is_new = rantfile_for_path(f)
+                if test(?f, Rant::SUB_RANTFILE)
+                    path = Rant::SUB_RANTFILE
+                else
+                    path = rantfile_in_dir
+                end
+                if path
+                    if defined? @initial_subdir and
+                            @initial_subdir == @current_subdir
+                        rf, is_new = rantfile_for_path(path, false)
+                        @rantfiles.unshift rf
+                    else
+                        rf, is_new = rantfile_for_path(path)
+                    end
 		    load_file rf if is_new
-		}
+                elsif !@opts[:no_warn_subdir]
+                    warn_msg(pos_text(ch[:file], ch[:ln]),
+                        "subdirs: No Rantfile in subdir `#{arg}'.")
+                end
 	    ensure
-		#puts "  going back to project dir: #{prev_subdir}"
+                #puts "  going back to project dir: #{prev_subdir}"
 		goto_project_dir prev_subdir
-	    end
-	    unless loaded || @opts[:no_warn_subdir]
-		warn_msg(pos_text(ch[:file], ch[:ln]),
-		    "subdirs: No Rantfile in subdir `#{arg}'.")
 	    end
 	}
     rescue SystemCallError => e
@@ -809,24 +791,25 @@ class Rant::RantApp
 	infix = "  # "
 	name_length = 0
 	tlist.each { |t|
-	    if t.full_name.length > name_length
-		name_length = t.full_name.length
+	    if t.to_s.length > name_length
+		name_length = t.to_s.length
 	    end
 	}
 	name_length < 7 && name_length = 7
 	cmd_length = prefix.length + name_length
-	unless tlist.first.full_name == def_target
+	unless tlist.first.to_s == def_target
 	    defaults = list_task_names(
 		resolve(def_target)).join(', ')
 	    puts "#{prefix}#{' ' * name_length}#{infix}=> #{defaults}"
 	end
 	tlist.each { |t|
-	    print(prefix + t.full_name.ljust(name_length) + infix)
+	    print(prefix + t.to_s.ljust(name_length) + infix)
 	    dt = t.description.sub(/\s+$/, "")
 	    puts dt.sub(/\n/, "\n" + ' ' * cmd_length + infix + "  ")
 	}
 	true
     end
+
     def list_task_names(*tasks)
 	rsl = []
 	tasks.flatten.each { |t|
@@ -928,8 +911,9 @@ class Rant::RantApp
 		target_list << "default"
 	    else
 		@rantfiles.each { |f|
-		    unless f.tasks.empty?
-			target_list << f.tasks.first.full_name
+                    first = f.tasks.first
+		    if first
+                        target_list << first.reference_name
 			break
 		    end
 		}
@@ -938,17 +922,18 @@ class Rant::RantApp
 	target_list
     end
 
+    # If this method returns (i.e. no exception was risen),
+    # current_subdir is the same as before invocation.
     def run_tasks
 	# Now, run all specified tasks in all rantfiles,
 	# rantfiles in reverse order.
-	opt = {}
-	matching_tasks = 0
-	target_list.each do |target|
-	    goto "#"
+	target_list.each { |target|
+            # build ensures that current_subdir is the same before
+            # and after invocation
 	    if build(target) == 0
 		abort("Don't know how to make `#{target}'.")
 	    end
-	end
+        }
     end
 
     def make(target, *args, &block)
@@ -1083,87 +1068,72 @@ class Rant::RantApp
 	# some "rant code" could already have run!
 	# We run the default Rantfiles only if no tasks where
 	# already defined and no Rantfile was given in args.
-	new_rf = []
-	@arg_rantfiles.each { |rf|
-	    if test(?f, rf)
-		new_rf << rf
-	    else
-		abort("No such file: " + rf)
-	    end
-	}
-	if new_rf.empty? && !have_any_task?
-	    # no Rantfiles given in args, no tasks defined,
-	    # so let's look for the default files
-	    new_rf = rantfiles_in_dir
-	end
-	new_rf.map! { |path|
-	    rf, is_new = rantfile_for_path(path)
-	    if is_new
-		load_file rf
-	    end
-	    rf
-	}
-	if @rantfiles.empty?
-            require 'pathname'
-            cur_dir = Pathname.new(Dir.pwd)
-            unless cur_dir.root?
-                FileUtils.cd cur_dir.parent
-                load_rantfiles
-            else  
-                abort("No Rantfile in current directory (" + Dir.pwd + ")",
-                    "looking for " + Rant::RANTFILES.join(", ") +
-                    "; case matters!")
-            end	
+        unless @arg_rantfiles.empty?
+            @arg_rantfiles.each { |fn|
+                if test(?f, fn)
+                    rf, is_new = rantfile_for_path(fn)
+                    load_file rf if is_new
+                else
+                    abort "No such file -- #{rf}"
+                end
+            }
+            return
         end
-        @opts[:directory] = Dir.pwd
+        return if have_any_task?
+        fn = rantfile_in_dir
+        if fn
+            rf, is_new = rantfile_for_path(fn)
+            load_file rf if is_new
+            return
+        end
+        if @opts[:look_up] || test(?f, Rant::SUB_RANTFILE)
+            cur_dir = Dir.pwd
+            until cur_dir == "/"
+                cur_dir = File.dirname(cur_dir)
+                Dir.chdir cur_dir
+                fn = rantfile_in_dir
+                if fn
+                    msg 2, "rootdir is #{cur_dir}"
+                    @initial_subdir = @rootdir.sub(
+                        /^#{Regexp.escape cur_dir}\//, '')
+                    # adjust rootdir
+                    @rootdir = cur_dir
+                    rf, is_new = rantfile_for_path(fn)
+                    load_file rf if is_new
+                    goto "##@initial_subdir"
+                    break
+                end
+            end
+        end
+        if @rantfiles.empty?
+            abort("No Rantfile found, looking for ",
+                "#{Rant::RANTFILES.join ", "}; case matters!")
+        end
     end
 
     # Returns the value of the last expression executed in +rantfile+.
     # +rantfile+ has to be an Rant::Rantfile instance.
     def load_file(rantfile)
 	msg 1, "source #{rantfile}"
-	rv = nil
-	begin
-	    path = rantfile.path
-	    rv = @context.instance_eval(File.read(path), path)
-	rescue NameError => e
-	    abort("Name error when loading `#{rantfile}':",
-	    e.message, e.backtrace)
-	rescue LoadError => e
-	    abort("Load error when loading `#{rantfile}':",
-	    e.message, e.backtrace)
-	rescue ScriptError => e
-	    abort("Script error when loading `#{rantfile}':",
-	    e.message, e.backtrace)
-	end
-	unless @rantfiles.include?(rantfile)
-	    @rantfiles << rantfile
-	end
-	rv
+	@context.instance_eval(File.read(rantfile), rantfile)
     end
     private :load_file
 
-    # Get all rantfiles in dir.
+    # Get path to Rantfile in +dir+ or nil if dir doesn't contain an
+    # Rantfile.
+    #
     # If dir is nil, look in current directory.
-    # Returns always an array with the pathes (not only the filenames)
-    # to the rantfiles.
-    def rantfiles_in_dir(dir=nil)
-	files = []
+    def rantfile_in_dir(dir=nil)
 	::Rant::RANTFILES.each { |rfn|
 	    path = dir ? File.join(dir, rfn) : rfn
-	    # We don't accept rantfiles with pathes that differ only
-	    # in case. This protects from loading the same file twice
-	    # on case insensitive file systems.
-	    unless files.find { |f| f.downcase == path.downcase }
-		files << path if test(?f, path)
-	    end
+            return path if test ?f, path
 	}
-	files
+        nil
     end
 
     def process_args
 	# WARNING: we currently have to fool getoptlong,
-	# by temporory changing ARGV!
+	# by temporary changing ARGV!
 	# This could cause problems (e.g. multithreading).
 	old_argv = ARGV.dup
 	ARGV.replace(@args.dup)
@@ -1179,9 +1149,7 @@ class Rant::RantApp
 		show_help
 		raise Rant::RantDoneException
 	    when "--directory"
-		# take care: we bypass the checks of self.rootdir=
-		# because @run is true
-		@opts[:directory] = value
+		@rootdir = File.expand_path(value)
 	    when "--rantfile"
 		@arg_rantfiles << value
 	    when "--force-run"
@@ -1310,17 +1278,17 @@ class Rant::RantApp
     # and a boolean value as second. If the second is true,
     # the rantfile was created and added, otherwise the rantfile
     # already existed.
-    def rantfile_for_path(path)
+    def rantfile_for_path(path, register=true)
 	# all rantfiles have an absolute path as path attribute
 	abs_path = File.expand_path(path)
-	if @rantfiles.any? { |rf| rf.path == abs_path }
-	    file = @rantfiles.find { |rf| rf.path == abs_path }
+        file = @rantfiles.find { |rf| rf.path == abs_path }
+	if file
 	    [file, false]
 	else
 	    # create new Rantfile object
 	    file = Rant::Rantfile.new abs_path
 	    file.project_subdir = @current_subdir
-	    @rantfiles << file
+	    @rantfiles << file if register
 	    [file, true]
 	end
     end

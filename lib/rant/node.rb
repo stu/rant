@@ -37,9 +37,8 @@ module Rant
 	    @tasks = []
 	    @project_subdir = nil
 	end
-	def to_s
-	    @path
-	end
+        alias to_s path
+        alias to_str path
     end	# class Rantfile
 
     # Any +object+ is considered a _task_ if
@@ -76,14 +75,17 @@ module Rant
             @project_subdir = ""
 	end
 
-	# Returns the name of this task.
-	def to_s
-	    name
-	end
-
-        def to_rant_target
-            name
+        def reference_name
+            sd = rac.current_subdir
+            case sd
+            when "": full_name
+            when project_subdir: name
+            else "##{full_name}".sub(/^##{Regexp.escape sd}\//, '')
+            end
         end
+
+        alias to_s reference_name
+        alias to_rant_target name
 
 	# Basically project_subdir/name
 	#

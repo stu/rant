@@ -1,6 +1,13 @@
 
 = Rant NEWS
 
+== Rant 0.4.6
+
+Incompatible changes:
+* Previous Rant versions loaded both, +Rantfile+ and
+  <tt>Rantfile.rb</tt>, if present. This version will only load one of
+  them (preferably +Rantfile+).
+
 == Rant 0.4.4
 
 Besides internal changes, this release is backwards compatible to
