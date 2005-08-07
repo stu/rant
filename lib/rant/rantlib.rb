@@ -320,6 +320,10 @@ class Rant::RantApp
 	    "Print failed commands and their exit status."	],
 	[ "--directory","-C",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Run rant in DIRECTORY."				],
+        [ "--cd-parent","-c",   GetoptLong::NO_ARGUMENT,
+            "Run rant in parent directory."                     ],
+        [ "--look-up",  "-u",   GetoptLong::NO_ARGUMENT,
+            "Look in parent directories for root Rantfile."     ],
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Process RANTFILE instead of standard rantfiles.\n" +
 	    "Multiple files may be specified with this option"	],
@@ -536,6 +540,7 @@ class Rant::RantApp
 	return 1
     ensure
 	# TODO: exception handling!
+        Dir.chdir @rootdir
         hooks = var._get("__at_return__")
         hooks.each { |hook| hook.call } if hooks
 	@plugins.each { |plugin| plugin.rant_plugin_stop }
@@ -1106,8 +1111,8 @@ class Rant::RantApp
             end
         end
         if @rantfiles.empty?
-            abort("No Rantfile found, looking for ",
-                "#{Rant::RANTFILES.join ", "}; case matters!")
+            abort("No Rantfile found, looking for:",
+                Rant::RANTFILES.join(", "))
         end
     end
 
@@ -1149,7 +1154,12 @@ class Rant::RantApp
 		show_help
 		raise Rant::RantDoneException
 	    when "--directory"
-		@rootdir = File.expand_path(value)
+                @rootdir = File.expand_path(value)
+            when "--cd-parent"
+                until @rootdir == "/"
+                    break if rantfile_in_dir(@rootdir)
+                    @rootdir = File.dirname(@rootdir)
+                end
 	    when "--rantfile"
 		@arg_rantfiles << value
 	    when "--force-run"

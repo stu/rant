@@ -152,7 +152,7 @@ module Rant::Console
 	    next unless desc	# "private" option
 	    optstr = ""
 	    arg = nil
-	    if mode == GetoptLong::REQUIRED_ARGUMENT
+	    if mode != GetoptLong::NO_ARGUMENT
 		if desc =~ /(\b[A-Z_]{2,}\b)/
 		    arg = $1
 		end
