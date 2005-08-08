@@ -32,12 +32,11 @@ module Rant
 
     class Task
 	include Node
-	include Console
 
 	def initialize(rac, name, prerequisites = [], &block)
 	    super()
-	    @rac = rac || Rant.rac
-	    @name = name or raise ArgumentError, "name not given"
+	    @rac = rac or raise ArgumentError, "rac not given"
+            @name = name or raise ArgumentError, "name not given"
 	    @pre = prerequisites || []
 	    @pre_resolved = false
 	    @block = block
@@ -187,7 +186,7 @@ module Rant
 	#
 	# See also: handle_node, handle_timestamped
 	def handle_non_node(dep, opt)
-	    err_msg "Unknown task `#{dep}',",
+	    @rac.err_msg "Unknown task `#{dep}',",
 		"referenced in `#{rantfile.path}', line #{@line_number}!"
 	    self.fail
 	end
@@ -325,7 +324,7 @@ module Rant
 	def handle_non_node(dep, opt)
             goto_task_home # !!??
 	    unless File.exist? dep
-		err_msg @rac.pos_text(rantfile.path, line_number),
+		@rac.err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
@@ -342,8 +341,9 @@ module Rant
 	private
 	def run
             goto_task_home
+            @rac.running_task(self)
 	    dir = File.dirname(name)
-            @rac.build dir unless dir == "."
+            @rac.build dir unless dir == "." || dir == "/"
             return unless @block
             @block.arity == 0 ? @block.call : @block[self]
 	end
@@ -390,7 +390,7 @@ module Rant
 	def handle_non_node(dep, opt)
             goto_task_home
 	    unless File.exist? dep
-		err_msg @rac.pos_text(rantfile.path, line_number),
+		@rac.err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file or task: `#{dep}'"
 		self.fail
 	    end
@@ -398,6 +398,7 @@ module Rant
 	end
 
 	def run
+            @rac.running_task(self)
 	    @rac.sys.mkdir @name unless @isdir
 	    if @block
 		@block.arity == 0 ? @block.call : @block[self]

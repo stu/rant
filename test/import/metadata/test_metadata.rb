@@ -24,7 +24,7 @@ class TestMetaData < Test::Unit::TestCase
     def test_subdir
         out, err = assert_rant("subdir=true", "sub/b")
         assert(err.empty?)
-        assert_equal("nil\nnil\ntouch b\n", out)
+        assert_equal("nil\nnil\n(in sub)\ntouch b\n", out)
         assert(test(?f, ".rant.meta"))
         assert(test(?f, "sub/.rant.meta"))
         out, err = assert_rant("subdir=true", "sub/b")
@@ -37,7 +37,7 @@ class TestMetaData < Test::Unit::TestCase
         FileUtils.rm ".rant.meta"
         out = run_ruby("make.t", "subdir=true", "sub/b")
         assert_exit
-        assert_equal("nil\nnil\ntouch b\n", out)
+        assert_equal("nil\nnil\n(in sub)\ntouch b\n", out)
         assert(test(?f, ".rant.meta"))
         assert(test(?f, "sub/.rant.meta"))
         out = run_ruby("make.t", "subdir=true", "sub/b")

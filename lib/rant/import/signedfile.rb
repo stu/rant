@@ -222,6 +222,7 @@ module Rant
             end
             private
             def run
+                @rac.running_task(self)
                 @rac.cx.sys.mkdir @name unless test ?d, @name
                 if @block
                     @block.arity == 0 ? @block.call : @block[self]

@@ -151,17 +151,17 @@ module Rant
 	def each_target
 	end
 
+        private
 	def run
 	    return unless @block
 	    goto_task_home
+            @rac.running_task(self)
 	    @block.arity == 0 ? @block.call : @block[self]
 	end
-	private :run
 
 	def circular_dep
 	    rac.warn_msg "Circular dependency on task `#{full_name}'."
 	    false
 	end
-	private :circular_dep
     end	# module Node
 end

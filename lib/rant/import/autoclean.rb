@@ -47,7 +47,7 @@ class Rant::Generators::AutoClean
 		end
 	    }
 	    if target_rx
-		rac.msg 1, "searching for rule products"
+		rac.vmsg 1, "searching for rule products"
 		rac.cx.sys["**/*"].each { |entry|
 		    if entry =~ target_rx
 			if test ?f, entry

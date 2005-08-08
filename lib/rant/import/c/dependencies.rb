@@ -102,7 +102,7 @@ class Rant::Generators::C::Dependencies
 		end
 		rf_str << file_deps(cf, deps) << "\n"
 	    }
-	    rac.msg 1, "writing C source dependencies to #{t.name}"
+	    rac.vmsg 1, "writing C source dependencies to #{t.name}"
 	    open(t.name, "w") { |f|
 		f.puts
 		f.puts "# #{t.name}"

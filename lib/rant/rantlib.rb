@@ -321,7 +321,7 @@ class Rant::RantApp
 	[ "--directory","-C",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Run rant in DIRECTORY."				],
         [ "--cd-parent","-c",   GetoptLong::NO_ARGUMENT,
-            "Run rant in parent directory."                     ],
+            "Run rant in parent directory with Rantfile."       ],
         [ "--look-up",  "-u",   GetoptLong::NO_ARGUMENT,
             "Look in parent directories for root Rantfile."     ],
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
@@ -379,7 +379,9 @@ class Rant::RantApp
     # Note: Might change before 1.0
     attr_reader :resolve_hooks
     # Root directory of project. Will be initialized to working
-    # directory in #initialize.
+    # directory in #initialize. This is always an absolute path
+    # beginning with a <tt>/</tt> and not ending in a slash (unless
+    # rootdir is <tt>/</tt>).
     attr_reader :rootdir
 
     attr_accessor :node_factory
@@ -412,8 +414,8 @@ class Rant::RantApp
 	@var.query :ignore, :AutoList, []
 	@imports = []
 
-	#@task_show = nil
 	@task_desc = nil
+        @last_build_subdir = ""
 
 	@current_subdir = ""
 	@resolve_hooks = []
@@ -430,17 +432,13 @@ class Rant::RantApp
     end
 
     ### support for subdirectories ###################################
-    def expand_project_path(path)
-	expand_path(@current_subdir, path)
-    end
     def expand_path(subdir, path)
 	case path
 	when nil:	subdir.dup
 	when "":	subdir.dup
 	when /^#/:	path.sub(/^#/, '')
-	when /^\\#/:	path.sub(/^\\/, '')
 	else
-	    #puts "epp: current_subdir: #@current_subdir"
+            path = path.sub(/^\\(?=#)/, '')
 	    if subdir.empty?
 		# we are in project's root directory
 		path
@@ -453,36 +451,27 @@ class Rant::RantApp
     # method ensures that the returned absolute path doesn't end in a
     # slash.
     def project_to_fs_path(path)
-	base = rootdir.empty? ? Dir.pwd : rootdir
-	sub = expand_project_path(path)
-	sub.empty? ? base : File.join(base, sub)
+	sub = expand_path(@current_subdir, path)
+	sub.empty? ? @rootdir : File.join(@rootdir, sub)
     end
     def goto(dir)
-	# TODO: optimize
-	p_dir = expand_project_path(dir)
-	base = rootdir.empty? ? Dir.pwd : rootdir
-	abs_path = p_dir.empty? ? base : File.join(base, p_dir)
-	@current_subdir = p_dir
+        goto_project_dir(expand_path(@current_subdir, dir))
+    end
+    # +dir+ is a path relative to +rootdir+. It has to be a "clean"
+    # path string, i.e. it mustn't start with <tt>./</tt>, contain any
+    # <tt>..</tt> parent reference and it mustn't have a trailing
+    # slash.
+    #
+    # To go to the root directory, dir has to be an empty string,
+    # which is the default value.
+    def goto_project_dir(dir='')
+        @current_subdir = dir
+        abs_path = @current_subdir.empty? ?
+            @rootdir : File.join(@rootdir, @current_subdir)
 	unless Dir.pwd == abs_path
-	    #puts "pwd: #{Dir.pwd}; abs_path: #{abs_path}"
-	    #puts "   current subdir: #@current_subdir"
 	    Dir.chdir abs_path
-	    msg 1, "in #{abs_path}"
-	    #STDERR.puts "rant: in #{p_dir}"
+	    vmsg 1, "in #{abs_path}"
 	end
-    end
-    # +dir+ is a path relative to +rootdir+
-    def goto_project_dir(dir)
-	# TODO: optimize
-	goto "##{dir}"
-    end
-    # Execute the give block in project directory dir.
-    def in_project_dir(dir)
-	prev_subdir = @current_subdir
-	goto_project_dir(dir)
-	yield
-    ensure
-	goto_project_dir(prev_subdir)
     end
     ##################################################################
 
@@ -507,8 +496,9 @@ class Rant::RantApp
 	# Process commandline.
 	process_args
         Dir.chdir(@rootdir)
-	# read rantfiles
+	# read rantfiles, might change @rootdir and Dir.pwd
 	load_rantfiles
+        @last_build_subdir = @initial_subdir if defined? @initial_subdir
 
 	raise Rant::RantDoneException if @opts[:stop_after_load]
 
@@ -599,7 +589,7 @@ class Rant::RantApp
 	    unless @imports.include? arg
 		unless Rant::CODE_IMPORTS.include? arg
 		    begin
-			msg 2, "import #{arg}"
+			vmsg 2, "import #{arg}"
 			require "rant/import/#{arg}"
 		    rescue LoadError => e
 			abort_at(ch, "No such import - #{arg}")
@@ -651,7 +641,7 @@ class Rant::RantApp
 	plugin = pl_class.rant_plugin_new(self, ch, *args, &block)
 	# TODO: check for rant_plugin?
 	@plugins << plugin
-	msg 2, "Plugin `#{plugin.rant_plugin_name}' registered."
+	vmsg 2, "Plugin `#{plugin.rant_plugin_name}' registered."
 	plugin.rant_plugin_init
 	# return plugin instance
 	plugin
@@ -850,48 +840,24 @@ class Rant::RantApp
 	t << ": "
     end
 
-    def msg(*args)
-	verbose_level = args[0]
-	if verbose_level.is_a? Integer
-	    super(args[1..-1]) if verbose_level <= verbose
-	else
-	    super
-	end
-    end
-
     # Print a command message as would be done from a call to a
-    # Sys method.
+    # sys method.
     def cmd_msg(cmd)
 	puts cmd unless quiet?
     end
-
-    ###### public methods regarding plugins ##########################
-    # The preferred way for a plugin to report a warning.
-    def plugin_warn(*args)
-	warn_msg(*args)
-    end
-    # The preferred way for a plugin to report an error.
-    def plugin_err(*args)
-	err_msg(*args)
-    end
-
-    # Get the plugin with the given name or nil. Yields the plugin
-    # object if block given.
-    def plugin_named(name)
-	@plugins.each { |plugin|
-	    if plugin.rant_plugin_name == name
-		yield plugin if block_given?
-		return plugin
-	    end
-	}
-	nil
-    end
-    ##################################################################
 
     # All targets given on commandline, including those given
     # with the -a option. The list will be in processing order.
     def cmd_targets
 	@force_targets + @arg_targets
+    end
+
+    def running_task(task)
+        if @current_subdir != @last_build_subdir
+            cmd_msg "(in #{@current_subdir.empty? ?
+                @rootdir : @current_subdir})"
+            @last_build_subdir = @current_subdir
+        end
     end
 
     private
@@ -1085,27 +1051,42 @@ class Rant::RantApp
             return
         end
         return if have_any_task?
+        # look for standard Rantfile in working directory
         fn = rantfile_in_dir
+        if @opts[:cd_parent]
+            # search for Rantfile in parent directories
+            old_root = @rootdir
+            until fn or @rootdir == "/"
+                @rootdir = File.dirname(@rootdir)
+                fn = rantfile_in_dir(@rootdir)
+            end
+            if @rootdir != old_root and fn
+                Dir.chdir @rootdir
+                cmd_msg "(in #@rootdir)" 
+            end
+        end
         if fn
             rf, is_new = rantfile_for_path(fn)
             load_file rf if is_new
             return
         end
         if @opts[:look_up] || test(?f, Rant::SUB_RANTFILE)
+            # search for "root" Rantfile in parent directories, treat
+            # current working directory as project subdirectory
             cur_dir = Dir.pwd
             until cur_dir == "/"
                 cur_dir = File.dirname(cur_dir)
                 Dir.chdir cur_dir
                 fn = rantfile_in_dir
                 if fn
-                    msg 2, "rootdir is #{cur_dir}"
                     @initial_subdir = @rootdir.sub(
                         /^#{Regexp.escape cur_dir}\//, '')
                     # adjust rootdir
                     @rootdir = cur_dir
                     rf, is_new = rantfile_for_path(fn)
                     load_file rf if is_new
-                    goto "##@initial_subdir"
+                    goto_project_dir @initial_subdir
+                    cmd_msg "(root is #@rootdir, in #@current_subdir)"
                     break
                 end
             end
@@ -1119,7 +1100,7 @@ class Rant::RantApp
     # Returns the value of the last expression executed in +rantfile+.
     # +rantfile+ has to be an Rant::Rantfile instance.
     def load_file(rantfile)
-	msg 1, "source #{rantfile}"
+	vmsg 1, "source #{rantfile}"
 	@context.instance_eval(File.read(rantfile), rantfile)
     end
     private :load_file
@@ -1155,11 +1136,6 @@ class Rant::RantApp
 		raise Rant::RantDoneException
 	    when "--directory"
                 @rootdir = File.expand_path(value)
-            when "--cd-parent"
-                until @rootdir == "/"
-                    break if rantfile_in_dir(@rootdir)
-                    @rootdir = File.dirname(@rootdir)
-                end
 	    when "--rantfile"
 		@arg_rantfiles << value
 	    when "--force-run"
@@ -1178,7 +1154,7 @@ class Rant::RantApp
 	ARGV.replace(old_argv)
 	rem_args.each { |ra|
 	    if ra =~ /(^[^=]+)=([^=]+)$/
-		msg 2, "var: #$1=#$2"
+		vmsg 2, "var: #$1=#$2"
 		@var[$1] = $2
 	    else
 		@arg_targets << ra

@@ -270,7 +270,7 @@ module Rant::Plugin
 	end
 
 	def write_yaml
-	    @app.msg 1, "Writing config to `#{@file}'."
+	    @app.vmsg 1, "Writing config to `#{@file}'."
 	    File.open(@file, "w") { |f|
 		f << data.to_yaml
 		f << "\n"

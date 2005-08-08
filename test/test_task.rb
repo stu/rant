@@ -6,37 +6,32 @@ $-w = true
 
 class TestTask < Test::Unit::TestCase
     def setup
+        @rant = Rant::RantApp.new
     end
-    def teardown
-    end
-
     def test_version
 	assert(Rant::VERSION.length >= 5)
     end
-
     def test_needed
 	run = false
-	t = Rant::Task.new(nil, :non_existent) { run = true }
+	t = Rant::Task.new(@rant, :non_existent) { run = true }
 	assert(t.needed?,
 	    "Rant::Task should always be 'needed?' before first invocation")
 	assert(!run,
 	    "Rant::Task shouldn't get run when 'needed?' is called")
     end
-
     def test_invoke
 	run = false
 	block = lambda { run = true }
-	task = Rant::Task.new(nil, :test_run, &block)
+	task = Rant::Task.new(@rant, :test_run, &block)
 	task.invoke
 	assert(run, "block should have been executed")
 	assert(task.done?, "task is done")
 	assert(!task.needed?,
 	    "task is done, so 'needed?' should return false")
     end
-
     def test_fail
 	block = lambda { |t| t.fail "this task abortet itself" }
-	task = Rant::Task.new(nil, :test_fail, &block)
+	task = Rant::Task.new(@rant, :test_fail, &block)
 	assert_raise(Rant::TaskFail,
 	    "run should throw Rant::TaskFail if block raises Exception") {
 	    task.invoke
@@ -44,11 +39,10 @@ class TestTask < Test::Unit::TestCase
 	assert(task.fail?)
 	assert(task.invoked?, "although task failed, it was invoked")
     end
-
     def test_dependent
 	r1 = r2 = false
-	t1 = Rant::Task.new(nil, :t1) { r1 = true }
-	t2 = Rant::Task.new(nil, :t2) { r2 = true }
+	t1 = Rant::Task.new(@rant, :t1) { r1 = true }
+	t2 = Rant::Task.new(@rant, :t2) { r2 = true }
 	t1 << t2
 	t1.invoke
 	assert(r1)
@@ -60,8 +54,8 @@ class TestTask < Test::Unit::TestCase
     end
 
     def test_dependency_fails
-	t1 = Rant::Task.new(nil, :t1) { true }
-	t2 = Rant::Task.new(nil, :t2) { |t| t.fail }
+	t1 = Rant::Task.new(@rant, :t1) { true }
+	t2 = Rant::Task.new(@rant, :t2) { |t| t.fail }
 	t1 << t2
 	assert_raise(Rant::TaskFail,
 	    "dependency t2 failed, so t1 should fail too") {

@@ -6,13 +6,11 @@ $test_filetask_file = File.expand_path(__FILE__)
 
 class TestFileTask < Test::Unit::TestCase
     def setup
+        @rant = Rant::RantApp.new
     end
-    def teardown
-    end
-
     def test_needed_non_existent
 	run = false
-	t = Rant::FileTask.new(nil, "non_existent") { run = true }
+	t = Rant::FileTask.new(@rant, "non_existent") { run = true }
 	assert(t.needed?,
 	    "`non_existent' doesn't exist, so filetask is needed")
 	assert(!run,

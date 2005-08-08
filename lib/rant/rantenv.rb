@@ -111,18 +111,18 @@ module Rant::Console
     end
     def msg(*text)
         pre = msg_prefix
-        text = text.join("\n" + ' ' * pre.length)
-        $stderr.puts(pre + text)
+        $stderr.puts "#{pre}#{text.join("\n" + ' ' * pre.length)}"
+    end
+    def vmsg(importance, *text)
+        msg(*text) if verbose >= importance
     end
     def err_msg(*text)
         pre = msg_prefix + ERROR_PREFIX
-        text = text.join("\n" + ' ' * pre.length)
-        $stderr.puts(pre + text)
+        $stderr.puts "#{pre}#{text.join("\n" + ' ' * pre.length)}"
     end
     def warn_msg(*text)
         pre = msg_prefix + WARN_PREFIX
-        text = text.join("\n" + ' ' * pre.length)
-        $stderr.puts(pre + text)
+        $stderr.puts "#{pre}#{text.join("\n" + ' ' * pre.length)}"
     end
     def ask_yes_no text
         $stderr.print msg_prefix + text + " [y|n] "
