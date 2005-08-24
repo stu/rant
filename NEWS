@@ -7,6 +7,12 @@ Incompatible changes:
 * Previous Rant versions loaded both, +Rantfile+ and
   <tt>Rantfile.rb</tt>, if present. This version will only load one of
   them (preferably +Rantfile+).
+* +RubyTest+ tasks no longer honour TESTOPTS variable.
+
+New features:
+* The +sys+ and <tt>sys.ruby</tt> methods take an optional block for
+  custom process exit status handling (per default, Rant aborts if a
+  subprocess started with +sys+ exits with another status than 0).
 
 == Rant 0.4.4
 

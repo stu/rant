@@ -195,7 +195,7 @@ module RantContext
     end
 
     def sys(*args, &block)
-	rac.sys(*args)
+	rac.sys(*args, &block)
     end
 
     def var(*args, &block)
@@ -733,7 +733,7 @@ class Rant::RantApp
     end
 
     def sys(*args, &block)
-	args.empty? ? @sys : @sys.sh(*args)
+	args.empty? ? @sys : @sys.sh(*args, &block)
     end
 
     # The [] and []= operators may be used to set/get values from this

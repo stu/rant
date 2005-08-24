@@ -35,7 +35,6 @@ methods with the Rant application:
 		look for Rantfiles.
 +var+::		Provides access to variables accessible in Rantfiles
 		and from the commandline.
-+rac+::		The "Rant compiler" which is compiling the Rantfiles.
 +make+::        Immediately build a target.
 
 === Defining a task

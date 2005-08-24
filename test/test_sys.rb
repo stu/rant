@@ -10,20 +10,45 @@ class TestSys < Test::Unit::TestCase
 
     def setup
 	# Ensure we run in test directory.
-	Dir.chdir($testDir) unless Dir.pwd == $testDir
+	Dir.chdir($testDir)
     end
-    def teardown
-    end
-
     def test_ruby
+        block_executed = false
 	op = capture_stdout do
-	    ruby('-e ""') { |succ, stat|
-		assert(succ)
-		assert_equal(stat, 0)
+	    ruby('-e ""') { |stat|
+                block_executed = true
+		assert_equal(0, stat)
 	    }
 	end
+        assert(block_executed)
 	assert(op =~ /\-e/i,
 	    "Sys should print command with arguments to $stdout")
+    end
+    def test_ruby_no_block
+        assert(!test(?e, "a.t"))
+        out, err = capture_std do
+            assert_nothing_raised { ruby '-e', 'open "a.t", "w" do end' }
+        end
+        assert(test(?f, "a.t"))
+    ensure
+        FileUtils.rm_f "a.t"
+    end
+    def test_ruby_exit_code
+        block_executed = false
+	out, err = capture_std do
+	    ruby('-e', 'exit 2') { |stat|
+                block_executed = true
+		assert_equal(2, stat.exitstatus)
+	    }
+	end
+        assert(block_executed)
+        assert(err.empty?)
+        assert_match(/. -e exit 2\n\z/m, out)
+    end
+    def test_ruby_fail
+        out, err = capture_std do
+            assert_raises(Rant::CommandError) { ruby '-e exit 1' }
+        end
     end
     def test_split_path
 	pl = split_path("/home/stefan")
@@ -84,5 +109,31 @@ class TestSys < Test::Unit::TestCase
         }
     ensure
         FileUtils.rm_rf %w(cp.t a.t b.t)
+    end
+    def test_sys_with_block
+        open "exit_1.t", "w" do |f|
+            f << <<-EOF
+            exit 1
+            EOF
+        end
+        open "rf.t", "w" do |f|
+            f << <<-EOF
+            task :rbexit1_block do
+                sys Env::RUBY, "exit_1.t" do |status|
+                    puts "no success" if status != 0
+                    puts status.exitstatus
+                end
+            end
+            task :rbexit1 do
+                sys.ruby "exit_1.t"
+            end
+            EOF
+        end
+        out, err = assert_rant("-frf.t")
+        assert(err.empty?)
+        assert_equal(["no success", "1"], out.split(/\n/)[1..-1])
+        out, err = assert_rant(:fail, "-frf.t", "rbexit1")
+    ensure
+        FileUtils.rm_f %w(exit_1.t rf.t)
     end
 end

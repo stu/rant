@@ -46,18 +46,18 @@ module Rant
 
 	    @pre ||= []
 	    # define the task
-	    app.task({:__caller__ => cinf, @name => @pre}) { |t|
-		arg = ""
-		libpath = (@libs.nil? || @libs.empty?) ?
-		    nil : @libs.join(File::PATH_SEPARATOR)
-		if libpath
-		    arg << "-I " << Env.shell_path(libpath) << " "
-		end
-		arg << "-S testrb " << optlist
+	    app.task(:__caller__ => cinf, @name => @pre) { |t|
+		args = []
+                if @libs && !@libs.empty?
+                    args << "-I#{@libs.join File::PATH_SEPARATOR}"
+                end
+                # TODO: don't use testrb
+                args << "-S" << "testrb"
+                args.concat optlist
 		if @test_dir
-		    app.context.sys.cd(@test_dir) {
-			arg << filelist.arglist
-			app.context.sys.ruby arg
+		    app.sys.cd(@test_dir) {
+			args.concat filelist
+			app.sys.ruby args
 		    }
 		else
 		    if test(?d, "test")
@@ -65,26 +65,32 @@ module Rant
 		    elsif test(?d, "tests")
 			@test_dirs << "tests"
 		    end
-		    arg << filelist.arglist
-		    app.context.sys.ruby arg
+		    args.concat filelist
+		    app.context.sys.ruby args
 		end
 	    }
 	end
 	def optlist
-	    options = (@options.is_a? Array) ?
-		@options.arglist : @options 
-	    @rac.cx.var["TESTOPTS"] || options || ""
+            if @options.respond_to? :to_ary
+                @options.to_ary
+            elsif @options
+                [@options.to_str]
+            else
+                []
+            end
+            # previously Rant (0.4.4 and earlier versions) honoured
+            # var["TESTOPTS"]
 	end
 	def filelist
-	    return Dir[@rac.cx.var['TEST']] if @rac.cx.var['TEST']
+	    return @rac.sys[@rac.var['TEST']] if @rac.var['TEST']
 	    filelist = @test_files || []
 	    if filelist.empty?
 		if @test_dirs && !@test_dirs.empty?
 		    @test_dirs.each { |dir|
-			filelist.concat(Dir[File.join(dir, @pattern)])
+			filelist.concat(@rac.sys[File.join(dir, @pattern)])
 		    }
 		else
-		    filelist.concat(Dir[@pattern]) if @pattern
+		    filelist.concat(@rac.sys[@pattern]) if @pattern
 		end
 	    end
 	    filelist

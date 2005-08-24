@@ -534,21 +534,25 @@ module Rant
 	    cmd_args.flatten!
 	    cmd = cmd_args.join(" ")
 	    fu_output_message cmd
+            success = system(*cmd_args)
 	    if block_given?
-		block[system(*cmd_args), $?]
-	    else
-		system(*cmd_args) or raise CommandError.new(cmd, $?)
+                block[$?]
+            elsif !success
+		raise CommandError.new(cmd, $?)
 	    end
 	end
 
 	# Run a new Ruby interpreter with the given arguments:
 	#     sys.ruby "install.rb"
 	def ruby(*args, &block)
-	    if args.size > 1
-		sh([Env::RUBY] + args, &block)
-	    else
-		sh("#{Env::RUBY} #{args.first}", &block)
-	    end
+            if args.empty?
+                # The empty string argument ensures that +system+
+                # doesn't start a subshell but invokes ruby directly.
+                # The empty string argument is ignored by ruby.
+                sh(Env::RUBY, '', &block)
+            else
+                sh(args.unshift(Env::RUBY), &block)
+            end
 	end
 
 	# Returns a string that can be used as a valid path argument
