@@ -10,6 +10,8 @@ dist_files = sys["{bin,lib,test,doc,misc}/**/*"]
 dist_files.shun("html", "coverage")
 dist_files += sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
 hp_files = sys["doc/homepage/*"]
+extra_rdoc_files = sys["**/README", "NEWS", "doc/**/*.rdoc"]
+extra_rdoc_files.no_dir("pkg").no_dir("test")
 
 # remove when compiler stuff is getting useful...
 dist_files.exclude "lib/rant/compiler*", "lib/rant/import/c/program.rb"
@@ -26,7 +28,7 @@ gen RubyPackage, "rant" do |t|
     t.email = "langstefan@gmx.at"
     t.rubyforge_project = "make"
     t.homepage = "http://make.rubyforge.org"
-    t.gem_extra_rdoc_files = sys["**/README", "NEWS"].no_dir("pkg").no_dir("test") + sys["doc/**/*.rdoc"]
+    t.gem_extra_rdoc_files = extra_rdoc_files
     t.gem_rdoc_options = rdoc_opts
     desc "Create packages for distribution."
     t.package_task
@@ -36,8 +38,7 @@ desc "Generate documentation."
 gen RubyDoc do |g|
     g.verbose = true
     g.dir = "doc/html"
-    g.files.concat sys["NEWS", "**/README"].no_dir("pkg").no_dir("test")
-    g.files.concat sys["doc/**/*.rdoc"]
+    g.files.concat extra_rdoc_files
     g.opts = rdoc_opts + %w(-T doc/jamis.rb)
 end
 

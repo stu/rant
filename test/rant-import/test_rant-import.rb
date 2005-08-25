@@ -7,6 +7,8 @@ require 'fileutils'
 $testRantImportDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestRantImport < Test::Unit::TestCase
+    include Rant::TestUtil
+
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir($testRantImportDir)
@@ -85,13 +87,11 @@ class TestRantImport < Test::Unit::TestCase
 	    end
 	    EOF
 	}
-	open("Rantfile.rb", "w") { |f|
-	    f << <<-EOF
+        write_to_file "rantfile", <<-EOF
 	    $:.unshift "lib.t"
 	    import "sub/t"
 	    gen Sub::T, "hello", "test" do end
-	    EOF
-	}
+        EOF
 	out, err = assert_rant
 	assert_match(/.*hello.*\n.*test.*\n.*block_given/, out)
 	run_import("--quiet", "--auto", "ant")
@@ -132,13 +132,11 @@ class TestRantImport < Test::Unit::TestCase
 	    end
 	    EOF
 	}
-	open("rantfile.rb", "w") { |f|
-	    f << <<-EOF
+        write_to_file "root.rant", <<-EOF
 	    $:.unshift "lib.t"
 	    import "sub2/t"
 	    gen Sub2::T, "hello", "test" do end
-	    EOF
-	}
+        EOF
 	out, err = assert_rant
 	assert_match(/hellotest/, out)
 	run_import("--quiet", "--auto", "ant.rb")

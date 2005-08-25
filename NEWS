@@ -9,6 +9,11 @@ Incompatible changes:
   them (preferably +Rantfile+).
 * +RubyTest+ tasks no longer honour TESTOPTS variable.
 
+Deprecated:
+* The filenames <tt>Rantfile.rb</tt> and <tt>rantfile.rb</tt> are
+  deprecated for rantfiles and won't be recognized by future Rant
+  versions. Use +Rantfile+, +rantfile+ or <tt>root.rant</tt> instead.
+
 New features:
 * The +sys+ and <tt>sys.ruby</tt> methods take an optional block for
   custom process exit status handling (per default, Rant aborts if a

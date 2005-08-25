@@ -1,0 +1,6 @@
+This directory contains tests for deprecated features.
+
+The test file names have the form test_digit_digit_digit.rb,
+where the digits represent the Rant release version with which the
+features tested in the file (and thus the testfile itself) will
+disappear.

@@ -1114,6 +1114,14 @@ class Rant::RantApp
 	    path = dir ? File.join(dir, rfn) : rfn
             return path if test ?f, path
 	}
+	::Rant::DEPRECATED_RANTFILES.each { |rfn|
+	    path = dir ? File.join(dir, rfn) : rfn
+            if test ?f, path
+                warn_msg "filename deprecated -- #{path}",
+                    "please rename it to `Rantfile' or `root.rant'!"
+                return path
+            end
+	}
         nil
     end
 

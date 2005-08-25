@@ -8,7 +8,7 @@ class TestProjectRb1 < Test::Unit::TestCase
     def setup
 	@manifest = %w(bin lib test bin/wgrep lib/wgrep.rb
 	    test/text test/tc_wgrep.rb README test_project_rb1.rb
-	    rantfile.rb)
+	    rantfile)
 	# Ensure we run in test directory.
 	Dir.chdir($testProjectRb1Dir)
     end

@@ -247,3 +247,23 @@ def extract_requires(script, dynamic_requires = [])
     }
     requires
 end
+
+module Rant::TestUtil
+    def in_local_temp_dir(dirname = "t")
+        dirname = dirname.dup
+        base_dir = Dir.pwd
+        raise "dir `#{t}' already exists" if test ?e, dirname
+        FileUtils.mkdir dirname
+        Dir.chdir dirname
+        yield
+    ensure
+        Dir.chdir base_dir
+        FileUtils.rm_rf dirname
+    end
+    def write_to_file(fn, content)
+        open fn, "w" do |f|
+            f.write content
+        end
+    end
+    extend self
+end

@@ -23,9 +23,7 @@ class TestProject2 < Test::Unit::TestCase
 	Dir.chdir($testProject2Dir) unless Dir.pwd == $testProject2Dir
     end
     def teardown
-	capture_std do
-	    assert_equal(app(%w(-f rantfile.rb -f buildfile clean sub1/clean)).run, 0)
-	end
+        assert_rant(%w(-f root.rant -f buildfile clean sub1/clean))
 	assert(Dir["r_f*"].empty?,
 	    "r_f* files should have been removed by `clean'")
 	assert(Dir["b_f*"].empty?,

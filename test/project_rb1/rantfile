@@ -1,7 +1,7 @@
 import %w(rubytest rubydoc rubypackage clean)
 
 lib_files = Dir["lib/**/*.rb"]
-dist_files = lib_files + %w(rantfile.rb README test_project_rb1.rb) + Dir["{test,bin}/*"]
+dist_files = lib_files + %w(rantfile README test_project_rb1.rb) + Dir["{test,bin}/*"]
 
 desc "Run unit tests."
 gen RubyTest do |t|
