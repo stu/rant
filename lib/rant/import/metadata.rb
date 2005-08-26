@@ -151,8 +151,8 @@ module Rant
 
             def invalid_format(fn)
                 raise Rant::Error, "The file `#{fn}' is used by " +
-                    "Rant to store meta information, it is in an " +
-                    "invalid state. Check that it doesn't contain " +
+                    "Rant to store meta information, it is in an\n" +
+                    "invalid state. Check that it doesn't contain\n" +
                     "important data, remove it and retry."
             end
 

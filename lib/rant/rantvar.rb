@@ -37,7 +37,7 @@ module Rant
     class RantDoneException < StandardError
     end
 
-    class RantError < StandardError
+    class Error < StandardError
     end
 
     # This module is a namespace for generator classes.
@@ -125,7 +125,7 @@ module Rant
 
     module RantVar
 
-	class Error < RantError
+	class Error < Rant::Error
 	end
 
 	class ConstraintError < Error

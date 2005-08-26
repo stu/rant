@@ -27,7 +27,7 @@ Rant::MAIN_OBJECT = self
 
 unless Process::Status.method_defined?(:success?) # new in 1.8.2
     class Process::Status
-        def success?;  exitstatus == 0; end
+        def success?; exitstatus == 0; end
     end
 end
 unless Regexp.respond_to? :union # new in 1.8.1
@@ -498,7 +498,6 @@ class Rant::RantApp
         Dir.chdir(@rootdir)
 	# read rantfiles, might change @rootdir and Dir.pwd
 	load_rantfiles
-        @last_build_subdir = @initial_subdir if defined? @initial_subdir
 
 	raise Rant::RantDoneException if @opts[:stop_after_load]
 
@@ -1083,10 +1082,11 @@ class Rant::RantApp
                         /^#{Regexp.escape cur_dir}\//, '')
                     # adjust rootdir
                     @rootdir = cur_dir
+                    cmd_msg "(root is #@rootdir, in #@initial_subdir)"
+                    @last_build_subdir = @initial_subdir
                     rf, is_new = rantfile_for_path(fn)
                     load_file rf if is_new
                     goto_project_dir @initial_subdir
-                    cmd_msg "(root is #@rootdir, in #@current_subdir)"
                     break
                 end
             end

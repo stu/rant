@@ -46,14 +46,15 @@ class Rant::Generators::AutoClean
 			Regexp.union(target_rx, t_rx)
 		end
 	    }
+            t.goto_task_home
 	    if target_rx
 		rac.vmsg 1, "searching for rule products"
-		rac.cx.sys["**/*"].each { |entry|
+		rac.sys["**/*"].each { |entry|
 		    if entry =~ target_rx
 			if test ?f, entry
-			    rac.cx.sys.rm_f entry
+			    rac.sys.rm_f entry
 			else
-			    rac.cx.sys.rm_rf entry
+			    rac.sys.rm_rf entry
 			end
 		    end
 		}
@@ -68,14 +69,13 @@ class Rant::Generators::AutoClean
                     }
                 }
             end
-            t.goto_task_home
 	end
     end
     def self.clean(rac, entry)
         if test ?f, entry
-            rac.cx.sys.rm_f entry
+            rac.sys.rm_f entry
         elsif test ?e, entry
-            rac.cx.sys.rm_rf entry
+            rac.sys.rm_rf entry
         end
     end
 end
