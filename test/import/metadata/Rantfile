@@ -10,7 +10,7 @@ if var[:subdir]
     subdirs "sub"
     rac.goto "sub"
         p var[:__metadata__].fetch("cmd", "b", "sub")
-    rac.goto "#"
+    rac.goto "@"
 else
     p var[:__metadata__].fetch("cmd", "a")
 end

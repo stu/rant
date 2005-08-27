@@ -344,7 +344,7 @@ class Rant::RantApp
 
     # Reference project's root directory in task names by preceding
     # them with this character.
-    ROOT_DIR_ID = "#"
+    ROOT_DIR_ID = "@"
     ESCAPE_ID = "\\"
 
     # Arguments, usually those given on commandline.
@@ -436,9 +436,9 @@ class Rant::RantApp
 	case path
 	when nil:	subdir.dup
 	when "":	subdir.dup
-	when /^#/:	path.sub(/^#/, '')
+	when /^@/:	path.sub(/^@/, '')
 	else
-            path = path.sub(/^\\(?=#)/, '')
+            path = path.sub(/^\\(?=@)/, '')
 	    if subdir.empty?
 		# we are in project's root directory
 		path

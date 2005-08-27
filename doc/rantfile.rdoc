@@ -400,8 +400,8 @@ Rantfile. Simply put a +subdirs+ command into the src/Rantfile. Rant
 integrates well into your file system :)
 
 If you want to refer to a task in the main Rantfile from a subdir
-Rantfile, put a # in front of the task name:
-    task "a" => "#b"
+Rantfile, put a <tt>@</tt> in front of the task name:
+    task "a" => "@b"
 But note that this Rantfile won't work as a standalone buildfile,
 because it refers to a main Rantfile.
 

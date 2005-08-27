@@ -3,7 +3,7 @@ file "rootdep.t" do |t|
     sys.touch t.name
 end
 
-file "rootref.t" => "#t" do |t|
+file "rootref.t" => "@t" do |t|
     test(?f, "../../t") || t.fail
     sys.touch t.name
 end

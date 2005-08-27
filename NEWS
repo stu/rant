@@ -4,6 +4,8 @@
 == Rant 0.4.6
 
 Incompatible changes:
+* *Important*: The notation <tt>"#foo"</tt> to reference a task
+  defined in the project's root directory changed to <tt>"@foo"</tt>.
 * Previous Rant versions loaded both, +Rantfile+ and
   <tt>Rantfile.rb</tt>, if present. This version will only load one of
   them (preferably +Rantfile+).

@@ -80,7 +80,7 @@ module Rant
             case sd
             when "": full_name
             when project_subdir: name
-            else "##{full_name}".sub(/^##{Regexp.escape sd}\//, '')
+            else "@#{full_name}".sub(/^@#{Regexp.escape sd}\//, '')
             end
         end
 
