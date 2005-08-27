@@ -620,4 +620,4 @@ module Rant
 	    @rac.cmd_msg cmd
 	end
     end
-end	# module Rant
+end # module Rant

@@ -164,4 +164,4 @@ module Rant
 	    false
 	end
     end	# module Node
-end
+end # module Rant

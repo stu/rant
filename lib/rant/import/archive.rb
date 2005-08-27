@@ -9,6 +9,7 @@
 
 require 'rant/rantlib'
 require 'rant/import/subfile'
+#require 'rant/progress' #rant-import:uncomment
 #require 'rant/tempfile' #rant-import:uncomment
 
 module Rant::Generators::Archive
@@ -309,16 +310,47 @@ module Rant::Generators::Archive
 			dirs << dir unless dir == "." || dirs.include?(dir)
 		    end
 		}
+                require 'rant/progress' #rant-import:remove
 		# create directory structure
-		dirs.each { |dir|
-		    dest = File.join(@dist_path, dir)
-		    cx.sys.mkpath(dest) unless test(?d, dest)
-		}
-		# link or copy files
-		fl.each { |f|
-		    dest = File.join(@dist_path, f)
-		    cx.sys.safe_ln(f, dest)
-		}
+                progress = Rant::ProgressCountdown.new(dirs.size, @rac)
+                dir_msg = "Creating directories under #@dist_path: "
+                msg_len = dir_msg.length
+                unless dirs.empty?
+                    @rac.cmd_print dir_msg
+                    dirs.each { |dir|
+                        FileUtils.mkpath(File.join(@dist_path, dir))
+                        progress.inc
+                    }
+                    @rac.cmd_msg "done"
+                end
+                # link/copy files to package directory
+                f = fl.first
+                if f
+                    progress = Rant::ProgressCountdown.new(fl.size, @rac)
+                    dest = File.join(@dist_path, f)
+                    ln_supported = true
+                    begin
+                        FileUtils.ln(f, dest)
+                        fl.shift
+                        @rac.cmd_print "Linking "
+                    rescue Exception #Errno::EOPNOTSUPP
+                        ln_supported = false
+                        @rac.cmd_print "Copying "
+                    end
+                    @rac.cmd_print \
+                        "#{progress.total} files to #@dist_path: ".ljust(msg_len - 8)
+                    progress.inc if ln_supported
+                    fl.each { |f|
+                       dest = File.join(@dist_path, f)
+                       if ln_supported
+                           FileUtils.ln(f, dest)
+                       else
+                           FileUtils.cp(f, dest)
+                       end
+                       progress.inc
+                    }
+                    @rac.cmd_msg "done"
+                end
 	    }
 	end
     end # class Base

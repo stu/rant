@@ -845,6 +845,11 @@ class Rant::RantApp
 	puts cmd unless quiet?
     end
 
+    def cmd_print(text)
+        print text unless quiet?
+        $stdout.flush
+    end
+
     # All targets given on commandline, including those given
     # with the -a option. The list will be in processing order.
     def cmd_targets

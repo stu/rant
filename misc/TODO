@@ -1,6 +1,16 @@
 
 = TODO
 
+== Eventually replace <tt>#</tt> with another symbol.
+
+The # symbol as reference to the project's root directory should
+eventuelly get replaced with a better fitting symbol. Many shells
+interpret it as comment start and thus escaping/quoting is needed if
+<tt>#some_target</tt> arguments are used on the commandline. This
+could get a common source of annoyance/bugs.
+
+Favorite candidate is currently <tt>@</tt>.
+
 == Improve SourceNode types
 
 Currently a SourceNode can only have other SourceNodes or files as
