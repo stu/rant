@@ -94,8 +94,7 @@ class TestProjectRb1 < Test::Unit::TestCase
 	FileUtils.mkdir tmp_dir
 	FileUtils.cp tar_fn, tmp_dir
 	FileUtils.cd tmp_dir do
-            #`tar xzf #{tar_fn}`
-            unpack_archive :tgz, tar_fn
+            Rant::Sys.unpack_tgz tar_fn
 	    assert(test(?d, pkg_base),
 		"`#{pkg_base}' should be root directory of all files in tar")
 	    FileUtils.cd pkg_base do
@@ -115,8 +114,7 @@ class TestProjectRb1 < Test::Unit::TestCase
 	FileUtils.mkdir tmp_dir
 	FileUtils.cp zip_fn, tmp_dir
 	FileUtils.cd tmp_dir do
-            #`unzip -q #{zip_fn}`
-            unpack_archive :zip, zip_fn
+            Rant::Sys.unpack_zip zip_fn
 	    assert(test(?d, pkg_base),
 		"`#{pkg_base}' should be root directory of all files in zip")
 	    FileUtils.cd pkg_base do

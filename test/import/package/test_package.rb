@@ -23,7 +23,12 @@ class TestImportPackage < Test::Unit::TestCase
 	FileUtils.cp archive, "u.t"
 	FileUtils.cd "u.t"
 	archive = File.basename archive
-	unpack_archive atype, archive
+        case atype
+        when :tgz: Rant::Sys.unpack_tgz(archive)
+        when :zip: Rant::Sys.unpack_zip(archive)
+        else
+            raise "unknown archive type -- #{atype}"
+        end
 	if @pkg_dir
 	    assert(test(?d, @pkg_dir))
 	    FileUtils.cd @pkg_dir

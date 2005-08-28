@@ -1,12 +1,12 @@
 
 require 'test/unit'
-require 'rant/rantlib'
 require 'tutil'
-require 'fileutils'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestRantfileAPI < Test::Unit::TestCase
+    include Rant::TestUtil
+
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir $testDir
@@ -138,5 +138,52 @@ class TestRantfileAPI < Test::Unit::TestCase
         assert_equal(th, th.join(1))
         assert_equal("test\n", out)
         assert(err.empty?)
+    end
+    def test_task_no_arguments
+        in_local_temp_dir do
+            write_to_file "Rantfile", <<-EOF
+                task
+                task :default do
+                    puts "hello"
+                end
+            EOF
+            out, err = assert_rant :fail
+            assert out.empty?
+            lines = err.split(/\n/)
+            assert lines.size < 4
+            assert_match(/\[ERROR\].*Rantfile\b.*\b1\b/, lines[0])
+            assert_match(/argument/, lines[1])
+        end
+    end
+    def test_file_too_many_hash_elements
+        in_local_temp_dir do
+            write_to_file "root.rant", <<-EOF
+
+                file :a => :b, :c => :d do |t|
+                    sys.touch t.name
+                end
+            EOF
+            out, err = assert_rant :fail
+            assert out.empty?
+            assert !test(?e, "a")
+            assert !test(?e, "c")
+            lines = err.split(/\n/)
+            assert lines.size < 4
+            assert_match(/\[ERROR\].*root\.rant\b.*\b2\b/, lines[0])
+            assert_match(/\btoo many\b.*\bone\b/i, lines[1])
+        end
+    end
+    def test_task_string_or_symbol_required
+        in_local_temp_dir do
+            write_to_file "root.rant", <<-EOF
+                task Object.new
+            EOF
+            out, err = assert_rant :fail
+            assert out.empty?
+            lines = err.split(/\n/)
+            assert lines.size < 4
+            assert_match(/\[ERROR\].*root\.rant\b.*\b1\b/, lines[0])
+            assert_match(/string or symbol/i, lines[1])
+        end
     end
 end

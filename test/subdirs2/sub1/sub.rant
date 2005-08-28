@@ -1,0 +1,9 @@
+
+task :a do |t|
+    puts t.full_name
+end
+
+desc "noop"
+task :b
+
+gen Directory, "dir.t"

@@ -37,7 +37,7 @@ module Rant::Generators::Archive
 	end
         def minitar_tgz fn, files, opts = {:recurse => false}
             require 'zlib'
-            require 'rant/archive/minitar'
+            require 'rant/archive/minitar' #rant-import:remove
             @rac.cmd_msg "minitar #{fn}"
             files = files.to_ary if files.respond_to? :to_ary
             tgz = Zlib::GzipWriter.new(File.open(fn, 'wb'))

@@ -303,8 +303,22 @@ EOF
             STDERR.puts "*** gcc and/or g++ not available, less example testing ***"
         end
         assert_rant("pkg/c_cpp.tgz")
-        # TODO: check archive contents
         assert(test(?f, "pkg/c_cpp.tgz"))
+        # checking archive contents
+        sources = Rant::FileList["root.rant", "**/*.{c,cpp,h,rf}"]
+        sources.no_dir("pkg").resolve
+        assert sources.size > 10
+        Rant::Sys.unpack_tgz "pkg/c_cpp.tgz"
+        assert test(?d, "c_cpp")
+        sources.each { |fn|
+            pkg_fn = File.join("c_cpp", fn)
+            if test ?d, fn
+                assert test(?d, pkg_fn)
+            else
+                assert Rant::Sys.compare_file(fn, pkg_fn)
+            end
+        }
+        Rant::Sys.rm_rf "c_cpp"
         out, err = assert_rant("pkg/c_cpp.tgz")
         assert(out.empty?)
         assert(err.empty?)

@@ -63,4 +63,28 @@ class TestRantInterface < Test::Unit::TestCase
 	assert(op.split("\n").size > 15,
 	    "rant --help should print at least 16 lines to STDOUT")
     end
+    def test_opt_version
+        out, err = assert_rant("--version")
+        assert err.empty?
+        lines = out.split(/\n/)
+        assert_equal 1, lines.size
+        assert_match(/^rant \d\.\d\.\d$/i, lines.first)
+        out2, err2 = assert_rant("-V")
+        assert_equal err, err2
+        assert_equal out, out2
+    end
+    def test_no_such_option
+        out, err = assert_rant :fail, "-n"
+        assert out.empty?
+        lines = err.split(/\n/)
+        assert lines.size < 3
+        assert_match(/\[ERROR\].*option.*\bn\b/, lines.first)
+    end
+    def test_no_such_long_option
+        out, err = assert_rant :fail, "--nix"
+        assert out.empty?
+        lines = err.split(/\n/)
+        assert lines.size < 3
+        assert_match(/\[ERROR\].*option.*\bnix\b/, lines.first)
+    end
 end

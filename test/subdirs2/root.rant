@@ -1,0 +1,30 @@
+
+import "autoclean", "subfile"
+
+desc "show full task name"
+task :a do |t|
+    puts t.full_name
+end
+
+file "a.t" do |t|
+    write t.name
+end
+
+file "b.t" do |t|
+    write t.name
+end
+
+gen SubFile, "t/t", "a.t" => "b.t" do |t|
+    write(t.name, "abc")
+end
+
+gen AutoClean
+
+subdirs sys["sub?"] # doesn't cover sub00, per intent
+
+def self.write(fn, content=nil)
+    puts "writing to #{fn}"
+    open fn, "w" do |f|
+        f.write(content || "#{fn}\n")
+    end
+end

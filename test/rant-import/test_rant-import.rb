@@ -1,8 +1,7 @@
 
 require 'test/unit'
-require 'rant/rantlib'
 require 'tutil'
-require 'fileutils'
+require 'rant/import'
 
 $testRantImportDir ||= File.expand_path(File.dirname(__FILE__))
 
@@ -19,12 +18,27 @@ class TestRantImport < Test::Unit::TestCase
 	FileUtils.rm_f Dir["make*"]
 	FileUtils.rm_rf Dir["*.t"]
     end
+    def test_option_help
+        out, err = capture_std do
+            assert_equal(0, Rant::RantImport.new("--help").run)
+        end
+        assert err.empty?
+        assert out.include?("rant-import")
+        assert out.include?("Options are")
+        assert out.include?("--help")
+    end
     def test_no_import
 	run_import("--quiet", "make.rb")
 	assert(test(?f, "make.rb"))
+        content = File.read("make.rb")
 	assert(!test(?f, "action.t"))
 	assert_equal(run_rant("hello"), run_ruby("make.rb", "hello"))
 	assert(test(?f, "action.t"))
+        out, err = capture_std do
+            assert_equal(1, Rant::RantImport.new("-iclean", "make.rb").run)
+        end
+        assert_equal(content, File.read("make.rb"))
+        assert_match(/\[ERROR\].*\bmake\.rb\b.*\bexists\b.*--force/m, err)
     end
     def test_import_from_custom_lib
 	FileUtils.mkpath "mylib.t/rant/import"

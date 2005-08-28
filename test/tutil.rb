@@ -2,6 +2,8 @@
 # This file contains methods that aid in testing Rant.
 
 require 'rant/rantlib'
+require 'rant/import/sys/tgz'
+require 'rant/import/sys/zip'
 require 'fileutils'
 
 module Test
@@ -175,44 +177,6 @@ end
 
 def run_ruby(*args)
     `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.join(' ')}`
-end
-
-$have_unzip = !!Rant::Env.find_bin("unzip")
-
-def unpack_archive(atype, archive)
-    case atype
-    when :tgz
-        if ::Rant::Env.have_tar?
-            `tar -xzf #{archive}`
-        else
-            minitar_unpack archive
-        end
-    when :zip
-        if $have_unzip
-            `unzip -q #{archive}`
-        else
-            rubyzip_unpack archive
-        end
-    else
-        raise "can't unpack archive type #{atype}"
-    end
-end
-def minitar_unpack(archive)
-    require 'zlib'
-    require 'rant/archive/minitar'
-    tgz = Zlib::GzipReader.new(File.open(archive, 'rb'))
-    # unpack closes tgz
-    Rant::Archive::Minitar.unpack(tgz, '.')
-end
-def rubyzip_unpack(archive)
-    require 'rant/archive/rubyzip'
-    f = Rant::Archive::Rubyzip::ZipFile.open archive
-    f.entries.each { |e|
-        dir, = File.split(e.name)
-        FileUtils.mkpath dir unless test ?d, dir
-        f.extract e, e.name
-    }
-    f.close
 end
 
 # Returns a list with the files required by the IO object script.

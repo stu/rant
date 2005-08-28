@@ -713,7 +713,7 @@ class Rant::RantApp
                     if defined? @initial_subdir and
                             @initial_subdir == @current_subdir
                         rf, is_new = rantfile_for_path(path, false)
-                        @rantfiles.unshift rf
+                        @rantfiles.unshift rf if is_new
                     else
                         rf, is_new = rantfile_for_path(path)
                     end
@@ -783,13 +783,7 @@ class Rant::RantApp
 	end
 	prefix = "rant "
 	infix = "  # "
-	name_length = 0
-	tlist.each { |t|
-	    if t.to_s.length > name_length
-		name_length = t.to_s.length
-	    end
-	}
-	name_length < 7 && name_length = 7
+        name_length = (tlist.map{ |t| t.to_s.length } << 7).max
 	cmd_length = prefix.length + name_length
 	unless tlist.first.to_s == def_target
 	    defaults = list_task_names(
@@ -813,7 +807,10 @@ class Rant::RantApp
 		if t.prerequisites.empty?
 		    rsl << t
 		else
-		    rsl.concat(list_task_names(t.prerequisites))
+                    t.prerequisites.each { |pre|
+                        rsl.concat(list_task_names(
+                            resolve(pre, t.project_subdir)))
+                    }
 		end
 	    else
 		rsl << t
@@ -879,7 +876,7 @@ class Rant::RantApp
 	# run default task, if not given:
 	# run first defined task.
 	target_list = @force_targets + @arg_targets
-	# The target list is a list of strings, not Task objects!
+	# The target list is a list of strings, not node objects!
 	if target_list.empty?
 	    def_tasks = resolve "default"
 	    unless def_tasks.empty?
@@ -1074,7 +1071,8 @@ class Rant::RantApp
             load_file rf if is_new
             return
         end
-        if @opts[:look_up] || test(?f, Rant::SUB_RANTFILE)
+        have_sub_rantfile = test(?f, Rant::SUB_RANTFILE)
+        if have_sub_rantfile || @opts[:look_up]
             # search for "root" Rantfile in parent directories, treat
             # current working directory as project subdirectory
             cur_dir = Dir.pwd
@@ -1092,6 +1090,16 @@ class Rant::RantApp
                     rf, is_new = rantfile_for_path(fn)
                     load_file rf if is_new
                     goto_project_dir @initial_subdir
+                    # ensure to read sub.rant in initial subdir even
+                    # if it wasn't mentioned with +subdirs+.
+                    if have_sub_rantfile
+                        rf, is_new = rantfile_for_path(
+                                Rant::SUB_RANTFILE, false)
+                        if is_new
+                            @rantfiles.unshift rf
+                            load_file rf
+                        end
+                    end
                     break
                 end
             end
