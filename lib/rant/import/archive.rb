@@ -198,10 +198,7 @@ module Rant::Generators::Archive
 	    @manifest_task =
                 ::Rant::Generators::Task.rant_gen(
                         @rac, @ch, [@manifest]) do |t|
-		    def t.each_target
-			goto_task_home
-			yield name
-		    end
+                    t.file_target
 		    t.needed {
                         # fl refers to @res_files
                         fl = get_files

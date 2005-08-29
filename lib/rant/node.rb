@@ -105,6 +105,10 @@ module Rant
 	    @rac.goto_project_dir project_subdir
 	end
 
+        def file_target?
+            false
+        end
+
 	def done?
 	    @done
 	end

@@ -43,6 +43,9 @@ module Rant
             def has_actions?
                 !!@block
             end
+            def file_target?
+                true
+            end
             def <<(pre)
                 @pre << pre
             end
@@ -181,7 +184,7 @@ module Rant
                 up
             end
             def handle_node(node, dep_str, opt)
-                up = node.invoke(opt)
+                up = node.invoke(opt) if node.file_target?
                 if node.respond_to? :signature
                     @cur_checksums << node.signature
                 elsif test(?f, dep_str)
@@ -189,6 +192,8 @@ module Rant
                     handle_file(dep_str)
                 elsif File.exist?(dep_str)
                     @cur_checksums << @sigs.signature_for_string(dep_str)
+                else
+                    self.fail "can't handle prerequisite `#{dep_str}'"
                 end
                 goto_task_home
                 up

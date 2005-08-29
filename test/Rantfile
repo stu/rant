@@ -87,4 +87,13 @@ end
 
 task :dep_on_make_files => ["make_files.t"]
 
+task "print_name.t" do |t|
+    puts t.full_name
+end
+
+file "depends_name.t" => "print_name.t" do |t|
+    import "sys/more"
+    sys.write_to_file t.name, File.read(t.source) + "a\n"
+end
+
 # vim: ft=ruby

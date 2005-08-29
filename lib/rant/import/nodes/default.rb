@@ -245,6 +245,7 @@ module Rant
 	    # used for initialization, not ment as action
 	    @block = nil
 	    @needed = nil
+            @target_files = nil
 	    # allow setting of @block and @needed
 	    yield self if block_given?
 	end
@@ -256,6 +257,25 @@ module Rant
 	def needed(&block)
 	    @needed = block
 	end
+
+        def file_target?
+            @target_files and @target_files.include? @name
+        end
+
+        def each_target(&block)
+            goto_task_home
+            @target_files.each &block if @target_files
+        end
+        
+        def file_target(*args)
+            args.flatten!
+            args << @name if args.empty?
+            if @target_files
+                @target_files.concat(args)
+            else
+                @target_files = args
+            end
+        end
 	
 	# We simply override this method and call internal_invoke with
 	# the +ud_init+ flag according to the result of a call to the
@@ -288,6 +308,10 @@ module Rant
 	    @ts = T0
 	end
 
+        def file_target?
+            true
+        end
+
 	def needed?
 	    return false if done?
 	    invoke(:needed? => true)
@@ -314,6 +338,17 @@ module Rant
 	def timestamp(opt = INVOKE_OPT)
 	    File.exist?(@name) ? File.mtime(@name) : T0
 	end
+
+        def handle_node(dep, opt)
+            #STDERR.puts "treating #{dep.full_name} as file dependency"
+            up = dep.invoke(opt) if dep.file_target?
+	    unless File.exist? dep.name
+		@rac.err_msg @rac.pos_text(rantfile.path, line_number),
+		    "in prerequisites: no such file: `#{dep.full_name}'"
+		self.fail
+	    end
+	    up or File.mtime(dep.name) > @ts
+        end
 
 	def handle_timestamped(dep, opt)
 	    return true if dep.invoke opt
@@ -381,6 +416,21 @@ module Rant
 		@run = false
 	    end
 	end
+
+        def file_target?
+            true
+        end
+
+        def handle_node(dep, opt)
+            #STDERR.puts "treating #{dep.full_name} as file dependency"
+            up = dep.invoke(opt) if dep.file_target?
+	    unless File.exist? dep.name
+		@rac.err_msg @rac.pos_text(rantfile.path, line_number),
+		    "in prerequisites: no such file: `#{dep.full_name}'"
+		self.fail
+	    end
+	    up or File.mtime(dep.name) > @ts
+        end
 
 	def handle_timestamped(dep, opt)
 	    return @block if dep.invoke opt
