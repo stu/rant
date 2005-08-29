@@ -1,0 +1,6 @@
+
+import "sys/tgz"
+
+task :unpack do
+    sys.unpack_tgz "data/pkg.tgz"
+end

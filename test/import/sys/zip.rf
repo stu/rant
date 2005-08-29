@@ -1,0 +1,15 @@
+
+import "md5", "sys/zip", "autoclean"
+
+var :src => "data/pkg.zip"
+
+gen Directory, "dir.t" => "t.zip" do
+    sys.rm_rf "dir.t/pkg"
+    sys.unpack_zip "t.zip", :in => "dir.t"
+end
+
+file "t.zip" => var[:src] do |t|
+    sys.cp t.source, t.name
+end
+
+gen AutoClean
