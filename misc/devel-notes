@@ -1,4 +1,7 @@
 
+== Rant::Env.find_bin...
+... could honour PATHEXT on windows.
+
 == Task alias
 Since +alias+ is a Ruby keyword, we could use +nick+ to create task
 alises.

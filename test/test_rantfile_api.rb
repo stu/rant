@@ -186,4 +186,9 @@ class TestRantfileAPI < Test::Unit::TestCase
             assert_match(/string or symbol/i, lines[1])
         end
     end
+    def test_make_plain_task
+        out, err = assert_rant "call-make"
+        assert err.empty?
+        assert_equal "print_name.t\ncall-make\n", out
+    end
 end

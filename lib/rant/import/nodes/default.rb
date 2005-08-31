@@ -125,7 +125,7 @@ module Rant
 	    end
 	end
 
-	def internal_invoke opt, ud_init = true
+	def internal_invoke(opt, ud_init = true)
 	    goto_task_home
 	    update = ud_init || opt[:force]
 	    dep = nil
@@ -264,7 +264,7 @@ module Rant
 
         def each_target(&block)
             goto_task_home
-            @target_files.each &block if @target_files
+            @target_files.each(&block) if @target_files
         end
         
         def file_target(*args)
@@ -341,13 +341,14 @@ module Rant
 
         def handle_node(dep, opt)
             #STDERR.puts "treating #{dep.full_name} as file dependency"
-            up = dep.invoke(opt) if dep.file_target?
-	    unless File.exist? dep.name
+            return true if dep.file_target? && dep.invoke(opt)
+	    if File.exist? dep.name
+                File.mtime(dep.name) > @ts
+            elsif !dep.file_target?
 		@rac.err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file: `#{dep.full_name}'"
 		self.fail
 	    end
-	    up or File.mtime(dep.name) > @ts
         end
 
 	def handle_timestamped(dep, opt)
@@ -423,13 +424,14 @@ module Rant
 
         def handle_node(dep, opt)
             #STDERR.puts "treating #{dep.full_name} as file dependency"
-            up = dep.invoke(opt) if dep.file_target?
-	    unless File.exist? dep.name
+            return true if dep.file_target? && dep.invoke(opt)
+	    if File.exist? dep.name
+                File.mtime(dep.name) > @ts
+            elsif !dep.file_target?
 		@rac.err_msg @rac.pos_text(rantfile.path, line_number),
 		    "in prerequisites: no such file: `#{dep.full_name}'"
 		self.fail
 	    end
-	    up or File.mtime(dep.name) > @ts
         end
 
 	def handle_timestamped(dep, opt)

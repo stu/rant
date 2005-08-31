@@ -326,7 +326,7 @@ class Rant::RantApp
             "Look in parent directories for root Rantfile."     ],
 	[ "--rantfile",	"-f",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Process RANTFILE instead of standard rantfiles.\n" +
-	    "Multiple files may be specified with this option"	],
+	    "Multiple files may be specified with this option." ],
 	[ "--force-run","-a",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Force rebuild of TARGET and all dependencies."     ],
 	[ "--tasks",	"-T",	GetoptLong::NO_ARGUMENT,

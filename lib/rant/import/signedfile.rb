@@ -192,7 +192,7 @@ module Rant
                     handle_file(dep_str)
                 elsif File.exist?(dep_str)
                     @cur_checksums << @sigs.signature_for_string(dep_str)
-                else
+                elsif !node.file_target?
                     self.fail "can't handle prerequisite `#{dep_str}'"
                 end
                 goto_task_home
