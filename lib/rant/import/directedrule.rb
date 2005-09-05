@@ -73,10 +73,7 @@ class Rant::Generators::DirectedRule
 	@esc_target_dir = Regexp.escape(target_dir)
 	@block = block
     end
-    def call(name)
-	self[name]
-    end
-    def [](name)
+    def [](name, rel_project_dir)
 	#puts "rule (#@target) for #{name} ?"
 	if name =~ /^#@esc_target_dir\// && name =~ @target_rx
 	    #puts "  matches"

@@ -473,6 +473,20 @@ class Rant::RantApp
 	    vmsg 1, "in #{abs_path}"
 	end
     end
+=begin
+    # Execute block in subdirectory context to subdir, relative to
+    # project root directory. Important: Does NOT change the process
+    # working directory. Not thread safe.
+    #
+    # For Rant internal use only!
+    def define_in_project_dir(dir)
+        old_subdir = @current_subdir
+        @current_subdir = dir
+        yield
+    ensure
+        @current_subdir = old_subdir
+    end
+=end
     ##################################################################
 
     def run?
@@ -983,7 +997,7 @@ class Rant::RantApp
 	when nil
 	    @resolve_hooks.each { |s|
 		# Note: will probably change to get more params
-		s = s[task_name]
+		s = s[task_name, rel_project_dir]
                 #if s
                 #    puts s.size
                 #    t = s.first

@@ -1,10 +1,12 @@
 
 require 'test/unit'
 require 'tutil'
+require 'rant/import/sys/tgz'
 
 $testIPackageDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestImportPackage < Test::Unit::TestCase
+    include Rant::TestUtil
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir $testIPackageDir
@@ -562,5 +564,37 @@ class TestImportPackage < Test::Unit::TestCase
         assert(out.empty?)
     ensure
         FileUtils.rm_f %w(make.t empty.rf empty.t.tgz)
+    end
+    def test_package_tgz_flag_manifest_opt_files
+        in_local_temp_dir do
+            write_to_file "root.rant", <<-EOF
+            import "md5", "package/tgz", "autoclean"
+            gen Package::Tgz, "a-b", :manifest, :files => sys["*"].exclude("u")
+            gen AutoClean
+            EOF
+            write_to_file "a", "a\n"
+            out, err = assert_rant "a-b.tgz"
+            assert err.empty?
+            assert !out.empty?
+            assert(test(?f, "a-b.tgz"))
+            assert(test(?f, "MANIFEST"))
+            Rant::Sys.unpack_tgz "a-b.tgz", :in => "u"
+            assert_nothing_raised do
+                assert Rant::Sys.compare_file("root.rant", "u/a-b/root.rant")
+                assert_equal "a\n", File.read("u/a-b/a")
+                entries =  File.read("u/a-b/MANIFEST").split(/\n/)
+                assert_equal 3, entries.size
+                assert entries.include?("MANIFEST")
+                assert entries.include?("a")
+                assert entries.include?("root.rant")
+            end
+            out, err = assert_rant "a-b.tgz"
+            assert err.empty?
+            assert out.empty?
+            assert_rant "autoclean"
+            assert !test(?e, "a-b.tgz")
+            assert !test(?e, "a-b")
+            assert !test(?e, ".rant.meta")
+        end
     end
 end

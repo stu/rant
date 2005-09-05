@@ -83,7 +83,9 @@ module Rant::Generators::Archive
 		end
 	    }
             desc = pkg.rac.pop_desc
-	    pkg.define_manifest_task if opts[:files] && opts[:manifest]
+            if opts[:files] and opts[:manifest] || flags.include?(:manifest)
+                pkg.define_manifest_task
+            end
             pkg.rac.cx.desc desc
 	    pkg.define_task
 	    pkg

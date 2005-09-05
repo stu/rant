@@ -1,6 +1,13 @@
 
 = TODO
 
+== Update documentation with regards to resolve hooks.
+
+The argument list for resolve hooks has changed in version 0.4.5.
+A hook has to accept two arguments now, the first is the target name
+and the second is the project directory the resolve action is relative
+to. Previously, a resolve hook got only the target name as argument.
+
 == Eventually replace <tt>#</tt> with another symbol.
 
 The # symbol as reference to the project's root directory should

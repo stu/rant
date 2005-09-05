@@ -34,11 +34,7 @@ class Rant::Generators::AutoClean
 	    rac.resolve_hooks.each { |hook|
 		if hook.respond_to? :each_target
 		    hook.each_target { |entry|
-			if test ?f, entry
-			    rac.cx.sys.rm_f entry
-			else
-			    rac.cx.sys.rm_rf entry
-			end
+                        clean rac, entry
 		    }
 		elsif hook.respond_to? :target_rx
 		    next(rx) unless (t_rx = hook.target_rx)
@@ -51,11 +47,7 @@ class Rant::Generators::AutoClean
 		rac.vmsg 1, "searching for rule products"
 		rac.sys["**/*"].each { |entry|
 		    if entry =~ target_rx
-			if test ?f, entry
-			    rac.sys.rm_f entry
-			else
-			    rac.sys.rm_rf entry
-			end
+                        clean rac, entry
 		    end
 		}
 	    end

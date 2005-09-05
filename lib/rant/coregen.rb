@@ -126,29 +126,29 @@ module Rant
 		end
 		esc_target = nil
 		target_rx = case target
-		when String
-		    esc_target = Regexp.escape(target)
-		    /#{esc_target}$/
-		when Regexp
-		    target
-		else
+                    when String
+                        esc_target = Regexp.escape(target)
+                        /#{esc_target}$/
+                    when Regexp
+                        target
+                    else
 		    rac.abort_at(ch, "rule target has " +
 			"to be a string or regular expression")
 		end
 		src_proc = case src_arg
-		when String
-		    unless String === target
-			rac.abort(ch, "rule target has to be a string " +
-			    "if source is a string")
-		    end
-		    lambda { |name| name.sub(/#{esc_target}$/, src_arg) }
-		when Proc: src_arg
-		when nil: lambda { |name| [] }
-		else
-		    rac.abort_at(ch, "rule source has to be " +
-			"String or Proc")
-		end
-		blk = self.new { |task_name|
+                    when String
+                        unless String === target
+                            rac.abort(ch, "rule target has to be " +
+                                  "a string if source is a string")
+                        end
+                        lambda { |name| name.sub(/#{esc_target}$/, src_arg) }
+                    when Proc: src_arg
+                    when nil: lambda { |name| [] }
+                    else
+                        rac.abort_at(ch, "rule source has to be " +
+                            "String or Proc")
+                    end
+		blk = self.new { |task_name, rel_project_dir|
 		    if target_rx =~ task_name
                         have_src = true
                         src = src_proc[task_name]
