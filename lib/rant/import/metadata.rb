@@ -40,7 +40,7 @@ module Rant
             #   => Dir.pwd has to be:   /home/foo/myproject/bar
             #
             # Returns nil only if the value doesn't exist.
-            def fetch(key, target, dir=@rac.current_subdir)
+            def fetch(key, target, dir=@rac.current_subdir, meta_dir=nil)
                 # first check if a value for the given key, target and
                 # dir already exists
                 dstore = @store[dir]
@@ -53,7 +53,7 @@ module Rant
                 end
                 # check if the meta file in dir was already read
                 unless @read_dirs.include? dir
-                    read_meta_file_in_dir(dir)
+                    read_meta_file_in_dir(dir, meta_dir)
                 end
                 tstore = @store[dir][target]
                 tstore[key] if tstore
@@ -82,6 +82,29 @@ module Rant
                 nil
             end
 
+            def path_fetch(key, target_path)
+                tdir, fn = File.split target_path
+                sdir = @rac.current_subdir
+                if tdir == '.'
+                    fetch(key, fn, sdir)
+                else
+                    dir = sdir.empty? ? tdir : "#{sdir}/#{tdir}"
+                    fetch(key, fn, dir, tdir)
+                end
+            end
+
+            def path_set(key, value, target_path)
+                tdir, fn = File.split target_path
+                sdir = @rac.current_subdir
+                if tdir == '.'
+                    dir = sdir
+                else
+                    dir = sdir.empty? ? tdir : "#{sdir}/#{tdir}"
+                end
+                #STDERR.puts "#{key}:#{value}:#{fn}:#{dir}"
+                set(key, value, fn, dir)
+            end
+
             # Assumes to be called from the projects root directory.
             def save
                 @modified_dirs.each_key { |dir|
@@ -92,12 +115,12 @@ module Rant
 
             private
             # assumes that dir is already the current working
-            # directory
-            def read_meta_file_in_dir(dir)
+            # directory if meta_dir is nil
+            def read_meta_file_in_dir(dir, meta_dir)
                 #puts "in dir: #{dir}, pwd: #{Dir.pwd}"
                 @read_dirs[dir] = true
                 #fn = dir.empty? ? META_FN : File.join(dir, META_FN)
-                fn = META_FN
+                fn = meta_dir ? File.join(meta_dir, META_FN) : META_FN
                 dstore = @store[dir]
                 @store[dir] = dstore = {} unless dstore
                 return unless File.exist? fn

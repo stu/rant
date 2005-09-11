@@ -1,0 +1,9 @@
+
+import "md5"
+import "sys/more", "autoclean"
+
+gen Rule, :t => :tt do |t|
+    sys.write_to_file t.name, "abc\n"
+end
+
+gen AutoClean
