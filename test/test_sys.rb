@@ -52,14 +52,14 @@ class TestSys < Test::Unit::TestCase
             assert_raises(Rant::CommandError) { ruby '-e exit 1' }
         end
     end
-    def test_split_path
-	pl = split_path("/home/stefan")
+    def test_split_all
+	pl = split_all("/home/stefan")
 	assert_equal(pl.size, 3,
 	    "/home/stefan should get split into 3 parts")
 	assert_equal(pl[0], "/")
 	assert_equal(pl[1], "home")
 	assert_equal(pl[2], "stefan")
-	pl = split_path("../")
+	pl = split_all("../")
 	assert_equal(pl.size, 1,
 	    '../ should be "split" into one element')
 	assert_equal(pl[0], "..")

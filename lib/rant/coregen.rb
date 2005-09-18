@@ -51,7 +51,7 @@ module Rant
 	    # element (and has all other necessary directories as
 	    # prerequisites).
 	    def self.task(rac, ch, name, prerequisites=[], basedir=nil, &block)
-		dirs = ::Rant::Sys.split_path(name)
+		dirs = ::Rant::Sys.split_all(name)
 		if dirs.empty?
 		    rac.abort_at(ch,
 			"Not a valid directory name: `#{name}'")

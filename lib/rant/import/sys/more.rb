@@ -11,5 +11,12 @@ module Rant
                 f.write content
             end
         end
+        def clean(entry)
+            if test ?f, entry
+                rm_f entry
+            elsif test ?e, entry
+                rm_rf entry
+            end
+        end
     end # module Sys
 end # module Rant

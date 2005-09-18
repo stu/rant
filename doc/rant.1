@@ -1,0 +1,129 @@
+.\" rant.1 - rant manpage
+.\" Date of last change to this manpage.
+.TH RANT 1 "September 17, 2005"
+.SH NAME
+rant \- A flexible and portable build tool.
+.SH SYNOPSIS
+.B rant
+.RI [OPTION]\ ...\ [TARGET]\ ...
+.br
+.SH DESCRIPTION
+.B Striking features
+
+* Defining custom tasks.
+
+* Automated packaging, testing and RDoc generation for Ruby
+  applications and libraries.
+
+* Creation of a monolithic script tailored to the needs of a specific
+  project which can be used instead of an Rant installation - users
+  don't need to install Rant.
+
+* Creating gzipped tar and zip archives -- without installing
+  additional software. 
+
+* Optional recognition of file changes based on MD5 checksums instead
+  of file modification times. 
+
+* Dependency checking for C/C++ source files (integrated makedepend
+  replacement).
+
+* Primitive support for compiling C# sources with csc, cscc and mcs.
+
+.B Startup
+
+On startup, rant will look for a file called
+.IR Rantfile
+,
+.IR rantfile
+or
+.IR root.rant
+which contains the build specification (which in fact is valid Ruby
+code). After reading the Rantfile(s), rant will execute the following
+tasks:
+
+.B If at least one target was given on the commandline:
+
+rant will execute all tasks necessary to build all targets given on
+the commandline.
+
+.B else:
+
+rant tries to build the target called "default". If no task with this
+name exists, rant invokes the first defined task.
+
+If you want to know which task(s) will be invoked when no target is
+given on the commandline, run rant with the
+.IR -T
+option. Example:
+
+  $ rant -T
+.br
+  rant               # => test
+.br
+  rant package       # Create packages for distribution.
+.br
+  rant doc           # Generate documentation.
+.br
+  rant publish-docs  # Publish html docs on make.rubyfore.org.
+.br
+                     #   Note: scp will prompt for rubyforge password.
+.br
+  rant test          # Run basic tests.
+
+The
+.B first line
+always shows the target that will be built if no target argument is
+given. In this case, it would be the
+.RI test
+target.
+
+.PP
+.SH OPTIONS
+.TP
+  --help                           -h
+      Print a help message and exit.
+.TP
+  --version                        -V
+      Print version of Rant and exit.
+.TP
+  --verbose                        -v
+      Print more messages to stderr.
+.TP
+  --quiet                          -q
+      Don't print commands.
+.TP
+  --err-commands
+      Print failed commands and their exit status.
+.TP
+  --directory DIRECTORY            -C DIRECTORY
+      Run rant in DIRECTORY.
+.TP
+  --cd-parent                      -c
+      With this option, Rant starts to search for an Rantfile in the
+      current working directory as usual, but if it doesn't find one,
+      it changes to the parent directory and looks there for an
+      Rantfile. This is repeated until an Rantfile is found or the
+      working directory is the root directory of the filesystem.
+.TP
+  --look-up                        -u
+      Look in parent directories for root Rantfile.
+.TP
+  --rantfile RANTFILE              -f RANTFILE
+      Process RANTFILE instead of standard rantfiles.
+      Multiple files may be specified by repeating this option.
+.TP
+  --force-run TARGET               -a TARGET
+      Force rebuild of TARGET and all dependencies.
+.TP
+  --tasks                          -T
+      Show a list of all described tasks and exit.
+
+.SH AUTHOR
+rant was developed by Stefan Lang <langstefan@gmx.at>
+.SH COPYRIGHT
+Copyright (C) 2005  Stefan Lang <langstefan@gmx.at>
+.SH SEE ALSO
+For extensive documentation visit the Rant homepage
+.IR http://make.ruby-co.de
+.\" vim:ft=nroff

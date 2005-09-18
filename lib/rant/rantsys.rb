@@ -124,17 +124,25 @@ module Rant
 	end
 	##############################################################
 
+if Object.method_defined? :fcall # in Ruby 1.9 like __send__
 	def resolve
 	    @pending = false
-	    @actions.each { |action|
-		self.send(*action)
-	    }
-	    @actions.clear
+	    @actions.each{ |action| self.fcall(*action) }.clear
 	    ix = ignore_rx
 	    if ix
 		@files.reject! { |f| f =~ ix && !@keep[f] }
 	    end
 	end
+else
+	def resolve
+	    @pending = false
+	    @actions.each{ |action| self.__send__(*action) }.clear
+	    ix = ignore_rx
+	    if ix
+		@files.reject! { |f| f =~ ix && !@keep[f] }
+	    end
+	end
+end
 
 	def include(*patterns)
 	    patterns.flatten.each { |pat|
@@ -269,7 +277,7 @@ module Rant
 	    elems = nil
 	    @files.reject! { |entry|
                 next if @keep[entry]
-		elems = Sys.split_path(entry)
+		elems = Sys.split_all(entry)
 		i = elems.index(name)
 		if i
 		    path = File.join(*elems[0..i])
@@ -303,7 +311,7 @@ module Rant
 	    elems =  nil
 	    elem = nil
 	    @files.reject! { |entry|
-		elems = Sys.split_path(entry)
+		elems = Sys.split_all(entry)
 		elems.any? { |elem|
 		    elem =~ /#{suffix}$/ && !@keep[entry]
 		}
@@ -322,7 +330,7 @@ module Rant
 	def apply_no_prefix(prefix)
 	    elems = elem = nil
 	    @files.reject! { |entry|
-		elems = Sys.split_path(entry)
+		elems = Sys.split_all(entry)
 		elems.any? { |elem|
 		    elem =~ /^#{prefix}/ && !@keep[entry]
 		}
@@ -577,12 +585,16 @@ module Rant
 	end
 
 	# Split a path in all elements.
-	def split_path(path)
+	def split_all(path)
 	    base, last = File.split(path)
 	    return [last] if base == "." || last == "/"
 	    return [base, last] if base == "/"
-	    split_path(base) + [last]
+	    split_all(base) + [last]
 	end
+
+        def split_path(str)
+            str.split(Env.on_windows? ? ";" : ":")
+        end
 
 	extend self
 

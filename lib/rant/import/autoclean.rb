@@ -5,6 +5,7 @@
 
 require 'rant/rantlib'
 require 'rant/import/clean'
+require 'rant/import/sys/more'
 
 class Rant::Generators::AutoClean
     def self.rant_gen(rac, ch, args, &block)
@@ -29,13 +30,13 @@ class Rant::Generators::AutoClean
                         add_common_dirs[File.dirname(f.full_name)] = true
                     end
 		    node.each { |subw|
-			subw.each_target { |entry| clean rac, entry }
+			subw.each_target { |entry| rac.sys.clean entry }
 		    }
 		else
                     if node.file_target?
                         add_common_dirs[File.dirname(node.full_name)] = true
                     end
-		    node.each_target { |entry| clean rac, entry }
+		    node.each_target { |entry| rac.sys.clean entry }
 		end
 	    }
 	    target_rx = nil
@@ -43,7 +44,7 @@ class Rant::Generators::AutoClean
 		if hook.respond_to? :each_target
 		    hook.each_target { |entry|
                         add_common_dirs[File.expand_path(File.dirname(entry))] = true
-                        clean rac, entry
+                        rac.sys.clean entry
 		    }
 		elsif hook.respond_to? :target_rx
 		    next(rx) unless (t_rx = hook.target_rx)
@@ -57,7 +58,7 @@ class Rant::Generators::AutoClean
 		rac.sys["**/*"].each { |entry|
 		    if entry =~ target_rx
                         add_common_dirs[File.dirname(entry)] = true
-                        clean rac, entry
+                        rac.sys.clean entry
 		    end
 		}
 	    end
@@ -67,23 +68,16 @@ class Rant::Generators::AutoClean
                     sd = rf.project_subdir
                     common.each { |fn|
                         path = sd.empty? ? fn : File.join(sd, fn)
-                        clean rac, path
+                        rac.sys.clean path
                     }
                 }
                 #STDERR.puts add_common_dirs.inspect
                 add_common_dirs.each { |dir, _|
                     common.each { |fn|
-                        clean rac, File.join(dir, fn)
+                        rac.sys.clean File.join(dir, fn)
                     }
                 }
             end
 	end
-    end
-    def self.clean(rac, entry)
-        if test ?f, entry
-            rac.sys.rm_f entry
-        elsif test ?e, entry
-            rac.sys.rm_rf entry
-        end
     end
 end

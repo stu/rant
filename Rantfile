@@ -167,6 +167,16 @@ end
 desc "Install Rant."
 task :install do
     sys.ruby "setup.rb"
+    # try to install man page
+    man_path = ENV["MANPATH"]
+    if man_path
+        puts "trying to install rant(1) manpage..."
+        require 'rbconfig'
+        prefix = Config::CONFIG["prefix"]
+        dirs = sys.split_path man_path
+        man_dir = dirs.find{|d| d == "#{prefix}/man" } || dirs.first
+        sys.install "doc/rant.1", "#{man_dir}/man1", :mode => 0644 if man_dir
+    end
 end
 
 if Env.on_windows?
