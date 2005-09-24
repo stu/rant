@@ -20,11 +20,11 @@ file "version.t" do |t|
 end
 
 gen Action do
-    rac.build "version.t"
+    rant.build "version.t"
 end
 
 auto_t_task = source "auto.rf"
-rac.abort unless auto_t_task.name == "auto.t"
+rant.abort unless auto_t_task.name == "auto.t"
 
 task :clean do
     sys.rm_f %w(auto.t auto.rf version.t)
@@ -45,7 +45,7 @@ task :subdir_tmp do
 end
 
 task :build_test_t do |t|
-    rac.build "tmp.t/test.t"
+    rant.build "tmp.t/test.t"
     # just ensure we're NOT in the tmp.t directory
     #STDERR.puts Dir.pwd
     test(?d, "tmp.t") or t.fail

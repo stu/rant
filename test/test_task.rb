@@ -1,6 +1,6 @@
 
 require 'test/unit'
-require 'rant/rantlib'
+require 'tutil'
 
 $-w = true
 
@@ -69,7 +69,7 @@ class TestTask < Test::Unit::TestCase
 
     def test_task
 	run = false
-	t = Rant.rac.task :t do |t|
+	t = @rant.task :t do |t|
 	    run = true
 	end
 	t.invoke
@@ -78,7 +78,7 @@ class TestTask < Test::Unit::TestCase
 
     def test_dep_on_self
 	run = false
-	t = Rant.rac.task :t => "t" do |t|
+	t = @rant.task :t => "t" do |t|
 	    run = true
 	end
 	th = Thread.new { t.invoke }
@@ -91,11 +91,11 @@ class TestTask < Test::Unit::TestCase
     def test_circular_dependency
 	t1r = false
 	t2r = false
-	t1 = Rant.rac.task :t1 => :t2 do |t|
+	t1 = @rant.task :t1 => :t2 do |t|
 	    assert(t2r)
 	    t1r = true
 	end
-	t2 = Rant.rac.task :t2 => :t1 do |t|
+	t2 = @rant.task :t2 => :t1 do |t|
 	    t2r = true
 	end
 	out, err = capture_std do
@@ -111,13 +111,13 @@ class TestTask < Test::Unit::TestCase
     end
     def test_dep_on_self_in_deplist
 	rl = []
-	t1 = Rant.rac.task :t1 do |t|
+	t1 = @rant.task :t1 do |t|
 	    rl << t.name
 	end
-	t2 = Rant.rac.task :t2 do |t|
+	t2 = @rant.task :t2 do |t|
 	    rl << t.name
 	end
-	t3 = Rant.rac.task :t3 => [:t1, :t3, :t2] do |t|
+	t3 = @rant.task :t3 => [:t1, :t3, :t2] do |t|
 	    rl << t.name
 	end
 	th = Thread.new { t3.invoke }

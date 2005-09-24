@@ -155,55 +155,63 @@ module RantContext
 
     # Define a basic task.
     def task(targ, &block)
-	rac.task(targ, &block)
+	rant.task(targ, &block)
     end
 
     # Define a file task.
     def file(targ, &block)
-	rac.file(targ, &block)
+	rant.file(targ, &block)
     end
 
     # Add code and/or prerequisites to existing task.
     def enhance(targ, &block)
-	rac.enhance(targ, &block)
+	rant.enhance(targ, &block)
     end
 
     def desc(*args)
-	rac.desc(*args)
+	rant.desc(*args)
     end
 
     def gen(*args, &block)
-	rac.gen(*args, &block)
+	rant.gen(*args, &block)
     end
 
     def import(*args, &block)
-	rac.import(*args, &block)
+	rant.import(*args, &block)
     end
 
     def plugin(*args, &block)
-	rac.plugin(*args, &block)
+	rant.plugin(*args, &block)
     end
 
     # Look in the subdirectories, given by args,
     # for rantfiles.
     def subdirs(*args)
-	rac.subdirs(*args)
+	rant.subdirs(*args)
     end
 
     def source(opt, rantfile = nil)
-	rac.source(opt, rantfile)
+	rant.source(opt, rantfile)
     end
 
     def sys(*args, &block)
-	rac.sys(*args, &block)
+	rant.sys(*args, &block)
     end
 
     def var(*args, &block)
-	rac.var(*args, &block)
+	rant.var(*args, &block)
     end
 
     def make(*args, &block)
-        rac.make(*args, &block)
+        rant.make(*args, &block)
+    end
+
+    # +rac+ stands for "rant compiler"
+    def rac
+        ch = Rant::Lib.parse_caller_elem caller[0]
+        rant.warn_msg(@__rant__.pos_text(ch[:file], ch[:ln]),
+            "Method `rac' is deprecated. Use `rant' instead.")
+	rant
     end
 end	# module RantContext
 
@@ -211,12 +219,11 @@ class RantAppContext
     include RantContext
 
     def initialize(app)
-	@__rac__ = app
+	@__rant__ = app
     end
 
-    # +rac+ stands for "rant compiler"
-    def rac
-	@__rac__
+    def rant
+        @__rant__
     end
 
     def method_missing(sym, *args)
@@ -232,10 +239,6 @@ class RantAppContext
 end
 
 module Rant
-
-    # In the class definition of Rant::RantApp, this will be set to a
-    # new application object.
-    @@rac = nil
 
     class << self
 
@@ -265,36 +268,32 @@ module Rant
 	def run(first_arg=nil, *other_args)
 	    other_args = other_args.flatten
 	    args = first_arg.nil? ? ARGV.dup : ([first_arg] + other_args)
-	    if @@rac && !@@rac.run?
-		@@rac.args.replace(args.flatten)
-		@@rac.run
+	    if rant && !rant.run?
+		rant.run(args.flatten)
 	    else
-		@@rac = Rant::RantApp.new
-		@@rac.run(args)
+                Rant::MAIN_OBJECT.instance_variable_set(
+                    :@__rant__, Rant::RantApp.new)
+		rant.run(args)
 	    end
 	end
 
-	def rac
-	    @@rac
-	end
-
-	def rac=(app)
-	    @@rac = app
+	def rant
+	    Rant::MAIN_OBJECT.instance_variable_get(:@__rant__)
 	end
     end
 
-end	# module Rant
+end # module Rant
 
 class Rant::RantApp
     include Rant::Console
 
     class AutoLoadNodeFactory
-        def initialize(rac)
-            @rac = rac
+        def initialize(rant)
+            @rant = rant
         end
         def method_missing(sym, *args, &block)
-            @rac.import "nodes/default"
-            @rac.node_factory.send(sym, *args, &block)
+            @rant.import "nodes/default"
+            @rant.node_factory.send(sym, *args, &block)
         end
     end
 
@@ -396,7 +395,6 @@ class Rant::RantApp
 	# Rantfiles will be loaded in the context of this object.
 	@context = RantAppContext.new(self)
 	@sys = ::Rant::SysObject.new(self)
-	Rant.rac ||= self
 	@rantfiles = []
 	@tasks = {}
 	@opts = {
@@ -550,7 +548,6 @@ class Rant::RantApp
 	@plugins.each { |plugin| plugin.rant_quit }
 	# restore pwd
         Dir.chdir orig_pwd
-	Rant.rac = self.class.new
     end
 
     ###### methods accessible through RantContext ####################
@@ -1024,7 +1021,7 @@ class Rant::RantApp
     end
     public :at_resolve
 
-    # block will be called before this rac returns from #run
+    # block will be called before this rant returns from #run
     # pwd will be the projects root directory
     def at_return(&block)
         hooks = var._get("__at_return__")
@@ -1360,10 +1357,5 @@ class Rant::RantApp
 	err_msg msg unless msg.empty?
 	err_msg t_msg
     end
-
-    # Just ensure that Rant.rac holds an RantApp after loading
-    # this file. The code in initialize will register the new app with
-    # Rant.rac= if necessary.
-    self.new
-
 end	# class Rant::RantApp
+# this line prevents ruby 1.8.3 from segfaulting

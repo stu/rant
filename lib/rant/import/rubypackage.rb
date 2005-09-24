@@ -106,7 +106,7 @@ class Rant::Generators::RubyPackage
     attr_accessor :pkg_dir
 
     def initialize(opts = {})
-	@app = opts[:app] || Rant.rantapp
+	@app = opts[:app] or raise ":app argument required"
 	@pkg_dir = "pkg"
 	@pkg_dir_task = nil
 	@gem_task = nil

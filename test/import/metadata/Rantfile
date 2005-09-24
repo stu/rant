@@ -8,9 +8,9 @@ var[:__metadata__].set("cmd", "touch a", "a")
 
 if var[:subdir]
     subdirs "sub"
-    rac.goto "sub"
+    rant.goto "sub"
         p var[:__metadata__].fetch("cmd", "b", "sub")
-    rac.goto "@"
+    rant.goto "@"
 else
     p var[:__metadata__].fetch("cmd", "a")
 end
