@@ -12,29 +12,26 @@ starts, it instantiates one Rant application which will read one or
 more Rantfiles. The Rantfile communicates with the following list of
 methods with the Rant application:
 
-+task+::	Defines a task with prerequisites and an action.
-+file+::	A special form of task which creates one file.
-+desc+::	Describes the next defined task. A task with
-		description is considered a "public" task.
-+gen+::		Takes a _generator_ object as first argument which
-		usually creates one or more tasks. An example would be
-		the +RubyPackage+ generator which produces tasks for
-		packaging.
-+import+::	Imports additional code which usually provides
-		additional generators. Example: to use the
-		+RubyPackage+ generator you have to <tt>import
-		"rubypackage"</tt> first.
-+plugin+::	Instantiate a plugin. Example: <tt>plugin
-		:Configure</tt> instantiates the Configure plugin.
-+sys+::		Run external commands or call portable file system
-		manipulation methods (copy files, unlink files,
-		install, ...).
-+source+::	Takes a filename as argument and causes Rant to read
-		it in as Rantfile.
-+subdirs+::	Takes a list of subdirectories in which Rant should
-		look for Rantfiles.
-+var+::		Provides access to variables accessible in Rantfiles
-		and from the commandline.
++task+::        Defines a task with prerequisites and an action.
++file+::        A special form of task which creates one file.
++desc+::        Describes the next defined task. A task with
+                description is considered a "public" task.
++gen+::         Takes a _generator_ object as first argument which
+                usually creates one or more tasks. An example would be
+                the +RubyPackage+ generator which produces tasks for
+                packaging.
++import+::      Imports additional code which usually provides
+                additional generators. Example: to use the
+                +RubyPackage+ generator you have to <tt>import
+                "rubypackage"</tt> first.
++sys+::         Run external commands or do usual file system
+                operations (copy files, unlink files, install, ...).
++source+::      Takes a filename as argument and causes Rant to read
+                it in as Rantfile.
++subdirs+::     Takes a list of subdirectories in which Rant should
+                look for Rantfiles.
++var+::         Provides access to variables accessible in Rantfiles
+                and from the commandline.
 +make+::        Immediately build a target.
 
 === Defining a task

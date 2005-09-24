@@ -2,7 +2,7 @@
 # Rantfile for Rant :)
 
 import "md5"
-import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper)
+import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper sys/more)
 
 task :default => :test
 
@@ -181,6 +181,12 @@ end
 
 if Env.on_windows?
     enhance :install => (gen Win32::RubyCmdWrapper, sys["bin/*"])
+end
+
+task "svn-clean" do
+    `svn stat`.split(/\n/).each { |line|
+        sys.clean line[7..-1] if line[0] == ??
+    }
 end
 
 # vim:ft=ruby

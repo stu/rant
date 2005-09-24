@@ -6,6 +6,20 @@
 require 'fileutils'
 require 'rant/rantenv'
 
+# Fix FileUtils::Verbose visibility issue
+if RUBY_VERSION == "1.8.3"
+    module FileUtils
+        METHODS = singleton_methods - %w(private_module_function
+            commands options have_option? options_of collect_method)
+        module Verbose
+            class << self
+                public(*::FileUtils::METHODS)
+            end
+            public(*::FileUtils::METHODS)
+        end
+    end
+end
+
 module Rant
 
     class FileList
@@ -633,3 +647,4 @@ end
 	end
     end
 end # module Rant
+# this line prevents ruby 1.8.3 from crashing with: [BUG] unknown node type 0
