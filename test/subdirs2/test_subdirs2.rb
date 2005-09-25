@@ -18,6 +18,7 @@ class TestSubdirs2 < Test::Unit::TestCase
 	Dir.chdir($test_subdirs2_dir)
         assert_rant "autoclean"
         assert Rant::FileList["**/*.t*"].shun(".svn").empty?
+        assert Rant::FileList["**/.rant.meta"].shun(".svn").empty?
     end
     def test_first
         out, err = assert_rant
@@ -202,5 +203,37 @@ EOF
     ensure
         Dir.chdir $test_subdirs2_dir
         Rant::Sys.rm_f Dir["**/rant.t"]
+    end
+    def test_expand_path_md5_in_sub1
+        Dir.chdir "sub1"
+        out, err = assert_rant "-imd5", "sub.t"
+        assert err.empty?
+        assert !out.empty?
+        assert test(?f, "sub.t")
+        assert_equal "a.t\n", File.read("sub.t")
+        out, err = assert_rant "-imd5", "sub.t"
+        assert err.empty?
+        assert out !~ /writing to/
+        assert out !~ /\bcp\b/
+        Dir.chdir ".."
+        out, err = assert_rant "-imd5", "sub1/sub.t"
+        assert err.empty?
+        assert out.empty?
+        assert_rant "-imd5", "autoclean"
+    end
+    def test_expand_path
+        out, err = assert_rant "sub1/sub.t"
+        assert err.empty?
+        assert test(?f, "sub1/sub.t")
+        assert_equal "a.t\n", File.read("sub1/sub.t")
+        out, err = assert_rant "sub1/sub.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_define_in_current_subdir
+        Dir.chdir "sub00"
+        out, err = assert_rant "a"
+        assert err.empty?
+        assert_equal "sub00/a", out.split(/\n/).last
     end
 end

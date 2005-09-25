@@ -612,6 +612,13 @@ end
 
 	extend self
 
+        if RUBY_VERSION >= "1.9.0"
+            class << self
+                public(*::FileUtils::METHODS)
+            end
+            public(*::FileUtils::METHODS)
+        end
+
     end	# module Sys
 
     # An instance of this class is returned from the +sys+ method in
@@ -621,9 +628,6 @@ end
     # instance of this class.
     class SysObject
 	include Sys
-
-	# The controlling Rant compiler.
-	attr_reader :rac
 
 	def initialize(rac)
 	    @rac = rac or
@@ -639,6 +643,10 @@ end
 	def [](*patterns)
 	    RacFileList.new(@rac, *patterns)
 	end
+
+        def expand_path(path)
+            File.expand_path(@rac.project_to_fs_path(path))
+        end
 
 	private
 	# Delegates FileUtils messages to +rac+.

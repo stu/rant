@@ -1,6 +1,12 @@
 
 import "autoclean", "subfile"
 
+def define_print_task(name)
+    task name do |t|
+        puts t.full_name
+    end
+end
+
 desc "show full task name"
 task :a do |t|
     puts t.full_name

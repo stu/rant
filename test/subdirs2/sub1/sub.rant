@@ -6,4 +6,8 @@ end
 desc "noop"
 task :b
 
+file "sub.t" => "@a.t" do |t|
+    sys.cp sys.expand_path(t.source), t.name
+end
+
 gen Directory, "dir.t"

@@ -1,0 +1,147 @@
+
+== Buildfiles in subdirectories
+
+When a software project grows, it is often desired to split the build
+file up and create multiple buildfiles, e.g. one per directory. Rant
+has support for this case built in (unlike make). Part of this support
+is the +subdirs+ command which is described in
+doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html].  This section
+will describe one possible technique.
+
+First, a project needs to have a so called "root Rantfile". This file
+lives in the top directory of the project and is called +Rantfile+ or
+<tt>root.rant</tt>. Each subdirectory which needs specialized tasks,
+has a buildfile called <tt>sub.rant</tt>.
+
+A simple example would be a Ruby project where the test task(s) are
+defined in a seperate buildfile in the +test+ directory. The
+directory structure could look like:
+
+    rubyproject/
+        README
+        root.rant
+        bin/
+            ... some scripts
+        lib/
+            ... ruby library scripts
+        test/
+            sub.rant
+            tc_reader.rb
+            tc_writer.rb
+            tc_filter.rb
+            tc_metautils.rb
+
+The project has one <tt>root.rant</tt> file and any number of
+<tt>sub.rant</tt> files (in this case only one). In root.rant we
+define tasks for packaging, installation, cleanup, etc. and in the
+test/sub.rant file we define tasks that run unit tests.
+
+<tt>root.rant</tt> could look like:
+
+    import "md5"    # use MD5 checksums instead of timestamps, optional
+    import "rubypackage", "rubydoc", "autoclean"
+
+    # reference the "all" task defined in test/sub.rant
+    task :default => "test/all"
+
+    desc "Create package for distribution."
+    gen RubyPackage, "foo" do |t|
+        t.version = "1.0.1"
+        t.summary = "Foo is a ruby library and program for ..."
+        t.files = sys["bin/*", "lib/**/*.rb", "test/tc_*.rb", "**/*.rant"].shun("pkg")
+        t.package_task
+    end
+
+    desc "Generate HTML docs."
+    gen RubyDoc
+
+    desc "Remove generated files and directories."
+    gen AutoClean, :clobber
+
+    # read test/sub.rant
+    subdirs "test"
+
+and <tt>test/sub.rant</tt> contains:
+
+    desc "Run all unit tests."
+    task :all do
+        sys "testrb", sys["tc_*.rb"]
+    end
+
+    desc "Run IO related unit tests."
+    task :io do
+        sys "testrb tc_reader.rb tc_writer.rb"
+    end
+
+    desc "Test internals."
+    task :internals do
+        sys "testrb tc_filter.rb tc_metautils.rb"
+    end
+
+Now we run from the shell:
+
+First let rant list all public tasks:
+    
+    <rubyproject> $ rant -T
+    rant                 # => test/all
+    rant package         # Create package for distribution.
+    rant doc             # Generate HTML docs.
+    rant clobber         # Remove generated files and directories.
+    rant test/all        # Run all unit tests.
+    rant test/io         # Run IO related unit tests.
+    rant test/internals  # Test internals.
+
+We see that if we run rant without arguments, it will run the test/all
+task.
+
+Change to the test directory:
+
+    <rubyproject> $ cd test
+    <test> $ rant -T
+    (root is /home/stefan/Ruby/misc/rant/rbtest, in test)
+    rant all        # Run all unit tests.
+    rant io         # Run IO related unit tests.
+    rant internals  # Test internals.
+    rant @package   # Create package for distribution.
+    rant @doc       # Generate HTML docs.
+    rant @clobber   # Remove generated files and directories.
+
+If rant is started from a directory with a sub.rant file, it searches
+upwards in the directory tree until it finds a file called +Rantfile+
+or <tt>root.rant</tt>. This file will be read first, the directory
+which contains this file is viewed as the projects root directory.
+Then it ensures that the sub.rant file in the current directory is
+read and starts operating. Task names given on the commandline are
+interpreted relative to the current directory. Tasks defined in other
+directories can be referenced by prepending them with an <tt>@</tt>
+character.
+
+To run the IO related tests from the test directory we type:
+
+    <test> $ rant io
+    (root is /home/stefan/Ruby/misc/rant/rbtest, in test)
+    testrb tc_reader.rb tc_writer.rb
+    ... output of testrb ...
+
+To run the clobber task from the test directory:
+
+    <test> $ rant @clobber
+    (root is /home/stefan/Ruby/misc/rant/rbtest, in test)
+    (in /home/stefan/Ruby/misc/rant/rbtest)
+    rm -f ...
+    ... more output ...
+
+== See also
+
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Support for C/C++::
+    doc/c.rdoc[link:files/doc/c_rdoc.html]
+Packaging::
+    doc/package.rdoc[link:files/doc/package_rdoc.html]
+Ruby project howto::
+    doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

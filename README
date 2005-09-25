@@ -41,7 +41,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.4.4 of Rant. Most things
+This document was written for version 0.4.6 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.
@@ -81,6 +81,8 @@ Using MD5 checksums instead of file modification times::
     read doc/md5.rdoc[link:files/doc/md5_rdoc.html]
 Compiling C/C++::
     read doc/c.rdoc[link:files/doc/c_rdoc.html]
+Buildfiles in subdirectories::
+    read doc/subdirs.rdoc[link:files/doc/subdirs_rdoc.html]
 Using the Configure plugin::
     read doc/configure.rdoc[link:files/doc/configure_rdoc.html]
 Compiling C#::
@@ -212,7 +214,7 @@ Rant was tested on:
     Linux		1.8.0
                         1.8.1
                         1.8.2
-			1.8.3 preview 1
+			1.8.3
 			1.9
     MacOS X		1.8.2
     Windows XP		1.8.2 (OneClick Installer)

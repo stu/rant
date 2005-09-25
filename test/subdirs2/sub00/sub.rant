@@ -1,7 +1,5 @@
 
-task :a do |t|
-    puts t.full_name
-end
+define_print_task :a
 
 file "a.t" => "@a.t" do |t|
     sys.cp "../a.t", t.name

@@ -1,12 +1,12 @@
 
 require 'test/unit'
-require 'rant/rantlib'
 require 'tutil'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestSys < Test::Unit::TestCase
     include Rant::Sys
+    include Rant::TestUtil
 
     def setup
 	# Ensure we run in test directory.
@@ -63,6 +63,77 @@ class TestSys < Test::Unit::TestCase
 	assert_equal(pl.size, 1,
 	    '../ should be "split" into one element')
 	assert_equal(pl[0], "..")
+    end
+    def test_expand_path
+        in_local_temp_dir do
+            rootdir = Dir.pwd
+            write_to_file "root.rant", <<-EOF
+                task :a do
+                    puts sys.expand_path("@")
+                end
+                subdirs "sub"
+            EOF
+            in_local_temp_dir "sub" do
+                write_to_file "sub.rant", <<-'EOF'
+                    task :a do
+                        puts sys.expand_path("@")
+                    end
+                    task :b do
+                        puts sys.expand_path("@/abc")
+                    end
+                    task :c do
+                        puts sys.expand_path("@abc")
+                    end
+                    task :d do
+                        puts sys.expand_path("../abc")
+                    end
+                    task :e do
+                        puts sys.expand_path(nil)
+                    end
+                    task :f do
+                        puts sys.expand_path("@/../abc")
+                    end
+                    task :g do
+                        puts sys.expand_path("a@b")
+                    end
+                    task :h do
+                        puts sys.expand_path("@a@b")
+                    end
+                    task :i do
+                        puts sys.expand_path('\@a@b')
+                    end
+                    task :j do
+                        puts sys.expand_path(nil)
+                    end
+                EOF
+                Dir.chdir ".."
+                out, err = assert_rant "a"
+                assert_equal rootdir, out.chomp
+                out, err = assert_rant "sub/a"
+                assert_equal rootdir, out.split(/\n/).last
+                Dir.chdir "sub"
+                out, err = assert_rant "a"
+                assert_equal rootdir, out.split(/\n/).last
+                out, err = assert_rant "b"
+                assert_equal "#{rootdir}/abc", out.split(/\n/).last
+                out, err = assert_rant "c"
+                assert_equal "#{rootdir}/abc", out.split(/\n/).last
+                out, err = assert_rant "d"
+                assert_equal "#{rootdir}/abc", out.split(/\n/).last
+                out, err = assert_rant "e"
+                assert_equal "#{rootdir}/sub", out.split(/\n/).last
+                out, err = assert_rant "f"
+                assert_equal "#{File.dirname(rootdir)}/abc", out.split(/\n/).last
+                out, err = assert_rant "g"
+                assert_equal "#{rootdir}/sub/a@b", out.split(/\n/).last
+                out, err = assert_rant "h"
+                assert_equal "#{rootdir}/a@b", out.split(/\n/).last
+                out, err = assert_rant "i"
+                assert_equal "#{rootdir}/sub/@a@b", out.split(/\n/).last
+                out, err = assert_rant "e"
+                assert_equal "#{rootdir}/sub", out.split(/\n/).last
+            end
+        end
     end
     # perhaps this test should go into a seperate file
     def test_toplevel

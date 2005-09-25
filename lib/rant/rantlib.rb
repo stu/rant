@@ -1210,7 +1210,8 @@ class Rant::RantApp
 	file, is_new = rantfile_for_path(ch[:file])
 	nt = yield(name, pre, block)
 	nt.rantfile = file
-        nt.project_subdir = file.project_subdir
+        #nt.project_subdir = file.project_subdir
+        nt.project_subdir = @current_subdir
 	nt.line_number = ch[:ln]
 	nt.description = @task_desc
 	@task_desc = nil

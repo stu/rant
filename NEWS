@@ -16,7 +16,25 @@ Deprecated:
   deprecated for rantfiles and won't be recognized by future Rant
   versions. Use +Rantfile+, +rantfile+ or <tt>root.rant</tt> instead.
 
+Fixes and minor improvements:
+* Fix an issue where a file was unnecessary rebuilt when rant was
+  started from different directories, the file task was created from a
+  rule and md5 signatures were used.
+* Concise output from Package::Tgz and Package::Zip tasks.
+* A manpage will be installed on Linux/Unix systems by the install.rb
+  script.
+* A fix for a FileUtils::Verbose bug in Ruby 1.8.3 which affects some
+  <tt>sys</tt> methods.
+
 New features:
+* The --cd-parent (-c) option to search for an Rantfile in parent
+  directories.
+* The --look-up (-u) option to search for the root Rantfile in parent
+  directories.
+* Recognition of rantfiles with the names <tt>root.rant</tt> and
+  <tt>sub.rant</tt>, where a <tt>sub.rant</tt> file is meant for a
+  project subdirectory and is treated special.
+  Read doc/subdirs.rdoc[link:files/doc/subdirs_rdoc.html]
 * The +sys+ and <tt>sys.ruby</tt> methods take an optional block for
   custom process exit status handling (per default, Rant aborts if a
   subprocess started with +sys+ exits with another status than 0).

@@ -16,7 +16,7 @@
 # If you're looking for general info about Rant, read the
 # README[link:files/README.html].
 module Rant
-    VERSION = '0.4.5'
+    VERSION = '0.4.6'
 
     # Those are the filenames for rantfiles.
     # Case matters!
