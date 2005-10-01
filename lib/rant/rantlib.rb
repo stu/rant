@@ -209,7 +209,7 @@ module RantContext
     # +rac+ stands for "rant compiler"
     def rac
         ch = Rant::Lib.parse_caller_elem caller[0]
-        rant.warn_msg(@__rant__.pos_text(ch[:file], ch[:ln]),
+        rant.warn_msg(rant.pos_text(ch[:file], ch[:ln]),
             "Method `rac' is deprecated. Use `rant' instead.")
 	rant
     end
@@ -507,7 +507,7 @@ class Rant::RantApp
 	orig_pwd = @rootdir = Dir.pwd
 	# Process commandline.
 	process_args
-        Dir.chdir(@rootdir)
+        Dir.chdir(@rootdir) rescue abort $!.message
 	# read rantfiles, might change @rootdir and Dir.pwd
 	load_rantfiles
 
@@ -541,7 +541,7 @@ class Rant::RantApp
 	return 1
     ensure
 	# TODO: exception handling!
-        Dir.chdir @rootdir
+        Dir.chdir @rootdir if test ?d, @rootdir
         hooks = var._get("__at_return__")
         hooks.each { |hook| hook.call } if hooks
 	@plugins.each { |plugin| plugin.rant_plugin_stop }
@@ -579,7 +579,7 @@ class Rant::RantApp
 	generator = args.shift
 	unless generator.respond_to? :rant_gen
 	    abort_at(ch,
-		"gen: First argument to has to be a task-generator.")
+		"gen: First argument has to be a task-generator.")
 	end
 	# ask generator to produce a task for this application
 	generator.rant_gen(self, ch, args, &block)
@@ -1137,14 +1137,6 @@ class Rant::RantApp
 	::Rant::RANTFILES.each { |rfn|
 	    path = dir ? File.join(dir, rfn) : rfn
             return path if test ?f, path
-	}
-	::Rant::DEPRECATED_RANTFILES.each { |rfn|
-	    path = dir ? File.join(dir, rfn) : rfn
-            if test ?f, path
-                warn_msg "filename deprecated -- #{path}",
-                    "please rename it to `Rantfile' or `root.rant'!"
-                return path
-            end
 	}
         nil
     end

@@ -16,14 +16,13 @@
 # If you're looking for general info about Rant, read the
 # README[link:files/README.html].
 module Rant
-    VERSION = '0.4.6'
+    VERSION = '0.4.7'
 
     # Those are the filenames for rantfiles.
     # Case matters!
     ROOT_RANTFILE = "root.rant"
     SUB_RANTFILE = "sub.rant"
     RANTFILES = [ "Rantfile", "rantfile", ROOT_RANTFILE ]
-    DEPRECATED_RANTFILES = [ "Rantfile.rb", "rantfile.rb" ]
     
     # Names of plugins and imports for which code was loaded.
     # Files that where loaded with the `import' commant are directly
