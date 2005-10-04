@@ -1,6 +1,8 @@
 
 = TODO
 
+== Implement Rant::FileList#==
+
 == Update documentation with regards to resolve hooks.
 
 The argument list for resolve hooks has changed in version 0.4.5.
@@ -17,6 +19,8 @@ interpret it as comment start and thus escaping/quoting is needed if
 could get a common source of annoyance/bugs.
 
 Favorite candidate is currently <tt>@</tt>.
+
+Done (0.4.5), using <tt>@</tt>.
 
 == Improve SourceNode types
 

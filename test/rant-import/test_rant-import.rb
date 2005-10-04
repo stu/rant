@@ -152,12 +152,20 @@ class TestRantImport < Test::Unit::TestCase
 	    gen Sub2::T, "hello", "test" do end
         EOF
 	out, err = assert_rant
+        n_out = out.dup
+        n_err = err.dup
 	assert_match(/hellotest/, out)
 	run_import("--quiet", "--auto", "ant.rb")
+        run_import("--quiet", "--auto", "--zip", "make.rb")
 	assert(test(?f, "ant.rb"))
 	FileUtils.rm_r "lib.t"
 	out = run_ruby("ant.rb")
-	assert_match(/hellotest/, out)
+	assert_equal(n_out, out)
+        FileUtils.rm "ant.rb"
+	assert(test(?f, "make.rb"))
+	assert(test(?f, "make.rb.gz"))
+	out = run_ruby("make.rb")
+	assert_equal(n_out, out)
     ensure
 	Dir.chdir old_pwd
 	FileUtils.rm_rf "sub2.t"

@@ -634,8 +634,8 @@ end
 		raise ArgumentError, "controller required"
 	end
 
-	def glob(*args, &block)
-	    fl = RacFileList.new(@rac, *args)
+	def glob(*patterns, &block)
+	    fl = RacFileList.new(@rac, *patterns)
 	    fl.instance_eval(&block) if block
 	    fl
 	end

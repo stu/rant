@@ -385,13 +385,8 @@ class Rant::RantApp
 
     attr_accessor :node_factory
 
-    def initialize(*args)
-	unless args.empty?
-	    STDERR.puts caller[0]
-	    STDERR.puts "Warning: Giving arguments Rant::RantApp.new " +
-		"is deprecated. Give them to the #run method."
-	end
-	@args = args.flatten
+    def initialize
+	@args = []
 	# Rantfiles will be loaded in the context of this object.
 	@context = RantAppContext.new(self)
 	@sys = ::Rant::SysObject.new(self)
@@ -471,20 +466,6 @@ class Rant::RantApp
 	    vmsg 1, "in #{abs_path}"
 	end
     end
-=begin
-    # Execute block in subdirectory context to subdir, relative to
-    # project root directory. Important: Does NOT change the process
-    # working directory. Not thread safe.
-    #
-    # For Rant internal use only!
-    def define_in_project_dir(dir)
-        old_subdir = @current_subdir
-        @current_subdir = dir
-        yield
-    ensure
-        @current_subdir = old_subdir
-    end
-=end
     ##################################################################
 
     def run?
@@ -804,7 +785,7 @@ class Rant::RantApp
 	tlist.each { |t|
 	    print(prefix + t.to_s.ljust(name_length) + infix)
 	    dt = t.description.sub(/\s+$/, "")
-	    puts dt.sub(/\n/, "\n" + ' ' * cmd_length + infix + "  ")
+	    puts dt.gsub(/\n/, "\n" + ' ' * cmd_length + infix + "  ")
 	}
 	true
     end

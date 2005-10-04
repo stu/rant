@@ -189,4 +189,18 @@ task "svn-clean" do
     }
 end
 
+task "check-168" do
+    rbfiles = sys["bin/rant*", "lib/**/*.rb"]
+    ok = []
+    bad = []
+    rbfiles.each { |fn|
+        sys "ruby168 -c #{fn}" do |ps|
+            (ps.exitstatus == 0 ? ok : bad) << fn
+        end
+    }
+    puts "Bad files:"
+    bad.each { |b| puts "  #{b}" }
+    puts "#{ok.size} of #{rbfiles.size} are OK"
+end
+
 # vim:ft=ruby
