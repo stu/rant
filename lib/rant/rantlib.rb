@@ -1038,7 +1038,7 @@ class Rant::RantApp
                     rf, is_new = rantfile_for_path(fn)
                     load_file rf if is_new
                 else
-                    abort "No such file -- #{rf}"
+                    abort "No such file -- #{fn}"
                 end
             }
             return

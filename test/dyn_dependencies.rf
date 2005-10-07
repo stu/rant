@@ -1,0 +1,25 @@
+
+import "sys/more", "autoclean"
+
+@print = lambda { |t| puts t.name }
+@write = lambda { |t|
+    sys.write_to_file(t.name, (var[t.name[0,1]]||t.name))
+}
+
+task :A => :B, &@print
+task :B do |t|
+    enhance :A => [:C, :D]
+    @print[t]
+end
+task :C, &@print
+task :D, &@print
+
+file "a.t" => "b.t", &@write
+file "b.t" do |t|
+    enhance "a.t" => ["c.t", "d.t"]
+    @write[t]
+end
+file "c.t", &@write
+file "d.t", &@write
+
+gen AutoClean

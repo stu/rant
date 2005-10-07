@@ -87,4 +87,9 @@ class TestRantInterface < Test::Unit::TestCase
         assert lines.size < 3
         assert_match(/\[ERROR\].*option.*\bnix\b/, lines.first)
     end
+    def test_opt_rantfile_no_such_file
+        out, err = assert_rant :fail, "-fdoesnt_exist.rf"
+        assert out.empty?
+        assert err =~ /\bdoesnt_exist\.rf\b/
+    end
 end
