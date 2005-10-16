@@ -30,7 +30,6 @@ module Rant
                 @block = block
                 @run = false
                 @success = nil
-                @needed_blk = nil
             end
             def prerequisites
                 @pre
@@ -75,9 +74,7 @@ module Rant
             def needed?
                 invoke(:needed? => true)
             end
-            def needed(&blk)
-                @needed_blk = blk
-            end
+            def extra_needed?; end
             def invoke(opt = INVOKE_OPT)
                 return circular_dep if @run
                 @run = true
@@ -86,19 +83,17 @@ module Rant
                     goto_task_home
                     @cur_checksums = []
                     @sigs = @rac.var._get("__signature__")
+                    @md = @rac.var._get("__metadata__")
                     key = "prerequisites_sig_#{@sigs.name}"
                     target_key = "target_sig_#{@sigs.name}"
                     up = signed_process_prerequisites(opt)
                     up ||= opt[:force]
-                    if @needed_blk
-                        up = true if @needed_blk.call(self)
-                    end
+                    up = true if extra_needed?
                     @cur_checksums.sort!
                     check_str = @cur_checksums.join
                     @cur_checksums = nil
-                    metadata = @rac.var._get("__metadata__")
-                    old_check_str = metadata.path_fetch(key, @name)
-                    old_target_str = metadata.path_fetch(target_key, @name)
+                    old_check_str = @md.path_fetch(key, @name)
+                    old_target_str = @md.path_fetch(target_key, @name)
                     # check explicitely for plain file, thus allow the
                     # target of a SignedFile to be a directory ;)
                     if test(?f, @name)
@@ -119,10 +114,10 @@ module Rant
                         @sigs.signature_for_file(@name) : ""
                     target_changed = target_str != old_target_str
                     if target_changed
-                        metadata.path_set(target_key, target_str, @name)
+                        @md.path_set(target_key, target_str, @name)
                     end
                     if check_str_changed
-                        metadata.path_set(key, check_str, @name)
+                        @md.path_set(key, check_str, @name)
                     end
                     return target_changed
                 rescue TaskFail => e
@@ -130,7 +125,7 @@ module Rant
                 rescue Exception => e
                     self.fail(nil, e)
                 ensure
-                    @sigs = nil
+                    @md = @sigs = nil
                     @run = false
                 end
             end

@@ -147,6 +147,26 @@ if Object.method_defined? :fcall # in Ruby 1.9 like __send__
 		@files.reject! { |f| f =~ ix && !@keep[f] }
 	    end
 	end
+elsif RUBY_VERSION < "1.8.2"
+	def resolve
+	    @pending = false
+	    @actions.each{ |action| self.__send__(*action) }.clear
+	    ix = ignore_rx
+            @files.reject! { |f|
+                unless @keep[f]
+                    next(true) if ix && f =~ ix
+                    if @glob_flags & File::FNM_DOTMATCH != File::FNM_DOTMATCH
+                        if ESC_ALT_SEPARATOR
+                            f =~ /(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)\..*
+                                ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x
+                        else
+                            f =~ /(^|#{ESC_SEPARATOR}+)\..*
+                                (#{ESC_SEPARATOR}+|$)/x
+                        end
+                    end
+                end
+            }
+	end
 else
 	def resolve
 	    @pending = false
@@ -422,10 +442,15 @@ end
 	    @basedir = Dir.pwd
 	    super(*patterns)
 	    @ignore_hash = nil
+            @add_ignore_args = []
 	    update_ignore_rx
 	end
 
-	private :ignore
+        alias filelist_ignore ignore
+        def ignore(*patterns)
+            @add_ignore_args.concat patterns
+            self
+        end
 
 	def ignore_rx
 	    update_ignore_rx
@@ -450,10 +475,11 @@ end
 	private
 	def update_ignore_rx
 	    ri = @rac.var[:ignore]
+            ri = ri ? (ri + @add_ignore_args) : @add_ignore_args
 	    rh = ri.hash
 	    unless rh == @ignore_hash
 		@ignore_rx = nil
-		ignore(*ri) if ri
+		filelist_ignore(*ri)
 		@ignore_hash = rh
 	    end
 	end
@@ -639,6 +665,14 @@ end
 	    fl.instance_eval(&block) if block
 	    fl
 	end
+
+        def glob_all(*patterns, &block)
+	    fl = RacFileList.new(@rac, *patterns)
+            fl.ignore(".", "..")
+            fl.glob_flags |= File::FNM_DOTMATCH
+	    fl.instance_eval(&block) if block
+	    fl
+        end
 
 	def [](*patterns)
 	    RacFileList.new(@rac, *patterns)

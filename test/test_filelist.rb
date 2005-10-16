@@ -1,12 +1,12 @@
 
 require 'test/unit'
-require 'rant/rantlib'
-require 'fileutils'
 require 'tutil'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestFileList < Test::Unit::TestCase
+    include Rant::TestUtil
+
     def fl(*args, &block)
 	Rant::FileList.new(*args, &block)
     end
@@ -424,4 +424,59 @@ else
         assert_equal("'a a' b", "#{cx.sys[].concat(["a a", "b"])}")
     end
 end
+    def test_dotfiles
+        in_local_temp_dir do
+            Rant::Sys.touch %w(a.t .a.t)
+            Rant::Sys.mkdir %w(d.t .d.t)
+            Rant::Sys.touch %w(d.t/a.t d.t/.a.t)
+            Rant::Sys.touch %w(.d.t/a.t .d.t/.a.t)
+            Rant::Sys.mkdir %w(d.t/d.t)
+            Rant::Sys.touch %w(d.t/d.t/a.t d.t/d.t/.a.t)
+            cx = Rant::RantApp.new.cx
+            files = cx.sys["**/*.t"]
+            %w(a.t d.t d.t/a.t d.t/d.t d.t/d.t/a.t).each { |fn|
+                assert files.include?(fn), "#{fn} missing"
+            }
+            #p files.sort.to_a
+            assert_equal 5, files.size
+            files = cx.sys.glob_all "**/*.t"
+            %w(a.t .a.t d.t .d.t d.t/a.t d.t/.a.t .d.t/a.t .d.t/.a.t d.t/d.t d.t/d.t/a.t d.t/d.t/.a.t).each { |fn|
+                assert files.include?(fn), "#{fn} missing"
+            }
+            assert_equal 11, files.size
+            files = cx.sys.glob_all("**/*.t").exclude(".a.*")
+            %w(a.t d.t .d.t d.t/a.t d.t/.a.t .d.t/a.t .d.t/.a.t d.t/d.t d.t/d.t/a.t d.t/d.t/.a.t).each { |fn|
+                assert files.include?(fn), "#{fn} missing"
+            }
+            assert_equal 10, files.size
+            files = cx.sys.glob_all("**/*.t").shun(".d.t")
+            %w(a.t .a.t d.t d.t/a.t d.t/.a.t d.t/d.t d.t/d.t/a.t d.t/d.t/.a.t).each { |fn|
+                assert files.include?(fn), "#{fn} missing"
+            }
+            assert_equal 8, files.size
+            files.include("**/*.t").uniq!
+            %w(a.t .a.t d.t d.t/a.t d.t/.a.t d.t/d.t d.t/d.t/a.t d.t/d.t/.a.t).each { |fn|
+                assert files.include?(fn), "#{fn} missing"
+            }
+            assert_equal 11, files.size
+            # redundant, just to emphasize
+            assert !files.include?(".")
+            assert !files.include?("..")
+            assert !files.include?("d.t/.")
+            assert !files.include?("d.t/..")
+            assert !files.include?(".d.t/.")
+            assert !files.include?(".d.t/..")
+        end
+    end
+    def test_dotdirs
+        in_local_temp_dir do
+            cx = Rant::RantApp.new.cx
+            Rant::Sys.mkdir ["d", ".d", "d/d", "d/.d", ".d/.d", ".d/d", "d/.d/d"]
+            files = cx.sys["**/*"]
+            %w(d d/d).each { |fn|
+                files.include?(fn)
+            }
+            assert_equal 2, files.size
+        end
+    end
 end
