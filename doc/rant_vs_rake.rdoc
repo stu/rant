@@ -1,0 +1,68 @@
+
+== Rant vs. Rake
+
+Since many people (especially Ruby programmers) that know Rake ask for
+a Rake/Rant comparison, I'll spend a few paragraphs on this topic.
+
+This comparison is for Rant 0.4.6 and Rake 0.6.2. If not stated
+otherwise, this document assumes a standard Ruby 1.8/1.9 installation
+without additional libraries (except for Rant and Rake).
+
+=== Feature comparison
+
+Generally speaking, Rant has all major features of Rake and more.
+Especially the following major Rant features aren't available for
+Rake:
+
+* Optional use of MD5 checksums instead of timestamps.
+  To enable it, one import statement at the top of the Rantfile is
+  enough:
+
+    import "md5"
+
+* Easy and portable tgz/zip file creation on Linux/MacOS X/Windows
+  (and probably most other platforms where ruby runs). No additional
+  libraries necessary!
+
+* Create a script, tailored to the needs of a project, which
+  can be used instead of an Rant installation => Distribute this
+  script with your project and users and other developers don't need
+  an Rant installation.
+
+  Try the <tt>rant-import</tt> command:
+
+    % rant-import --auto make.rb
+
+  rant-import reads the Rantfile in the current directory, determines
+  what code of the Rant distribution (and custom imports) is needed
+  and writes a script that supports all required Rant features and
+  depends only on a standard Ruby (1.8.0 or newer) installation to the
+  file <tt>make.rb</tt>. Users and other developers don't need an Rant
+  installation anymore. Instead of typing:
+
+    % rant foo
+
+  they can type:
+
+    % ruby make.rb foo
+
+* It is possible to split up the build specification into
+  multiple files in different directories.  (=> no such thing as
+  "recursive make" necessary). 
+
+* Dependency checking for C/C++ source files (integrated makedepend
+  replacement).
+
+* The <tt>--force-run</tt> (<tt>-a</tt>) option forces the rebuild of
+  a target and all its dependencies. E.g.:
+
+    % rant -a foo
+
+  Let's say +foo+ depends on <tt>foo.o</tt> and <tt>util.o</tt>. Then
+  the above command will cause a rebuild of <tt>foo.o</tt>,
+  <tt>util.o</tt> and +foo+, no matter if Rant considers these files
+  up to date or not.
+
+Some other goodies: The +make+ method, the SubFile and AutoClean
+tasks, special variables and more. Most of this is documented in
+doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
