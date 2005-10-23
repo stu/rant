@@ -43,7 +43,7 @@ module Rant
                 @pre.first.to_s
             end
             def has_actions?
-                @block or @receiver && @receiver.has_post_action?
+                @block or @receiver && @receiver.has_pre_action?
             end
             def file_target?
                 true
@@ -112,7 +112,6 @@ module Rant
                     # run action and save checksums
                     run
                     goto_task_home
-                    @receiver.post_run(self) if @receiver
                     target_str = test(?f, @name) ?
                         @sigs.signature_for_file(@name) : ""
                     target_changed = target_str != old_target_str

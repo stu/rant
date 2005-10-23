@@ -51,6 +51,14 @@ module Test
             def assert_exit(status = 0)
                 assert_equal(status, $?.exitstatus)
             end
+            def assert_file_content(fn, content, *opts)
+                assert(test(?f, fn), "`#{fn}' doesn't exist")
+                fc = File.read(fn)
+                fc.strip! if opts.include? :strip
+                assert(fc == content,
+                    "file `#{fn}' should contain `#{content}' " +
+                    "but contains `#{fc}'")
+            end
             if RUBY_VERSION < "1.8.1"
                 def assert_raise(*args, &block)
                     assert_raises(*args, &block)

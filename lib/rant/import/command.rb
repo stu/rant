@@ -3,7 +3,6 @@
 #
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
-require 'rant/metautils'
 #require 'rant/import/metadata' #rant-import:uncomment
 #require 'rant/import/signature/md5' #rant-import:uncomment
 
@@ -12,6 +11,61 @@ module Rant
         rant.import "metadata" unless rant.var._get("__metadata__")
         rant.import "signature/md5" unless rant.var._get("__signature__")
     end
+    module Generators
+        class Command
+            def self.rant_gen(rant, ch, args, &block)
+                if args.size == 1 && block
+                    return \
+                    rant.prepare_task(args.first, nil, ch) { |n,pre,_|
+                        t = rant.node_factory.new_file(rant, n, pre, nil)
+                        t.receiver = CommandManager.new(nil, block)
+                        t
+                    }
+                elsif args.size < 2
+                    rant.abort_at(ch, "Command: At least two " +
+                        "arguments required: task name and command.")
+                elsif args.size > 3
+                    rant.abort_at(ch, "Command: Too many arguments.")
+                end
+                # determine task name
+                name = args.shift
+                if name.respond_to? :to_str
+                    name = name.to_str
+                else
+                    rant.abort_at(ch, "Command: task name (string) " +
+                        "as first argument required")
+                end
+                if args.size == 1 && args.first.respond_to?(:to_hash)
+                    parse_keyword_syntax(rant, ch,
+                        name, block, args[0].to_hash)
+                else
+                    parse_plain_syntax(rant, ch,
+                        name, block, args[0], args[1])
+                end
+            end
+            def self.parse_plain_syntax(rant, ch, name, block, pre, cmd)
+                # determine prerequisites
+                pre ||= []
+                # determine command
+                (cmd = pre; pre = []) unless cmd
+                if cmd.respond_to? :to_str
+                    cmd = cmd.to_str
+                else
+                    rant.abort_at(ch, "Command: command argument has " +
+                        "to be a string.")
+                end
+                rant.prepare_task({name => pre}, nil, ch) { |n,pre,_|
+                    t = rant.node_factory.new_file(rant, n, pre, nil)
+                    t.receiver = CommandManager.new(cmd, block)
+                    t
+                }
+            end
+            def self.parse_keyword_syntax(rant, ch, name, block, hash)
+                # TODO
+                rant.abort_at(ch, "Command: syntax error")
+            end
+        end # class Command
+    end # module Generators
     module Node
         def interp_vars(str)
             str.gsub(/\$\((\w+|<|>)\)/) { |_|
@@ -49,10 +103,10 @@ module Rant
             res_command(node)
             @command_changed
         end
-        def has_post_action?
+        def has_pre_action?
             true
         end
-        def post_run(node)
+        def pre_run(node)
             @command.split(/\n/).each { |cmd| node.rac.sys cmd }
             if @command_changed
                 node.goto_task_home
@@ -81,16 +135,4 @@ module Rant
             @command_changed = old_sig != @new_sig
         end
     end # class CommandManager
-    module Generators
-        class Command
-            def self.rant_gen(rant, ch, args, &block)
-                name, pre, cmd = args
-                rant.prepare_task({name => pre}, nil, ch) { |n,pre,_|
-                    t = rant.node_factory.new_file(rant, n, pre, nil)
-                    t.receiver = CommandManager.new(cmd, block)
-                    t
-                }
-            end
-        end # class Command
-    end # module Generators
 end # module Rant

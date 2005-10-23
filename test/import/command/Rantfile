@@ -1,0 +1,26 @@
+
+import "command", "autoclean"
+
+@echo_prog = "echo"
+
+desc "Build a.t"
+gen Command, "a.t" => ["b.t", "c.t"] do |t|
+    "echo #{t.prerequisites.arglist} > #{t.name}"
+end
+
+var :btxt => "b"
+var :be, :Bool
+
+gen Command, "b.t", "echo $(btxt) > $(>)"
+
+if var[:be]
+    enhance "b.t" => "d.t" do |t|
+        import "sys/more"
+        sys.write_to_file(t.name,
+            File.read(t.name) + File.read(t.source))
+    end
+end
+
+gen Command, "c.t", sys["d???.t"], "$(echo_prog) $(<) > $(>)"
+
+gen AutoClean

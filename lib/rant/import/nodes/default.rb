@@ -67,7 +67,7 @@ module Rant
 	# True if this task has at least one action (block to be
 	# executed) associated.
 	def has_actions?
-            @block or @receiver && @receiver.has_post_action?
+            @block or @receiver && @receiver.has_pre_action?
 	end
 
 	# Add a prerequisite.
@@ -150,13 +150,7 @@ module Rant
             end
 	    # Never run a task block for a "needed?" query.
 	    return update if opt[:needed?]
-            if update
-                run
-                if @receiver
-                    goto_task_home
-                    @receiver.post_run(self)
-                end
-            end
+            run if update
 	    @success = true
 	    # IMPORTANT: return update flag
 	    update

@@ -155,12 +155,17 @@ module Rant
 	def each_target
 	end
 
+        def has_actions?
+            defined? @block and @block
+        end
+
         private
 	def run
-	    return unless @block
+	    return unless has_actions?
 	    goto_task_home
             @rac.running_task(self)
-	    @block.arity == 0 ? @block.call : @block[self]
+            @receiver.pre_run(self) if defined? @receiver and @receiver
+	    @block.arity == 0 ? @block.call : @block[self] if @block
 	end
 
 	def circular_dep
