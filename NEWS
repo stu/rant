@@ -1,6 +1,20 @@
 
 = Rant NEWS
 
+== Rant 0.4.8
+
+Incompatible changes:
+* The filenames <tt>Rantfile.rb</tt> and <tt>rantfile.rb</tt> which
+  were deprecated since the last release aren't recognized anymore.
+  Use +Rantfile+, +rantfile+ or <tt>root.rant</tt> instead.
+
+Fixes and minor improvements:
+* Fix output of `rant -T' for descriptions with more than two lines.
+
+New features:
+* rant-import supports --zip (-z) option for zip-compression now.
+* Command tasks
+
 == Rant 0.4.6
 
 Incompatible changes:

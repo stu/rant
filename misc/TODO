@@ -4,6 +4,9 @@
 == Check +enhance+ for SourceNodes
 
 Rant fails (infinite recursion) for enhance on SourceNodes.
+Update: Infinite recursion occurs only when a <tt>require "rant"</tt>
+        was done. Else an appropriate message is printed. Can be
+        considered OK.
 
 == Implement Rant::FileList#==
 

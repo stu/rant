@@ -79,16 +79,18 @@ module Rant
                     Rant::Sys.sp(self.source)
                 else
                     cx = rac.cx
-                    cx.var._get(var) or (
-                        if cx.instance_eval("defined? @#{var}")
-                            cx.instance_variable_get "@#{var}"
-                        else
-                            rac.warn_msg(rac.pos_text(
-                                rantfile.path, line_number),
-                                "Command: undefined variable `#{var}'")
-                            ""
-                        end
-                    )
+                    val =
+                        cx.var._get(var) || (
+                            if cx.instance_eval("defined? @#{var}")
+                                cx.instance_variable_get "@#{var}"
+                            else
+                                rac.warn_msg(rac.pos_text(
+                                    rantfile.path, line_number),
+                                    "Command: undefined variable `#{var}'")
+                                ""
+                            end
+                        )
+                    val.respond_to?(:arglist) ? val.arglist : val
                 end
             }
         end

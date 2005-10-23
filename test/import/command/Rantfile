@@ -23,4 +23,11 @@ end
 
 gen Command, "c.t", sys["d???.t"], "$(echo_prog) $(<) > $(>)"
 
+var :rcmd => "echo $(prerequisites) $(source) > $(name)"
+gen Rule, :out => [:in1, :in2] do |name, sources|
+    gen Command, name, sources, var[:rcmd]
+end
+
+gen Directory, "a.in1"
+
 gen AutoClean

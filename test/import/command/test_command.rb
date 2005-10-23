@@ -140,6 +140,80 @@ if Rant::Env.find_bin("echo")
     ensure
         Rant::Sys.rm_f "d.t"
     end
+    def test_rule
+        out, err = assert_rant :fail, "a.out"
+        assert out.empty?
+        lines = err.split(/\n/)
+        assert lines.size < 3
+        assert_match(/ERROR.*\ba\.out\b/, lines.first)
+        assert !test(?e, "a.out")
+        assert !test(?e, "a.in1")
+        Rant::Sys.write_to_file "a.in2", ""
+        assert test(?f, "a.in2")
+        out, err = assert_rant "a.out"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "a.out", "a.in1 a.in2 a.in1", :strip
+        assert test(?d, "a.in1")
+        out, err = assert_rant "a.out", "rcmd=echo $(<) $(source) > $(>)"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "a.out", "rcmd=echo $(source) > $(>)"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "a.out", "a.in1", :strip
+        assert test(?d, "a.in1")
+        out, err = assert_rant "a.out", "rcmd=echo  $(source) > $(>)"
+        assert err.empty?
+        assert out.empty?
+        timeout
+        Rant::Sys.touch "a.in2"
+        out, err = assert_rant "a.out", "rcmd=echo  $(source) > $(>)"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "a.out", "a.in1", :strip
+        out, err = assert_rant "a.out", "rcmd=echo $(source) > $(>)"
+        assert err.empty?
+        assert out.empty?
+    ensure
+        Rant::Sys.rm_f "a.in2"
+        assert_rant "autoclean"
+        assert !(test(?e, "a.out"))
+        assert !(test(?e, "a.in1"))
+    end
+    def test_rule_md5
+        Rant::Sys.write_to_file "a.in2", ""
+        assert test(?f, "a.in2")
+        out, err = assert_rant "-imd5", "a.out"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "a.out", "a.in1 a.in2 a.in1", :strip
+        assert test(?d, "a.in1")
+        out, err = assert_rant "-imd5", "a.out", "rcmd=echo $(<) $(source) > $(>)"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "-imd5", "a.out", "rcmd=echo $(source) > $(>)"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "a.out", "a.in1", :strip
+        assert test(?d, "a.in1")
+        out, err = assert_rant "-imd5", "a.out", "rcmd=echo  $(source) > $(>)"
+        assert err.empty?
+        assert out.empty?
+        Rant::Sys.write_to_file "a.in2", " "
+        out, err = assert_rant "-imd5", "a.out", "rcmd=echo  $(source) > $(>)"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "a.out", "a.in1", :strip
+        out, err = assert_rant "-imd5", "a.out", "rcmd=echo $(source) > $(>)"
+        assert err.empty?
+        assert out.empty?
+    ensure
+        Rant::Sys.rm_f "a.in2"
+        assert_rant "autoclean"
+        assert !(test(?e, "a.out"))
+        assert !(test(?e, "a.in1"))
+    end
 else
     $stderr.puts "*** `echo' not available, less Command testing ***"
     def test_dummy

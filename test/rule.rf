@@ -31,3 +31,5 @@ if var[:enhance_t]
 	puts "eh.t created"
     end
 end
+
+# vim:ft=ruby

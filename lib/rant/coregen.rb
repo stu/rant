@@ -98,7 +98,7 @@ module Rant
                 }
             end
         end
-	class Rule < ::Proc
+	class Rule
 	    # Generate a rule by installing an at_resolve hook for
 	    # +rac+.
 	    def self.rant_gen(rac, ch, args, &block)
@@ -136,48 +136,88 @@ module Rant
 			"to be a string or regular expression")
 		end
 		src_proc = case src_arg
-                    when String
+                    when String, Array
                         unless String === target
                             rac.abort(ch, "rule target has to be " +
                                   "a string if source is a string")
                         end
-                        lambda { |name| name.sub(/#{esc_target}$/, src_arg) }
+                        if src_arg.kind_of? String
+                            lambda { |name|
+                                name.sub(/#{esc_target}$/, src_arg)
+                            }
+                        else
+                            lambda { |name|
+                                src_arg.collect { |s_src|
+                                    s_src = ".#{s_src}" if Symbol === s_src
+                                    name.sub(/#{esc_target}$/, s_src)
+                                }
+                            }
+                        end
                     when Proc: src_arg
                     when nil: lambda { |name| [] }
                     else
-                        rac.abort_at(ch, "rule source has to be " +
-                            "String or Proc")
+                        rac.abort_at(ch, "rule source has to be a " +
+                            "String, Array or Proc")
                     end
-		blk = self.new { |task_name, rel_project_dir|
-		    if target_rx =~ task_name
+                rac.resolve_hooks <<
+                    (block.arity == 2 ? Hook : FileHook).new(
+                           rac, ch, target_rx, src_proc, block)
+		nil
+	    end
+            class Hook
+                attr_accessor :target_rx
+                def initialize(rant, ch, target_rx, src_proc, block)
+                    @rant = rant
+                    @ch = ch
+                    @target_rx = target_rx
+                    @src_proc = src_proc
+                    @block = block
+                end
+                def call(target, rel_project_dir)
+		    if @target_rx =~ target
                         have_src = true
-                        src = src_proc[task_name]
+                        src = @src_proc[target]
                         if src.respond_to? :to_ary
                             src.each { |f|
-                                if rac.resolve(f).empty? && !test(?e, f)
+                                if @rant.resolve(f).empty? && !test(?e, f)
                                     have_src = false
                                     break
                                 end
                             }
                         else
-                            if rac.resolve(src).empty? && !test(?e, src)
+                            if @rant.resolve(src).empty? && !test(?e, src)
                                 have_src = false
                             end
                         end
                         if have_src
-                            t = rac.file(:__caller__ => ch,
-                                    task_name => src_proc[task_name], &block)
-                            t.project_subdir = rac.current_subdir
-                            [t]
+                            create_nodes(rel_project_dir, target, src)
                         end
-		    end
-		}
-		blk.target_rx = target_rx
-		rac.resolve_hooks << blk
-		nil
-	    end
-	    attr_accessor :target_rx
-	end	# class Rule
+                    end
+                end
+                alias [] call
+                private
+                def create_nodes(rel_project_dir, target, deps)
+                    case nodes = @block[target, deps]
+                    when Array: nodes
+                    when Node: [nodes]
+                    else
+                        @rant.abort_at(@ch, "Block has to " +
+                            "return Node or array of Nodes.")
+                    end.each { |node|
+                        node.project_subdir = @rant.current_subdir
+                    }
+                end
+            end
+            class FileHook < Hook
+                private
+                def create_nodes(rel_project_dir, target, deps)
+                    t = @rant.file(:__caller__ => @ch,
+                            target => deps, &@block)
+                    t.project_subdir = @rant.current_subdir
+                    [t]
+                end
+            end
+	end # class Rule
 	class Action
 	    def self.rant_gen(rac, ch, args, &block)
 		unless args.empty?
