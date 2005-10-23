@@ -21,6 +21,8 @@ module Rant
                 }
             end
 
+            attr_accessor :receiver
+
             def initialize(rac, name, prerequisites, &block)
                 super()
                 @rac = rac
@@ -30,6 +32,7 @@ module Rant
                 @block = block
                 @run = false
                 @success = nil
+                @receiver = nil
             end
             def prerequisites
                 @pre
@@ -74,7 +77,6 @@ module Rant
             def needed?
                 invoke(:needed? => true)
             end
-            def extra_needed?; end
             def invoke(opt = INVOKE_OPT)
                 return circular_dep if @run
                 @run = true
@@ -88,7 +90,7 @@ module Rant
                     target_key = "target_sig_#{@sigs.name}"
                     up = signed_process_prerequisites(opt)
                     up ||= opt[:force]
-                    up = true if extra_needed?
+                    up = true if @receiver && @receiver.update?(self)
                     @cur_checksums.sort!
                     check_str = @cur_checksums.join
                     @cur_checksums = nil
@@ -110,6 +112,7 @@ module Rant
                     # run action and save checksums
                     run
                     goto_task_home
+                    @receiver.post_run(self) if @receiver
                     target_str = test(?f, @name) ?
                         @sigs.signature_for_file(@name) : ""
                     target_changed = target_str != old_target_str
@@ -119,6 +122,7 @@ module Rant
                     if check_str_changed
                         @md.path_set(key, check_str, @name)
                     end
+                    @success = true
                     return target_changed
                 rescue TaskFail => e
                     raise

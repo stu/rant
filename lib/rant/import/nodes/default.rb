@@ -33,6 +33,8 @@ module Rant
     class Task
 	include Node
 
+        attr_accessor :receiver
+
 	def initialize(rac, name, prerequisites = [], &block)
 	    super()
 	    @rac = rac or raise ArgumentError, "rac not given"
@@ -46,6 +48,7 @@ module Rant
 	    #	false	invoked, but fail
 	    #	true	invoked and run successfully
 	    @success = nil
+            @receiver = nil
 	end
 
 	# Get a list of the *names* of all prerequisites. The
@@ -141,9 +144,14 @@ module Rant
 		    dep
 		end
 	    }
+            update = true if @receiver && @receiver.update?(self)
 	    # Never run a task block for a "needed?" query.
 	    return update if opt[:needed?]
 	    run if update
+            if @receiver
+                goto_task_home
+                @receiver.post_run(self)
+            end
 	    @success = true
 	    # IMPORTANT: return update flag
 	    update

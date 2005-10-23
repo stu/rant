@@ -9,6 +9,7 @@
 
 require 'rant/rantlib'
 require 'rant/import/subfile'
+require 'rant/metautils'
 #require 'rant/progress' #rant-import:uncomment
 #require 'rant/tempfile' #rant-import:uncomment
 

@@ -1,6 +1,10 @@
 
 = TODO
 
+== Check +enhance+ for SourceNodes
+
+Rant fails (infinite recursion) for enhance on SourceNodes.
+
 == Implement Rant::FileList#==
 
 == Update documentation with regards to resolve hooks.

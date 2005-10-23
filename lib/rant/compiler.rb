@@ -4,6 +4,7 @@
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
 require 'rant/rantvar'
+require 'rant/metautils'
 
 module Rant
     class Compiler

@@ -2,6 +2,7 @@
 # program.rb - Compiling C programs.
 
 require 'rant/rantlib'
+require 'rant/metautils'
 
 module Rant
 
