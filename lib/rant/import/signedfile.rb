@@ -43,7 +43,7 @@ module Rant
                 @pre.first.to_s
             end
             def has_actions?
-                !!@block
+                @block or @receiver && @receiver.has_post_action?
             end
             def file_target?
                 true
