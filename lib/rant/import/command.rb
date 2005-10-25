@@ -69,30 +69,33 @@ module Rant
     module Node
         def interp_vars(str)
             str.gsub(/\$\((\w+|<|>)\)/) { |_|
-                var = $1
-                case var
-                when "name", ">"
-                    Rant::Sys.sp(self.name)
-                when "prerequisites", "<"
-                    self.prerequisites.arglist
-                when "source"
-                    Rant::Sys.sp(self.source)
-                else
-                    cx = rac.cx
-                    val =
-                        cx.var._get(var) || (
-                            if cx.instance_eval("defined? @#{var}")
-                                cx.instance_variable_get "@#{var}"
-                            else
-                                rac.warn_msg(rac.pos_text(
-                                    rantfile.path, line_number),
-                                    "Command: undefined variable `#{var}'")
-                                ""
-                            end
-                        )
-                    val.respond_to?(:arglist) ? val.arglist : val
-                end
+                val = val_for_interp_var $1
+                #val.respond_to?(:to_ary) ? val.to_ary.join(' ') : val
+                val.respond_to?(:arglist) ? val.arglist : Sys.sp(val)
+            }.gsub(/\$\[(\w+|<|>)\]/) { |_|
+                val = val_for_interp_var $1
+                val.respond_to?(:to_ary) ? val.to_ary.join(' ') : val.to_s
             }
+        end
+        private
+        def val_for_interp_var(var)
+            case var
+            when "name", ">": self.name
+            when "prerequisites", "<": self.prerequisites
+            when "source": self.source
+            else
+                cx = rac.cx
+                cx.var._get(var) || (
+                    if cx.instance_eval("defined? @#{var}")
+                        cx.instance_variable_get "@#{var}"
+                    else
+                        rac.warn_msg(rac.pos_text(
+                            rantfile.path, line_number),
+                            "Command: undefined variable `#{var}'")
+                        ""
+                    end
+                )
+            end
         end
     end
     class CommandManager

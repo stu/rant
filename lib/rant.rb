@@ -60,9 +60,9 @@ module Rant
 end
 
 def rant
-    @__rant__
+    Rant.rant
 end
 
-@__rant__ = Rant::RantApp.new
+Rant.instance_variable_set(:@__rant__, Rant::RantApp.new)
 
 include RantContext

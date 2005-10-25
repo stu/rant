@@ -41,7 +41,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.4.6 of Rant. Most things
+This document was written for version 0.4.8 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.

@@ -240,6 +240,7 @@ end
 
 module Rant
 
+    @__rant__ = nil
     class << self
 
 	# Run a new rant application in the current working directory.
@@ -271,14 +272,13 @@ module Rant
 	    if rant && !rant.run?
 		rant.run(args.flatten)
 	    else
-                Rant::MAIN_OBJECT.instance_variable_set(
-                    :@__rant__, Rant::RantApp.new)
+                @__rant__ = Rant::RantApp.new
 		rant.run(args)
 	    end
 	end
 
 	def rant
-	    Rant::MAIN_OBJECT.instance_variable_get(:@__rant__)
+	    @__rant__
 	end
     end
 
