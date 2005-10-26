@@ -210,4 +210,55 @@ class TestSys < Test::Unit::TestCase
     ensure
         FileUtils.rm_f %w(exit_1.t rf.t)
     end
+    def test_escape
+        assert_equal "abc", Rant::Sys.escape("abc")
+        assert_equal "", Rant::Sys.escape("")
+        # might change
+        assert_equal "", Rant::Sys.escape(nil)
+        if Rant::Env.on_windows?
+            assert_equal '"a b"', Rant::Sys.escape("a b")
+            assert_equal '" "', Rant::Sys.escape(" ")
+            assert_equal '" a b "', Rant::Sys.escape(" a b ")
+            o = Object.new
+            def o.to_s; "to s"; end
+            assert_equal '"to s"', Rant::Sys.escape(o)
+        else
+            assert_equal "a\\ b", Rant::Sys.escape("a b")
+            assert_equal "\\ ", Rant::Sys.escape(" ")
+            assert_equal "\\ a\\ b\\ ", Rant::Sys.escape(" a b ")
+            o = Object.new
+            def o.to_s; "to s"; end
+            assert_equal "to\\ s", Rant::Sys.escape(o)
+        end
+    end
+    def test_escape_array
+        assert_equal "a b", Rant::Sys.escape(%w(a b))
+        assert_equal "", Rant::Sys.escape([])
+        assert_equal "", Rant::Sys.escape([[]])
+        res = Rant::Sys.escape(["", []])
+        assert_equal "", res.strip
+        assert res.length < 2
+        if Rant::Env.on_windows?
+            assert_equal '"a  b" c d " e"', Rant::Sys.escape([["a  b"], "c", ["d", " e"]])
+        else
+            assert_equal "a\\ \\ b c d \\ e", Rant::Sys.escape([["a  b"], "c", ["d", " e"]])
+        end
+    end
+    def test_sp
+        assert_equal "a", Rant::Sys.sp("a")
+        assert_equal "", Rant::Sys.sp("")
+        if Rant::Env.on_windows?
+            assert_equal '"a b"', Rant::Sys.sp("a b")
+            assert_equal '" " a b "c " d', Rant::Sys.sp([" ", ["a", "b", "c ", ["d"]]])
+            assert_equal "a\\b", Rant::Sys.sp("a/b")
+            assert_equal '"a\ b" c\d', Rant::Sys.sp(["a/ b", "c/d"])
+	    assert_equal "a\\b\\c\\", Rant::Sys.sp("a/b/c/")
+	    assert_equal "\"a b\\c\\\\\"", Rant::Sys.sp("a b/c/")
+        else
+            assert_equal "a\\ b", Rant::Sys.sp("a b")
+            assert_equal "\\  a b c\\  d", Rant::Sys.sp([" ", ["a", "b", "c ", ["d"]]])
+            assert_equal "a/b", Rant::Sys.sp("a/b")
+            assert_equal "a/\\ b c/d", Rant::Sys.sp(["a/ b", "c/d"])
+        end
+    end
 end

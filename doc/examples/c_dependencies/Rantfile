@@ -3,7 +3,7 @@ import %w(c/dependencies clean autoclean)
 
 desc "Compile hello world program."
 file "hello" => %w(src/main.o src/util.o) do |t|
-    sys "cc -Wall -o #{t.name} #{t.prerequisites.arglist}"
+    sys "cc -Wall -o #{t.name} #{sys.sp t.prerequisites}"
 end
 
 gen Rule, :o => :c do |t|

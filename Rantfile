@@ -9,7 +9,7 @@ task :default => :test
 dist_files = sys["{bin,lib,test,doc,misc}/**/*"]
 dist_files.shun("html", "coverage")
 dist_files += sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
-dist_files.exclude("bench-*")
+dist_files.exclude("mk", "bench-*")
 hp_files = sys["doc/homepage/*"]
 extra_rdoc_files = sys["**/README", "NEWS", "doc/**/*.rdoc"]
 extra_rdoc_files.no_dir("pkg").no_dir("test")

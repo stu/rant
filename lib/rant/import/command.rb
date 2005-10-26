@@ -67,15 +67,19 @@ module Rant
         end # class Command
     end # module Generators
     module Node
-        def interp_vars(str)
-            str.gsub(/\$\((\w+|<|>)\)/) { |_|
-                val = val_for_interp_var $1
-                #val.respond_to?(:to_ary) ? val.to_ary.join(' ') : val
-                val.respond_to?(:arglist) ? val.arglist : Sys.sp(val)
-            }.gsub(/\$\[(\w+|<|>)\]/) { |_|
+        def interp_vars!(str)
+            mod = false
+            mod ||= str.gsub!(/\$\((\w+|<|>)\)/) { |_|
+                Sys.sp(val_for_interp_var($1))
+            }
+            mod ||= str.gsub!(/\$\{(\w+|<|>)\}/) { |_|
+                Sys.escape(val_for_interp_var($1))
+            }
+            mod ||= str.gsub!(/\$\[(\w+|<|>)\]/) { |_|
                 val = val_for_interp_var $1
                 val.respond_to?(:to_ary) ? val.to_ary.join(' ') : val.to_s
             }
+            mod ? interp_vars!(str) : str
         end
         private
         def val_for_interp_var(var)
@@ -128,7 +132,7 @@ module Rant
                         @cmd_block.call :
                         @cmd_block[node]).to_str
                 else
-                    node.interp_vars(@cmd_str.to_str.dup)
+                    node.interp_vars!(@cmd_str.to_str.dup)
                 end
             var = node.rac.var
             @md = var._get "__metadata__"

@@ -379,9 +379,9 @@ end
 	# will result on windows:
 	#	rdoc foo\bar "with space"
 	# on other systems:
-	#	rdoc foo/bar 'with space'
+	#	rdoc foo/bar with\ space
 	def arglist
-	    to_ary.arglist
+            Rant::Sys.sp to_ary
 	end
         alias to_s arglist
 
@@ -605,9 +605,42 @@ end
 
 	# Returns a string that can be used as a valid path argument
 	# on the shell respecting portability issues.
-	def sp path
-	    Env.shell_path path
+	def sp(arg)
+            if arg.respond_to? :to_ary
+                arg.to_ary.map{ |e| sp e }.join(' ')
+            else
+                _escaped_path arg
+            end
 	end
+
+        # Escape special shell characters (currently only spaces).
+        # Flattens arrays and returns always a single string.
+        def escape(arg)
+            if arg.respond_to? :to_ary
+                arg.to_ary.map{ |e| escape e }.join(' ')
+            else
+                _escaped arg
+            end
+        end
+
+        if Env.on_windows?
+            def _escaped_path(path)
+		_escaped(path.to_s.tr("/", "\\"))
+            end
+            def _escaped(arg)
+		sarg = arg.to_s
+		return sarg unless sarg.include?(" ")
+		sarg << "\\" if sarg[-1].chr == "\\"
+                "\"#{sarg}\""
+            end
+        else
+            def _escaped_path(path)
+                path.to_s.gsub(/(?=\s)/, "\\")
+            end
+            alias _escaped _escaped_path
+        end
+        private :_escaped_path
+        private :_escaped
 
 	# If supported, make a hardlink, otherwise
 	# fall back to copying.

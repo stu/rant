@@ -17,8 +17,10 @@ module Rant::Env
     @@zip_bin = false
     @@tar_bin = false
 
-    def on_windows?
-        OS =~ /mswin/i
+    if OS =~ /mswin/i
+        def on_windows?; true; end
+    else
+        def on_windows?; false; end
     end
 
     def have_zip?

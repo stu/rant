@@ -1,17 +1,18 @@
 
 import "command", "autoclean"
 
-@echo_prog = "echo"
+@sh_echo = "#{sys.sp Env::RUBY} -e \"puts ARGV.join(' ')\""
+@sh_puts = "#{sys.sp Env::RUBY} -e \"puts ARGV\""
 
 desc "Build a.t"
 gen Command, "a.t" => ["b.t", "c.t"] do |t|
-    "echo #{t.prerequisites.arglist} > #{t.name}"
+    "#@sh_echo #{sys.sp t.prerequisites} > #{t.name}"
 end
 
 var :btxt => "b"
 var :be, :Bool
 
-gen Command, "b.t", "echo $(btxt) > $(>)"
+gen Command, "b.t", "$[sh_echo] $(btxt) > $(>)"
 
 if var[:be]
     enhance "b.t" => "d.t" do |t|
@@ -21,9 +22,26 @@ if var[:be]
     end
 end
 
-gen Command, "c.t", sys["d???.t"], "$(echo_prog) $(<) > $(>)"
+gen Command, "c.t", sys["d???.t"], "$[sh_echo] $(<) > $(>)"
 
-var :rcmd => "echo $(prerequisites) $(source) > $(name)"
+gen Command, "with space/a.t",
+    ["b.t", "with space/b.t"],
+    "$[sh_puts] $(<) > $(>)"
+
+var :fargs => "/I$(p_ath1)"
+var :p_ath1 => "a bc"
+gen Command, "f.t", "$[sh_echo] $[fargs] > $[>]"
+
+var :eargs => "/I$(epath)"
+var :epath => "a b/c/"
+gen Command, "e.t", "$[sh_echo] $[eargs] > ${>}"
+
+var :gargs => "/I${gpath}"
+var :gpath => "a b/c/"
+gen Command, "g.t", "$[sh_echo] $[gargs] > $(>)"
+
+var :rargs => "$(prerequisites) $(source) > $(name)"
+var :rcmd => "$[sh_echo] " + var[:rargs]
 gen Rule, :out => [:in1, :in2] do |name, sources|
     gen Command, name, sources, var[:rcmd]
 end

@@ -421,7 +421,9 @@ if Rant::Env.on_windows?
 else
     def test_to_s_quoting_spaces
         cx = Rant::RantApp.new.cx
-        assert_equal("'a a' b", "#{cx.sys[].concat(["a a", "b"])}")
+        # changed in 0.4.7
+        #assert_equal("'a a' b", "#{cx.sys[].concat(["a a", "b"])}")
+        assert_equal("a\\ a b", "#{cx.sys[].concat(["a a", "b"])}")
     end
 end
     def test_dotfiles

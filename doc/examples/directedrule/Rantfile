@@ -13,7 +13,7 @@ ro = gen DirectedRule, "obj" => sys["src_*"], :o => :c do |t|
 end
 
 file "obj/libfoo.a" => ro.candidates do |t|
-    sys "ar cr #{t.name} #{t.prerequisites.arglist}"
+    sys "ar cr #{t.name} #{sys.sp t.prerequisites}"
     sys "ranlib #{t.name}"
 end
 

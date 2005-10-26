@@ -77,10 +77,18 @@ class Array
     # Concatenates all elements like #join(' ') but also puts quotes
     # around strings that contain a space.
     def arglist
-	self.shell_pathes.join(' ')
+        warn caller[0]
+        warn "Use `sys.sp(ary)' in Rantfiles instead of deprecated Array#arglist."
+        Rant::Sys.sp(self)
     end
 
     def shell_pathes
+        warn caller[0]
+        warn "Array#shell_pathes is highly deprecated " +
+            "and will not come with future (0.5.0 and later) Rant releases."
+        warn "Use `ary.map { |path| sys.sp path }' in Rantfiles."
+        map { |path| Rant::Sys.sp(path) }
+=begin
 	entry = nil
 	if ::Rant::Env.on_windows?
 	    self.collect { |entry|
@@ -101,6 +109,7 @@ class Array
 		end
 	    }
 	end
+=end
     end
 end
 

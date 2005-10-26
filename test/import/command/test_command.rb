@@ -15,7 +15,6 @@ class TestImportCommand < Test::Unit::TestCase
         assert Rant::FileList["*.t"].empty?
         assert Rant::FileList[".rant.meta"].empty?
     end
-if Rant::Env.find_bin("echo")
     def test_plain_syntax_no_deps
         out, err = assert_rant "b.t"
         assert err.empty?
@@ -155,24 +154,24 @@ if Rant::Env.find_bin("echo")
         assert !out.empty?
         assert_file_content "a.out", "a.in1 a.in2 a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "a.out", "rcmd=echo $(<) $(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(<) $(source) > $(>)"
         assert err.empty?
         assert out.empty?
-        out, err = assert_rant "a.out", "rcmd=echo $(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(source) > $(>)"
         assert err.empty?
         assert !out.empty?
         assert_file_content "a.out", "a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "a.out", "rcmd=echo  $(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(source) > $(>)"
         assert err.empty?
         assert out.empty?
         timeout
         Rant::Sys.touch "a.in2"
-        out, err = assert_rant "a.out", "rcmd=echo  $(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=  $(source) > $(>)"
         assert err.empty?
         assert !out.empty?
         assert_file_content "a.out", "a.in1", :strip
-        out, err = assert_rant "a.out", "rcmd=echo $(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(source) > $(>)"
         assert err.empty?
         assert out.empty?
     ensure
@@ -189,23 +188,23 @@ if Rant::Env.find_bin("echo")
         assert !out.empty?
         assert_file_content "a.out", "a.in1 a.in2 a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "-imd5", "a.out", "rcmd=echo $(<) $(source) > $(>)"
+        out, err = assert_rant "-imd5", "a.out", "rargs=$(<) $(source) > $(>)"
         assert err.empty?
         assert out.empty?
-        out, err = assert_rant "-imd5", "a.out", "rcmd=echo $(source) > $(>)"
+        out, err = assert_rant "-imd5", "a.out", "rargs=$(source) > $(>)"
         assert err.empty?
         assert !out.empty?
         assert_file_content "a.out", "a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "-imd5", "a.out", "rcmd=echo  $(source) > $(>)"
+        out, err = assert_rant "-imd5", "a.out", "rargs= $(source) > $(>)"
         assert err.empty?
         assert out.empty?
         Rant::Sys.write_to_file "a.in2", " "
-        out, err = assert_rant "-imd5", "a.out", "rcmd=echo  $(source) > $(>)"
+        out, err = assert_rant "-imd5", "a.out", "rargs= $(source) > $(>)"
         assert err.empty?
         assert !out.empty?
         assert_file_content "a.out", "a.in1", :strip
-        out, err = assert_rant "-imd5", "a.out", "rcmd=echo $(source) > $(>)"
+        out, err = assert_rant "-imd5", "a.out", "rargs=$(source) > $(>)"
         assert err.empty?
         assert out.empty?
     ensure
@@ -214,10 +213,75 @@ if Rant::Env.find_bin("echo")
         assert !(test(?e, "a.out"))
         assert !(test(?e, "a.in1"))
     end
-else
-    $stderr.puts "*** `echo' not available, less Command testing ***"
-    def test_dummy
-        assert true
+    def test_with_space
+        Rant::Sys.mkdir "with space"
+        Rant::Sys.write_to_file "with space/b.t", "content"
+        out, err = assert_rant "with space/a.t"
+        assert err.empty?
+        assert !out.empty?
+        content = Rant::Env.on_windows? ?
+            "b.t\nwith space\\b.t\n" :
+            "b.t\nwith space/b.t\n"
+        assert_file_content "with space/a.t", content
+        out, err = assert_rant "with space/a.t"
+        assert err.empty?
+        assert out.empty?
+        assert_rant "autoclean"
+        ["with space/a.t", "with space/a.t",
+            "with space/.rant.meta", "b.t"].each { |fn|
+            assert !test(?e, fn)
+        }
+    ensure
+        Rant::Sys.rm_rf "with space"
     end
-end
+    def test_sp_var_inline
+        out, err = assert_rant "f.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "f.t", "/Ia bc\n"
+        out, err = assert_rant "f.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_sp_var_inline_path
+        out, err = assert_rant "e.t"
+        assert err.empty?
+        assert !out.empty?
+        content = Rant::Env.on_windows? ? "/Ia b\\c\\\n" : "/Ia b/c/\n"
+        assert_file_content "e.t", content
+        out, err = assert_rant "e.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_sp_var_inline_escaped
+        out, err = assert_rant "g.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "g.t", "/Ia b/c/\n"
+        out, err = assert_rant "g.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_sp_var_inline_escaped_md5
+        out, err = assert_rant "-imd5", "g.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "g.t", "/Ia b/c/\n"
+        out, err = assert_rant "-imd5", "g.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_rant_import
+        run_import("-q", "--auto", "-imd5", "ant.t")
+        assert_exit
+        out = run_ruby("ant.t", "-imd5", "e.t")
+        assert_exit
+        assert !out.empty?
+        content = Rant::Env.on_windows? ? "/Ia b\\c\\\n" : "/Ia b/c/\n"
+        assert_file_content "e.t", content
+        out = run_ruby("ant.t", "-imd5", "e.t")
+        assert out.empty?
+    ensure
+        Rant::Sys.rm_f "ant.t"
+    end
 end
