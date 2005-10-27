@@ -508,8 +508,7 @@ module Rant
 	    if File.exist?(@name)
 		@ts = File.mtime @name
 	    else
-		rac.abort(rac.pos_text(@rantfile, @line_number),
-		    "SourceNode: no such file -- #@name")
+		rac.abort_at(ch, "SourceNode: no such file -- #@name")
 	    end
 	    sd = project_subdir
 	    @pre.each { |f|
@@ -519,7 +518,7 @@ module Rant
 			mtime = File.mtime f
 			@ts = mtime if mtime > @ts
 		    else
-			rac.abort(rac.pos_text(@rantfile, @line_number),
+			rac.abort_at(ch, 
 			    "SourceNode: no such file -- #{f}")
 		    end
 		else
@@ -530,7 +529,7 @@ module Rant
                             goto_task_home
 			    @ts = node_ts if node_ts > @ts
 			else
-			    rac.abort(rac.pos_text(@rantfile, @line_number),
+			    rac.abort_at(ch, 
 				"SourceNode can't depend on #{node.name}")
 			end
 		    }

@@ -26,6 +26,7 @@ module Rant::Generators
 			    i_bin = File.join(::Rant::Env::RUBY_BINDIR,
 				File.basename(bin))
 			    rac.cmd_msg "Writing #{t.name}: #{i_bin}"
+                            # TODO: Better use Env::RUBY_EXE?
 			    f.puts "@#{rac.cx.sys.sp ::Rant::Env::RUBY} #{rac.cx.sys.sp i_bin} %*"
 			}
 		    end

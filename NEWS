@@ -8,12 +8,19 @@ Incompatible changes:
   were deprecated since the last release aren't recognized anymore.
   Use +Rantfile+, +rantfile+ or <tt>root.rant</tt> instead.
 
+Deprecated:
+* The two undocumented Array methods +arglist+ and +shell_pathes+ are
+  deprecated. Use <tt>sys.sp</tt> in Rantfiles instead.
+
 Fixes and minor improvements:
 * Fix output of `rant -T' for descriptions with more than two lines.
+* Filelists: Same handling of files starting with a dot with all
+  supported ruby versions (1.8.0 - 1.9).
 
 New features:
 * rant-import supports --zip (-z) option for zip-compression now.
 * Command tasks
+* Improved rule support
 
 == Rant 0.4.6
 

@@ -42,7 +42,7 @@ module Rant
                 if test(?f, @name)
                     @signature = sig.signature_for_file(@name)
                 else
-                    @rac.abort(rac.pos_text(@rantfile, @line_number),
+                    @rac.abort_at(ch,
                         "SourceNode: no such file -- #@name")
                 end
                 sd = project_subdir
@@ -55,7 +55,7 @@ module Rant
                         if test(?f, f)
                             sig_list << sig.signature_for_file(f)
                         else
-                            rac.abort(rac.pos_text(@rantfile, @line_number),
+                            rac.abort_at(ch,
                                 "SourceNode: no such file -- #{f}")
                         end
                     else
@@ -66,7 +66,7 @@ module Rant
                                 sig_list << node.signature
                                 goto_task_home
                             else
-                                rac.abort(rac.pos_text(@rantfile, @line_number),
+                                rac.abort_at(ch,
                                     "SourceNode can't depend on #{node.name}")
                             end
                         }

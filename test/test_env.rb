@@ -13,16 +13,17 @@ class TestRantEnv < Test::Unit::TestCase
     end
     def test_on_windows
 	# rather primitive test, but should catch obvious programming
-	# errors when making changes in when in hurry ;)
+	# errors when making changes when in hurry ;)
 	if Rant::Env.on_windows?
 	    assert(File::ALT_SEPARATOR,
 		"Env says we're on windows, but there is no ALT_SEPARATOR")
 	end
     end
     def test_find_bin
-	assert(Rant::Env.find_bin(Rant::Env::RUBY),
-	    "RUBY_INSTALL_NAME should be found by Env.find_bin, " +
-	    "doesn't need to be a bug of Rant")
+        # not required since Rant 0.4.7
+	#assert(Rant::Env.find_bin(Rant::Env::RUBY),
+	#    "RUBY_INSTALL_NAME should be found by Env.find_bin, " +
+	#    "doesn't need to be a bug of Rant")
 	# let's check for the `echo' command which should be on most
 	# systems:
 	have_echo = false

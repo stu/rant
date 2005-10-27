@@ -128,9 +128,15 @@ module Rant
             return if @command
             @command =
                 if @cmd_block
-                    (@cmd_block.arity == 0 ?
+                    cmd = (@cmd_block.arity == 0 ?
                         @cmd_block.call :
-                        @cmd_block[node]).to_str
+                        @cmd_block[node])
+                    if cmd.respond_to? :to_str
+                        cmd.to_str
+                    else
+                        node.rac.abort_at(node.ch,
+                            "Command: block has to return command string.")
+                    end
                 else
                     node.interp_vars!(@cmd_str.to_str.dup)
                 end

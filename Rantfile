@@ -20,7 +20,7 @@ dist_files.exclude "lib/rant/compiler*", "lib/rant/import/c/program.rb"
 rdoc_opts = %w(-S -c UTF-8 --title Rant --main README)
 
 gen RubyPackage, "rant#{var :pkg_ext}" do |t|
-    t.version = `#{Env::RUBY} run_rant --version`.split[1]
+    t.version = `#{sys.sp Env::RUBY_EXE} run_rant --version`.split[1]
     t.summary = "Rant is a Ruby based build tool."
     t.files = dist_files
     t.bindir = "bin"

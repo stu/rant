@@ -162,7 +162,7 @@ class TestSys < Test::Unit::TestCase
     end
     # ...
     def test_standalone
-	out = `#{Rant::Sys.sp(Rant::Env::RUBY)} -I#{Rant::Sys.sp(RANT_DEV_LIB_DIR)} standalone.rf`
+	out = `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} -I#{Rant::Sys.sp(RANT_DEV_LIB_DIR)} standalone.rf`
         assert_exit
 	assert_match(/^t_standalone/, out)
     end
@@ -193,7 +193,7 @@ class TestSys < Test::Unit::TestCase
         open "rf.t", "w" do |f|
             f << <<-EOF
             task :rbexit1_block do
-                sys Env::RUBY, "exit_1.t" do |status|
+                sys Env::RUBY_EXE, "exit_1.t" do |status|
                     puts "no success" if status != 0
                     puts status.exitstatus
                 end

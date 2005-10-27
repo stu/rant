@@ -78,13 +78,13 @@ class Array
     # around strings that contain a space.
     def arglist
         warn caller[0]
-        warn "Use `sys.sp(ary)' in Rantfiles instead of deprecated Array#arglist."
+        warn "[WARNING] Use `sys.sp(ary)' in Rantfiles instead of deprecated Array#arglist."
         Rant::Sys.sp(self)
     end
 
     def shell_pathes
         warn caller[0]
-        warn "Array#shell_pathes is highly deprecated " +
+        warn "[WARNING] Array#shell_pathes is highly deprecated " +
             "and will not come with future (0.5.0 and later) Rant releases."
         warn "Use `ary.map { |path| sys.sp path }' in Rantfiles."
         map { |path| Rant::Sys.sp(path) }

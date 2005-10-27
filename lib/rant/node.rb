@@ -96,6 +96,10 @@ module Rant
 	    sd.empty? ? name : File.join(sd, name)
 	end
 
+        def ch
+            {:file => rantfile.to_str, :ln => line_number}
+        end
+
 	# Change current working directory to the directory this task
 	# was defined in.
 	#

@@ -32,10 +32,10 @@ module Test
                 if newproc
                     if capture
                         # TODO: stderr
-                        `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
+                        `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
                     else
-                        system("#{Rant::Sys.sp(Rant::Env::RUBY)} " +
-                            #{Rant::Sys.sp(RANT_BIN)} " +
+                        system("#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} " +
+                            "#{Rant::Sys.sp(RANT_BIN)} " +
                             "#{args.flatten.join(' ')}")
                     end
                     assert_equal(res, $?.exitstatus)
@@ -176,15 +176,15 @@ When testing Rant: `#{Dir.pwd + "/" + errfn}' exists.
 end
 
 def run_rant(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
 end
 
 def run_import(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{Rant::Sys.sp(RANT_IMPORT_BIN)} #{args.flatten.join(' ')}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} #{Rant::Sys.sp(RANT_IMPORT_BIN)} #{args.flatten.join(' ')}`
 end
 
 def run_ruby(*args)
-    `#{Rant::Sys.sp(Rant::Env::RUBY)} #{args.flatten.join(' ')}`
+    `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} #{args.flatten.join(' ')}`
 end
 
 # Returns a list with the files required by the IO object script.

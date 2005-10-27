@@ -597,9 +597,9 @@ end
                 # The empty string argument ensures that +system+
                 # doesn't start a subshell but invokes ruby directly.
                 # The empty string argument is ignored by ruby.
-                sh(Env::RUBY, '', &block)
+                sh(Env::RUBY_EXE, '', &block)
             else
-                sh(args.unshift(Env::RUBY), &block)
+                sh(args.unshift(Env::RUBY_EXE), &block)
             end
 	end
 

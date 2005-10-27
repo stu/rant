@@ -1,12 +1,17 @@
 
 import "command", "autoclean"
 
-@sh_echo = "#{sys.sp Env::RUBY} -e \"puts ARGV.join(' ')\""
-@sh_puts = "#{sys.sp Env::RUBY} -e \"puts ARGV\""
+@sh_echo = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV.join(' ')\""
+@sh_puts = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV\""
+@sh_cat = "#{sys.sp Env::RUBY_EXE} -e \"print ARGF.read\""
 
 desc "Build a.t"
 gen Command, "a.t" => ["b.t", "c.t"] do |t|
     "#@sh_echo #{sys.sp t.prerequisites} > #{t.name}"
+end
+
+gen Command, "f_a.t" do |t|
+    sys "#@sh_echo #{sys.escape "I will fail."} > #{t.name}"
 end
 
 var :btxt => "b"
@@ -39,6 +44,14 @@ gen Command, "e.t", "$[sh_echo] $[eargs] > ${>}"
 var :gargs => "/I${gpath}"
 var :gpath => "a b/c/"
 gen Command, "g.t", "$[sh_echo] $[gargs] > $(>)"
+
+var :h1 => 1
+var :h2 => 2
+gen Command, "h.t", <<end
+$[sh_echo] ${h1} > $(>)1
+$[sh_echo] ${h2} > $(>)2
+$[sh_cat] $(>)1 $(>)2 > $(>)
+end
 
 var :rargs => "$(prerequisites) $(source) > $(name)"
 var :rcmd => "$[sh_echo] " + var[:rargs]

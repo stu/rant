@@ -13,6 +13,7 @@ module Rant::Env
     OS		= ::Config::CONFIG['target']
     RUBY	= ::Config::CONFIG['ruby_install_name']
     RUBY_BINDIR	= ::Config::CONFIG['bindir']
+    RUBY_EXE = File.join(RUBY_BINDIR, RUBY + ::Config::CONFIG["EXEEXT"])
 
     @@zip_bin = false
     @@tar_bin = false

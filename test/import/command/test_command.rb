@@ -5,6 +5,7 @@ require 'tutil'
 $testImportCommandDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestImportCommand < Test::Unit::TestCase
+    include Rant::TestUtil
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir($testImportCommandDir)
@@ -283,5 +284,49 @@ class TestImportCommand < Test::Unit::TestCase
         assert out.empty?
     ensure
         Rant::Sys.rm_f "ant.t"
+    end
+    def test_multiple_commands
+        out, err = assert_rant "h.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "h.t1", "1\n"
+        assert_file_content "h.t2", "2\n"
+        assert_file_content "h.t", "1\n2\n"
+        meta = File.read ".rant.meta"
+        out, err = assert_rant "h.t"
+        assert err.empty?
+        assert out.empty?
+        assert_equal meta, File.read(".rant.meta")
+    ensure
+        Rant::Sys.rm_f ["h.t1", "h.t2"]
+    end
+    def test_block_sys_instead_of_string
+        out, err = assert_rant :fail, "f_a.t"
+        lines = err.split(/\n/)
+        assert lines.size < 5
+        assert_match(/\[ERROR\]/, err)
+        rf_path = File.join($testImportCommandDir, "Rantfile")
+        assert_match(/#{Regexp.escape rf_path}\b.*\b13\b/, err)
+        assert_match(/block has to return command string/i, err)
+        assert_match(/\bf_a\.t\b/, err)
+    end
+    def test_only_one_arg
+        in_local_temp_dir do
+            Rant::Sys.write_to_file "root.rant", <<-EOF
+                import "command"
+                gen Command, "a"
+            EOF
+            out, err = assert_rant :fail
+            lines = err.split(/\n/)
+            assert lines.size < 4
+            assert_match(/\[ERROR\]/, err)
+            assert_match(/\broot\.rant\b.*\b2\b/, err)
+            assert_match(/argument/, err)
+            assert_match(/\bname\b.*\bcommand\b/, err)
+            old_out, old_err = out, err
+            out, err = assert_rant :fail, "-T"
+            assert_equal old_out, out
+            assert_equal old_err, err
+        end
     end
 end
