@@ -1,6 +1,16 @@
 
 = TODO
 
+== Don't use +invoke+ result of dependency to check if update is
+   necessary
+
+It doesn't make sense since:
+1. The node (prerequisite) could have already been invoked by another
+   node as prerequisite. For the first node, the prerequisite would
+   return true, all following false.
+2. The node (prerequisite) *can* *not* know if the invoking node is
+   up to date compared to itself.
+
 == Check +enhance+ for SourceNodes
 
 Rant fails (infinite recursion) for enhance on SourceNodes.

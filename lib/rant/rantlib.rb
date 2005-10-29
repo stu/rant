@@ -962,13 +962,15 @@ class Rant::RantApp
 	old_subdir = @current_subdir
 	old_pwd = Dir.pwd
 	resolve(target).each { |t|
-	    matching_tasks += 1
-	    begin
-		t.invoke(opt)
-	    rescue Rant::TaskFail => e
-		err_task_fail(e)
-		abort
-	    end
+            unless opt[:type] == :file && !t.file_target?
+                matching_tasks += 1
+                begin
+                    t.invoke(opt) 
+                rescue Rant::TaskFail => e
+                    err_task_fail(e)
+                    abort
+                end
+            end
 	}
 	@current_subdir = old_subdir
 	Dir.chdir old_pwd

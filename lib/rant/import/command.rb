@@ -116,6 +116,10 @@ module Rant
             true
         end
         def pre_run(node)
+	    dir = File.dirname(node.name)
+            unless dir == "." || dir == "/"
+                node.rac.build dir, :type => :file 
+            end
             @command.split(/\n/).each { |cmd| node.rac.sys cmd }
             if @command_changed
                 node.goto_task_home
@@ -132,7 +136,7 @@ module Rant
                         @cmd_block.call :
                         @cmd_block[node])
                     if cmd.respond_to? :to_str
-                        cmd.to_str
+                        cmd.to_str.dup
                     else
                         node.rac.abort_at(node.ch,
                             "Command: block has to return command string.")
@@ -146,6 +150,8 @@ module Rant
             @cmd_key = "command_sig_#{sigs.name}"
             old_sig = @md.path_fetch(@cmd_key, node.name)
             sig_str = @command.gsub(/( |\t)+/, ' ')
+            sig_str.gsub!(/\[#.*?#\]/, '')
+            @command.gsub!(/\[#(.*?)#\]/) { |_| $1 }
             @new_sig = sigs.signature_for_string(sig_str)
             @command_changed = old_sig != @new_sig
         end

@@ -214,6 +214,27 @@ class TestImportCommand < Test::Unit::TestCase
         assert !(test(?e, "a.out"))
         assert !(test(?e, "a.in1"))
     end
+=begin undecided behaviour
+    def test_ignore_special_node_vars
+        Rant::Sys.mkdir "sub.t"
+        Rant::Sys.touch ["sub.t/b.in1", "sub.t/b.in2"]
+        out, err = assert_rant "sub.t/b.out"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+        out, err = assert_rant "sub.t/b.out"
+        assert err.empty?
+        assert out.empty?
+        Dir.chdir "sub.t"
+        out, err = assert_rant "-u", "b.out"
+        assert err.empty?
+        assert out.empty?
+        assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+    ensure
+        Dir.chdir $testImportCommandDir
+        Rant::Sys.rm_rf "sub.t"
+    end
+=end
     def test_with_space
         Rant::Sys.mkdir "with space"
         Rant::Sys.write_to_file "with space/b.t", "content"
@@ -300,6 +321,21 @@ class TestImportCommand < Test::Unit::TestCase
     ensure
         Rant::Sys.rm_f ["h.t1", "h.t2"]
     end
+    def test_multiple_commands_md5
+        out, err = assert_rant "-imd5", "h.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "h.t1", "1\n"
+        assert_file_content "h.t2", "2\n"
+        assert_file_content "h.t", "1\n2\n"
+        meta = File.read ".rant.meta"
+        out, err = assert_rant "-imd5", "h.t"
+        assert err.empty?
+        assert out.empty?
+        assert_equal meta, File.read(".rant.meta")
+    ensure
+        Rant::Sys.rm_f ["h.t1", "h.t2"]
+    end
     def test_block_sys_instead_of_string
         out, err = assert_rant :fail, "f_a.t"
         lines = err.split(/\n/)
@@ -328,5 +364,128 @@ class TestImportCommand < Test::Unit::TestCase
             assert_equal old_out, out
             assert_equal old_err, err
         end
+    end
+    def test_dep_rebuild_no_change_md5
+        out, err = assert_rant "-imd5", "t1.t", "t2.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "dep1.t", "a\n"
+        assert_file_content "t1.t", "making t1\n"
+        assert_file_content "t2.t", "making t2\n"
+        out, err = assert_rant "-imd5", "t1.t", "t2.t"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "-imd5", "rc_dep=print 'a'; puts", "t1.t", "t2.t"
+        assert err.empty?
+        assert out.include?("print")
+        assert !out.include?("making t2")
+        assert !out.include?("making t1")
+    end
+    def test_dep_rebuild_same_content_md5
+        out, err = assert_rant "-imd5", "t1.t", "t2.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "dep1.t", "a\n"
+        assert_file_content "t1.t", "making t1\n"
+        assert_file_content "t2.t", "making t2\n"
+        out, err = assert_rant "-imd5", "t1.t", "t2.t"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "-imd5", "rc_dep=print 'b'; puts", "dep1.t"
+        out, err = assert_rant "-imd5", "rc_dep=print 'a'; puts", "t1.t", "t2.t"
+        assert err.empty?
+        assert out.include?("print")
+        assert !out.include?("making t2")
+        assert !out.include?("making t1")
+    end
+    def test_in_subdir
+        out, err = assert_rant :fail, "sub1.t/a"
+        Rant::Sys.mkdir "sub1.t"
+        out, err = assert_rant "sub1.t/a"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "sub1.t/a", "sub1.t/a\n"
+        out, err = assert_rant "sub1.t/a"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "autoclean"
+        assert !test(?e, "sub1.t/a")
+        assert test(?d, "sub1.t")
+    ensure
+        Rant::Sys.rm_rf "sub1.t"
+    end
+    def test_in_subdir_with_dirtask
+        out, err = assert_rant "sub2.t/a"
+        assert err.empty?
+        assert !out.empty?
+        assert test(?d, "sub2.t")
+        assert_file_content "sub2.t/a", "sub2.t/a\n"
+        out, err = assert_rant "sub2.t/a"
+        assert err.empty?
+        assert out.empty?
+        assert_rant "autoclean"
+        assert !test(?e, "sub2.t")
+    end
+    def test_in_subdir_with_task
+        out, err = assert_rant :fail, "sub3/a"
+        assert out !~ /task sub3/
+        Rant::Sys.mkdir "sub3"
+        out, err = assert_rant "sub3/a"
+        assert err.empty?
+        assert !out.empty?
+        assert out !~ /task sub3/
+        assert_file_content "sub3/a", "sub3/a\n"
+        out, err = assert_rant "sub3/a"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "autoclean"
+        assert !test(?e, "sub3/a")
+        assert test(?d, "sub3")
+        out, err = assert_rant "sub3"
+        assert err.empty?
+        assert_match(/task sub3/, out)
+    ensure
+        Rant::Sys.rm_rf "sub3"
+    end
+    def test_in_subdir_with_task_md5
+        out, err = assert_rant :fail, "-imd5", "sub3/a"
+        assert out !~ /task sub3/
+        Rant::Sys.mkdir "sub3"
+        out, err = assert_rant "-imd5", "sub3/a"
+        assert err.empty?
+        assert !out.empty?
+        assert out !~ /task sub3/
+        assert_file_content "sub3/a", "sub3/a\n"
+        out, err = assert_rant "-imd5", "sub3/a"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "-imd5", "autoclean"
+        assert !test(?e, "sub3/a")
+        assert test(?d, "sub3")
+        out, err = assert_rant "-imd5", "sub3"
+        assert err.empty?
+        assert_match(/task sub3/, out)
+    ensure
+        Rant::Sys.rm_rf "sub3"
+    end
+    def test_ignore_for_sig
+        out, err = assert_rant "x.t", "a=1", "b=2"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "x.t", "1\n2\n"
+        out, err = assert_rant "x.t", "a=1", "b=2"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "x.t", "a=1", "b=3"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "x.t", "1\n3\n"
+        out, err = assert_rant "x.t", "a=1", "b=3"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "x.t", "a=3", "b=3"
+        assert err.empty?
+        assert out.empty?
+        assert_file_content "x.t", "1\n3\n"
     end
 end

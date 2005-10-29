@@ -194,7 +194,8 @@ module Rant
                     self.fail "can't handle prerequisite `#{dep_str}'"
                 end
                 goto_task_home
-                up
+                # changed in 0.4.7
+                false #up
             end
             def handle_file(path)
                 @cur_checksums << @sigs.signature_for_file(path)

@@ -1,6 +1,7 @@
 
 import "command", "autoclean"
 
+@ruby = Env::RUBY_EXE
 @sh_echo = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV.join(' ')\""
 @sh_puts = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV\""
 @sh_cat = "#{sys.sp Env::RUBY_EXE} -e \"print ARGF.read\""
@@ -9,7 +10,6 @@ desc "Build a.t"
 gen Command, "a.t" => ["b.t", "c.t"] do |t|
     "#@sh_echo #{sys.sp t.prerequisites} > #{t.name}"
 end
-
 gen Command, "f_a.t" do |t|
     sys "#@sh_echo #{sys.escape "I will fail."} > #{t.name}"
 end
@@ -60,5 +60,22 @@ gen Rule, :out => [:in1, :in2] do |name, sources|
 end
 
 gen Directory, "a.in1"
+
+var :rc_dep => "puts 'a'"
+gen Command, "dep1.t", "$(ruby) -e \"$[rc_dep]\" > $(>)"
+
+gen Command, "t1.t", "dep1.t", "$[sh_echo] making t1 > $(>)"
+gen Command, "t2.t", "dep1.t", "$[sh_echo] making t2 > $(>)"
+
+gen Command, "sub1.t/a", "$[sh_echo] ${>} > $(>)"
+gen Command, "sub2.t/a", "$[sh_echo] ${>} > $(>)"
+gen Directory, "sub2.t"
+
+task :sub3 do
+    puts "task sub3"
+end
+gen Command, "sub3/a", "$[sh_echo] ${>} > $(>)"
+
+gen Command, "x.t", '[#$[sh_puts] ${a}#] ${b} > $(>)'
 
 gen AutoClean
