@@ -573,4 +573,13 @@ class TestImportCommand < Test::Unit::TestCase
         assert err.empty?
         assert out.empty?
     end
+    # will probably change
+    def test_warn_about_hash
+        out, err = assert_rant "hash.t"
+        assert !out.empty?
+        assert err.split(/\n/).size < 3
+        assert_match(/\[WARNING\].*`h'/, err)
+        assert_match(/\bhash(es)?\b/i, err)
+        assert_file_content "hash.t", "", :strip
+    end
 end

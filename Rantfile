@@ -11,8 +11,7 @@ dist_files.shun("html", "coverage")
 dist_files += sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
 dist_files.exclude("mk", "bench-*")
 hp_files = sys["doc/homepage/*"]
-extra_rdoc_files = sys["**/README", "NEWS", "doc/**/*.rdoc"]
-extra_rdoc_files.no_dir("pkg").no_dir("test")
+rdoc_files = sys["README", "NEWS", "INSTALL", "doc/*.rdoc"]
 
 # remove when compiler stuff is getting useful...
 dist_files.exclude "lib/rant/compiler*", "lib/rant/import/c/program.rb"
@@ -29,7 +28,8 @@ gen RubyPackage, "rant#{var :pkg_ext}" do |t|
     t.email = "langstefan@gmx.at"
     t.rubyforge_project = "make"
     t.homepage = "http://make.rubyforge.org"
-    t.gem_extra_rdoc_files = extra_rdoc_files
+    t.has_rdoc = false
+    t.gem_extra_rdoc_files = rdoc_files
     t.gem_rdoc_options = rdoc_opts
     desc "Create packages for distribution."
     t.package_task
@@ -39,7 +39,7 @@ desc "Generate documentation."
 gen RubyDoc do |g|
     g.verbose = true
     g.dir = "doc/html"
-    g.files.concat extra_rdoc_files
+    g.files = rdoc_files
     g.opts = rdoc_opts + %w(-T doc/jamis.rb)
 end
 
@@ -206,6 +206,18 @@ task "check-168" do
     puts "Bad files:"
     bad.each { |b| puts "  #{b}" }
     puts "#{ok.size} of #{rbfiles.size} are OK"
+end
+
+task "fetch-svn-dump" do
+    require 'net/http'
+    require 'uri'
+    url = URI.parse("http://svn.berlios.de/svndumps/rant-repos.gz")
+    req = Net::HTTP::Get.new(url.path)
+    puts "Starting download from: #{url}"
+    res = Net::HTTP.start(url.host, url.port) { |http|
+        http.request(req)
+    }
+    sys.write_to_file "../rant-repos.gz", res.body
 end
 
 # vim:ft=ruby

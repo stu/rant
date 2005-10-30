@@ -130,7 +130,11 @@ module Rant
                 if val.respond_to?(:call) && val.respond_to?(:arity)
                     val.arity == 0 ? val.call : val.call(self)
                 elsif val.respond_to?(:to_hash)
-                    val.to_hash[full_name]
+                    rac.warn_msg(
+                        "`#{var}' -- Avoid interpolation of hashes.\n" +
+                        "Behaviour is undecided.")
+                    ""
+                    #val.to_hash[full_name]
                 else
                     val
                 end

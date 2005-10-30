@@ -27,6 +27,20 @@ class TestRantImport < Test::Unit::TestCase
         assert out.include?("Options are")
         assert out.include?("--help")
     end
+    def test_option_version_and_V
+        out, err = capture_std do
+            assert_equal(0, Rant::RantImport.new("--version").run)
+        end
+        assert err.empty?
+        lines = out.split(/\n/)
+        assert_equal 1, lines.size
+        assert_equal "rant-import #{Rant::VERSION}", lines.first
+        out2, err = capture_std do
+            assert_equal(0, Rant::RantImport.new("-V").run)
+        end
+        assert err.empty?
+        assert_equal out, out2
+    end
     def test_no_import
 	run_import("--quiet", "make.rb")
 	assert(test(?f, "make.rb"))

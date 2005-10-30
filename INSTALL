@@ -1,0 +1,44 @@
+
+== Installing Rant
+
+Of course you need Ruby to run rant. You can get the latest Ruby
+package from the {Ruby hompage}[http://www.ruby-lang.org/en/].
+
+There are two ways to install Rant on your system:
+
+=== Installing Rant as a RubyGem
+
+RubyGems has to be installed on your system. Check this by trying
+the _gem_ command:
+    % gem
+If this prints a help message, RubyGems should work. Otherwise
+install Rant as described in the next section.
+Now the following command:
+    % gem install --remote rant
+will download and install Rant. Depending on the RubyGems
+configuration, you will probably need superuser privileges.
+Then try to run:
+    % rant --version
+which should print name and version of the _rant_ command. If this
+is done, you have successfully installed Rant. Congratulations!
+
+=== Conventional installation
+
+First download the latest version of Rant from
+http://rubyforge.org/frs/?group_id=615. Choose the .zip or .tar.gz
+file, whatever you like, with the highest version number. Then unpack
+the archive, cd to the new directory and run the install.rb script.
+This could look like:
+    % tar -xzf rant-<version>.tar.gz
+    % cd rant-<version>
+    % ruby install.rb
+Depending on your Ruby installation, you'll probably need superuser
+privileges for the last command.
+Finally try to run
+    % rant --version
+to verify Rant was installed correctly.
+
+If you aren't already reading this documentation in html format, you
+can generate it with:
+    % rant doc
+The output will be in doc/html.

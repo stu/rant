@@ -67,7 +67,7 @@ gen Command, "dep1.t", "$(ruby) -e \"$[rc_dep]\" > $(>)"
 gen Command, "t1.t", "dep1.t", "$[sh_echo] making t1 > $(>)"
 gen Command, "t2.t", "dep1.t", "$[sh_echo] making t2 > $(>)"
 
-gen Command, "sub1.t/a", "$[sh_echo] ${>} > $(>)"
+gen Command, "sub1.t/a", "#@sh_echo ${>} > $(>)"
 gen Command, "sub2.t/a", "$[sh_echo] ${>} > $(>)"
 gen Directory, "sub2.t"
 
@@ -95,5 +95,8 @@ var[:p2] = lambda { var[:foo] << "." }
 if var[:inc_foo]
     var[:p2].call
 end
+
+@h = {:a => "b"}
+gen Command, "hash.t", "$[sh_puts] ${h} > $(>)"
 
 gen AutoClean

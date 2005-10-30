@@ -123,7 +123,7 @@ To run the IO related tests from the test directory we type:
     testrb tc_reader.rb tc_writer.rb
     ... output of testrb ...
 
-To run the clobber task from the test directory:
+To run the clobber task from the toplevel directory:
 
     <test> $ rant @clobber
     (root is /home/stefan/Ruby/misc/rant/rbtest, in test)

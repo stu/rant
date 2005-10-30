@@ -24,8 +24,10 @@ module Rant
 	OPTIONS = [
 	    [ "--help",		"-h",	GetoptLong::NO_ARGUMENT,
 		"Print this help and exit."			],
-	    [ "--version",	"-v",	GetoptLong::NO_ARGUMENT,
+	    [ "--version",	"-V",	GetoptLong::NO_ARGUMENT,
 		"Print version of rant-import and exit."	],
+	    [ "-v",	        	GetoptLong::NO_ARGUMENT,
+		"Deprecated. Use -V or --version instead."	],
 	    [ "--quiet",	"-q",	GetoptLong::NO_ARGUMENT,
 		"Operate quiet."				],
 	    [ "--plugins",	"-p",	GetoptLong::REQUIRED_ARGUMENT,
@@ -216,7 +218,7 @@ EOF
 	    cmd_opts.quiet = true
 	    cmd_opts.each { |opt, value|
 		case opt
-		when "--version"
+		when "--version", "-v":
 		    puts "rant-import #{Rant::VERSION}"
 		    done
 		when "--help": help

@@ -11,6 +11,7 @@ Incompatible changes:
 Deprecated:
 * The two undocumented Array methods +arglist+ and +shell_pathes+ are
   deprecated. Use <tt>sys.sp</tt> in Rantfiles instead.
+* rant-import -v option. Use -V or --version instead.
 
 Fixes and minor improvements:
 * Fix output of `rant -T' for descriptions with more than two lines.
@@ -19,8 +20,8 @@ Fixes and minor improvements:
 
 New features:
 * rant-import supports --zip (-z) option for zip-compression now.
-* Command tasks
-* Improved rule support
+* Tasks with command change recognition.
+* Improved rule support.
 
 == Rant 0.4.6
 

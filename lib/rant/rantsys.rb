@@ -671,7 +671,7 @@ end
 
 	extend self
 
-        if RUBY_VERSION >= "1.9.0"
+        if RUBY_VERSION >= "1.8.4"  # needed by 1.9.0, too
             class << self
                 public(*::FileUtils::METHODS)
             end
