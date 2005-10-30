@@ -155,15 +155,15 @@ class TestImportCommand < Test::Unit::TestCase
         assert !out.empty?
         assert_file_content "a.out", "a.in1 a.in2 a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "a.out", "rargs=$(<) $(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(prerequisites) $(source) > $(name)"
         assert err.empty?
         assert out.empty?
-        out, err = assert_rant "a.out", "rargs=$(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(source) > $(name)"
         assert err.empty?
         assert !out.empty?
         assert_file_content "a.out", "a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "a.out", "rargs=$(source) > $(>)"
+        out, err = assert_rant "a.out", "rargs=$(source) > $(name)"
         assert err.empty?
         assert out.empty?
         timeout
@@ -189,7 +189,7 @@ class TestImportCommand < Test::Unit::TestCase
         assert !out.empty?
         assert_file_content "a.out", "a.in1 a.in2 a.in1", :strip
         assert test(?d, "a.in1")
-        out, err = assert_rant "-imd5", "a.out", "rargs=$(<) $(source) > $(>)"
+        out, err = assert_rant "-imd5", "a.out", "rargs=$(prerequisites) $(source) > $(name)"
         assert err.empty?
         assert out.empty?
         out, err = assert_rant "-imd5", "a.out", "rargs=$(source) > $(>)"
@@ -214,8 +214,28 @@ class TestImportCommand < Test::Unit::TestCase
         assert !(test(?e, "a.out"))
         assert !(test(?e, "a.in1"))
     end
-=begin undecided behaviour
-    def test_ignore_special_node_vars
+    def test_ignore_symbolic_node_var_changes
+        Rant::Sys.mkdir "sub.t"
+        Rant::Sys.touch ["sub.t/b.in1", "sub.t/b.in2"]
+        out, err = assert_rant "sub.t/b.out", "rargs=$(<) $(-) > $(>)"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+        out, err = assert_rant "sub.t/b.out", "rargs=$(<) $(-) > $(>)"
+        assert err.empty?
+        assert out.empty?
+        Dir.chdir "sub.t"
+        out, err = assert_rant "-u", "b.out", "rargs=$(<) $(-) > $(>)"
+        assert err.empty?
+        lines = out.split(/\n/)
+        assert_equal 1, lines.size
+        assert_match(/\(root\b.*\bsub\.t\)/, lines.first)
+        assert_file_content "b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+    ensure
+        Dir.chdir $testImportCommandDir
+        Rant::Sys.rm_rf "sub.t"
+    end
+    def test_do_not_ignore_non_symbolic_node_var_changes
         Rant::Sys.mkdir "sub.t"
         Rant::Sys.touch ["sub.t/b.in1", "sub.t/b.in2"]
         out, err = assert_rant "sub.t/b.out"
@@ -228,13 +248,16 @@ class TestImportCommand < Test::Unit::TestCase
         Dir.chdir "sub.t"
         out, err = assert_rant "-u", "b.out"
         assert err.empty?
-        assert out.empty?
-        assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+        assert !out.empty?
+        lines = out.split(/\n/)
+        assert_equal 2, lines.size
+        assert_match(/\(root\b.*\bsub\.t\)/, lines.first)
+        assert_match(/\bb\.out\b/, lines[1])
+        assert_file_content "b.out", "b.in1 b.in2 b.in1", :strip
     ensure
         Dir.chdir $testImportCommandDir
         Rant::Sys.rm_rf "sub.t"
     end
-=end
     def test_with_space
         Rant::Sys.mkdir "with space"
         Rant::Sys.write_to_file "with space/b.t", "content"
@@ -487,5 +510,67 @@ class TestImportCommand < Test::Unit::TestCase
         assert err.empty?
         assert out.empty?
         assert_file_content "x.t", "1\n3\n"
+    end
+    def test_proc_var_with_arg
+        out, err = assert_rant "p1.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "p1.t", "p1.t foo value\n"
+        out, err = assert_rant "p1.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_proc_var_with_arg_md5
+        out, err = assert_rant "-imd5", "p1.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "p1.t", "p1.t foo value\n"
+        out, err = assert_rant "-imd5", "p1.t"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "-imd5", "change_foo", "p1.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "p1.t", "p1.t changed\n"
+        out, err = assert_rant "-imd5", "change_foo", "p1.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_proc_var_without_arg
+        out, err = assert_rant "p2.t", "p3.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "p2.t", "foo value.\n"
+        assert_file_content "p3.t", "foo value..\n"
+        out, err = assert_rant "p2.t", "p3.t"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "p2.t", "p3.t", "inc_foo=on"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "p2.t", "foo value..\n"
+        assert_file_content "p3.t", "foo value...\n"
+        out, err = assert_rant "p2.t", "p3.t", "inc_foo=on"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_delayed_var_interpolation
+        out, err = assert_rant "delay.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "delay.t", "foo value\n"
+        out, err = assert_rant "delay.t"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "delay.t"
+        assert err.empty?
+        assert out.empty?
+        out, err = assert_rant "change_foo", "delay.t"
+        assert err.empty?
+        assert !out.empty?
+        assert_file_content "delay.t", "changed\n"
+        out, err = assert_rant "change_foo", "delay.t"
+        assert err.empty?
+        assert out.empty?
     end
 end

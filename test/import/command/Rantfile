@@ -78,4 +78,22 @@ gen Command, "sub3/a", "$[sh_echo] ${>} > $(>)"
 
 gen Command, "x.t", '[#$[sh_puts] ${a}#] ${b} > $(>)'
 
+gen Command, "delay.t", "$[sh_echo] ${foo} > $(>)"
+
+gen Command, "p1.t", '$[sh_puts] ${p1} > $(>)'
+gen Command, "p2.t", '$[sh_puts] ${p2} > $(>)'
+gen Command, "p3.t", '$[sh_puts] ${p2} > $(>)'
+
+var :foo => "foo value"
+task :change_foo do
+    var[:foo] = "changed"
+end
+
+var[:p1] = lambda { |n| "#{n.full_name} $[foo]" }
+var[:p2] = lambda { var[:foo] << "." }
+
+if var[:inc_foo]
+    var[:p2].call
+end
+
 gen AutoClean
