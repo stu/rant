@@ -220,8 +220,12 @@ class TestImportCommand < Test::Unit::TestCase
         out, err = assert_rant "sub.t/b.out", "rargs=$(<) $(-) > $(>)"
         assert err.empty?
         assert !out.empty?
-        assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
-        out, err = assert_rant "sub.t/b.out", "rargs=$(<) $(-) > $(>)"
+	if Rant::Env.on_windows?
+	    assert_file_content "sub.t/b.out", "sub.t\\b.in1 sub.t\\b.in2 sub.t\\b.in1", :strip
+	else
+	    assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+	end
+	out, err = assert_rant "sub.t/b.out", "rargs=$(<) $(-) > $(>)"
         assert err.empty?
         assert out.empty?
         Dir.chdir "sub.t"
@@ -230,7 +234,11 @@ class TestImportCommand < Test::Unit::TestCase
         lines = out.split(/\n/)
         assert_equal 1, lines.size
         assert_match(/\(root\b.*\bsub\.t\)/, lines.first)
-        assert_file_content "b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+	if Rant::Env.on_windows?
+	    assert_file_content "b.out", "sub.t\\b.in1 sub.t\\b.in2 sub.t\\b.in1", :strip
+	else
+	    assert_file_content "b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+	end
     ensure
         Dir.chdir $testImportCommandDir
         Rant::Sys.rm_rf "sub.t"
@@ -241,7 +249,11 @@ class TestImportCommand < Test::Unit::TestCase
         out, err = assert_rant "sub.t/b.out"
         assert err.empty?
         assert !out.empty?
-        assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+	if Rant::Env.on_windows?
+	    assert_file_content "sub.t/b.out", "sub.t\\b.in1 sub.t\\b.in2 sub.t\\b.in1", :strip
+	else
+	    assert_file_content "sub.t/b.out", "sub.t/b.in1 sub.t/b.in2 sub.t/b.in1", :strip
+	end
         out, err = assert_rant "sub.t/b.out"
         assert err.empty?
         assert out.empty?
@@ -253,7 +265,7 @@ class TestImportCommand < Test::Unit::TestCase
         assert_equal 2, lines.size
         assert_match(/\(root\b.*\bsub\.t\)/, lines.first)
         assert_match(/\bb\.out\b/, lines[1])
-        assert_file_content "b.out", "b.in1 b.in2 b.in1", :strip
+	assert_file_content "b.out", "b.in1 b.in2 b.in1", :strip
     ensure
         Dir.chdir $testImportCommandDir
         Rant::Sys.rm_rf "sub.t"

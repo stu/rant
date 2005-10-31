@@ -1,0 +1,210 @@
+
+== Command change recognition
+
+A +Command+ task is similar to a +file+ task: It is intended to create
+on file which may depend on other files. But instead of creating the
+file by executing a block of Ruby code, the +Command+ task creates the
+target file by executing a shell command.
+
+A +file+ task rebuilds the target file if at least one of the
+following two conditions is met:
+1. The target file doesn't exist.
+2. One of the prerequisites changed since the last build.
+
+A +Command+ task rebuilds the target file if at least one of the
+following three conditions is met:
+1. The target file doesn't exist.
+2. One of the prerequisites changed since the last build.
+3. The command to create the target file changed since the last build.
+
+=== General usage
+
+Consider the following Rantfile for rant 0.4.6:
+
+    var :CFLAGS => "-g -O2"    # can be overriden from commandline
+    
+    file "foo" => ["foo.o", "util.o"] do |t|
+        sys "cc -o #{t.name} #{var :CFLAGS} #{t.prerequisites.join(' ')}"
+    end
+
+    gen Rule, ".o" => ".c" do |t|
+        sys "cc -c -o #{t.name} #{var :CFLAGS} #{t.source}"
+    end
+
+The problem with this buildfile is, that it won't recognize
+a change of CFLAGS, i.e. foo.o, util.o and foo should get
+rebuilt whenever CFLAGS changes.
+
+Since Rant 0.4.8, it is possible to do the following:
+
+    import "command"
+
+    var :CFLAGS => "-g -O2"    # can be overriden from commandline
+    
+    gen Command, "foo" => ["foo.o", "util.o"] do |t|
+        # notice: we're not calling the sys method, we
+        # are returning a string from the block
+        "cc -o #{t.name} #{var :CFLAGS} #{t.prerequisites.join(' ')}"
+    end
+
+    # if the block to Rule takes two arguments,
+    # it is expected to return a task
+    gen Rule, ".o" => ".c" do |target, sources|
+        gen Command, target => sources do |t|
+            "cc -c -o #{t.name} #{var :CFLAGS} #{t.source}"
+        end
+    end
+
+Now, whenever the command to build foo or a *.o file changes,
+it will be rebuilt.
+
+There is also a more concise syntax:
+
+    import "command"
+
+    var :CFLAGS => "-g -O2"
+    
+    # first argument (string) is the task/file name, second
+    # argument (string, array or filelist) is a list of
+    # prerequisites (notice: no `target => prereqs' syntax!)
+    # third argument is a command string, which will be
+    # executed by a subshell.
+    gen Command, "foo", ["foo.o", "util.o"],
+        'cc -o $(>) $[CFLAGS] $(<)'
+
+    gen Rule, ".o" => ".c" do |target, sources|
+        gen Command, target, sources,
+            'cc -c -o $(<) $[CFLAGS] $(-)'
+    end
+
+For the last syntax:
+
+=== Interpolation of variables into command strings:
+
+==== Which variables are interpolated?
+
+1. Instance variables (mostly for internal usage), e.g.:
+       @cc = "cc"
+
+2. "var" variables (can be set from commandline, easy
+   synchronization with environment variables), e.g.:
+       var :cc => "cc"
+
+3. Special, task specific variables
+   "name" (symbol equivalent ">")::
+      task name
+   "prerequisites" (symbol equivalent "<")::
+      all prerequisites seperated by spaces
+   "source" (symbol equivalent "-")::
+      first prerequisite
+   more task specific variables might get added later
+
+==== Syntax of variable interpolation
+
+Variable names must consist only of "word characters",
+i.e. matching \w in Ruby regexes.
+
+1. Plain interpolation.
+   Example command:
+        "echo $[ARGS]"
+   The contents of variable ARGS (either <tt>@ARGS</tt> or
+   <tt>var[:ARGS]</tt>) are converted to a string and interpolated.
+   If the variable contains an array, <tt>ARGS.join(' ')</tt> is
+   interpolated.
+
+2. Escaped interpolation.
+   Example command:
+        "echo ${ARGS}"
+   Like plain interpolation, but spaces will be escaped
+   (system dependent).
+   Consider this Rantfile:
+      
+       import "command"
+       @args = ["a b", "c d", "ef"]
+       @sh_puts = "ruby -e \"puts ARGV\""
+       gen Command, "foo", '$[sh_puts] ${args} > $(>)'
+
+   Running rant will give on Windows:
+        ruby -e "puts ARGV" "a b" "c d" ef > foo
+   and on other systems:
+        ruby -e "puts ARGV" a\ b c\ d ef > foo
+
+3. Path interpolation.
+   Example command:
+        "echo $(ARGS)"
+   Like escaped interpolation, but additionally, forward slashes
+   (as used for filenames in Rantfiles) will be replaced with
+   backslashes on Windows.
+
+==== More on semantics of variable interpolation
+
+Interpolation is recursive, except for special target variables.
+
+There is a small semantic difference between the verbose
+special target variables (+name+ +prerequisites+ +source+) and
+the symbolic ones (<tt><</tt> <tt>></tt> <tt>-</tt>):
+The symbolic ones are interpolated *after* checking if the command
+has changed since the last build, the verbose forms are interpolated
+*before*.
+
+Consider this (artifical, using the Unix tool "cat") example:
+Rantfile (symbolic special target vars):
+
+    import "command"
+    @src = ["src1", "src2"]
+    @src = var[:SRC].split if var[:SRC]
+    gen Command, "foo", @src, 'cat $(<) > $(>)'
+
+    % echo a > src1
+    % echo b > src2
+    % echo b > src3
+    % rant
+    cat src1 src2 > foo
+
+"foo" didn't exist, so it was built anyway. Now let us
+change the prerequisite list:
+
+    % rant "SRC=src1 src3"
+
+won't cause a rebuild of foo. Dependencies of foo changed from
+<tt>["src1", "src2"]</tt> to <tt>["src1", "src3"]</tt> but since src2
+and src3 have the same content and <tt>$(<)</tt> isn't expanded for
+command change recognition, rant considers foo up to date.
+
+Now change Rantfile to (verbose special target vars):
+
+    import "command"
+    @src = ["src1", "src2"]
+    @src = var[:SRC].split if var[:SRC]
+    gen Command, "foo", @src, 'cat $(prerequisites) > $(name)'
+
+Starting from scratch:
+    % echo a > src1
+    % echo b > src2
+    % echo b > src3
+    % rant
+    cat src1 src2 > foo
+    % rant "SRC=src1 src3"
+    cat src1 src3 > foo
+
+This time, Rant expanded <tt>$(prerequisites)</tt> for command change
+recognition, and since the prerequsite list changed, it caused a
+rebuild.
+
+== See also
+
+If you want more details, look in the <tt>test/import/command</tt>
+directory of the Rant distribution.
+
+Using MD5 checksums instead of file modification times::
+    doc/md5.rdoc[link:files/doc/md5_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Support for C/C++::
+    doc/c.rdoc[link:files/doc/c_rdoc.html]
+Packaging::
+    doc/package.rdoc[link:files/doc/package_rdoc.html]
+Ruby project howto::
+    doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]

@@ -4,7 +4,7 @@
 Since many people (especially Ruby programmers) that know Rake ask for
 a Rake/Rant comparison, I'll spend a few paragraphs on this topic.
 
-This comparison is for Rant 0.4.6 and Rake 0.6.2. If not stated
+This comparison is for Rant 0.4.8 and Rake 0.6.2. If not stated
 otherwise, this document assumes a standard Ruby 1.8/1.9 installation
 without additional libraries (except for Rant and Rake).
 
@@ -63,6 +63,45 @@ Rake:
   <tt>util.o</tt> and +foo+, no matter if Rant considers these files
   up to date or not.
 
+* Tasks with command change recognition. Example code:
+  
+    import "command"
+
+    var :CFLAGS => "-g -O2" # can be overridden from commandline
+
+    gen Command, "foo", ["foo.o", "util.o"],
+        "cc $[CFLAGS] -o $(name) $(prerequisites)"
+  
+  The last two lines tell Rant, that the file +foo+ depends on the
+  files <tt>foo.o</tt> and <tt>util.o</tt> and that +foo+ can be built
+  by running the command in the last line ("cc ...") in a subshell.
+  If at least one of the following three conditions is met, +foo+ will
+  be rebuilt:
+  1. +foo+ doesn't exist.
+  2. <tt>foo.o</tt> or <tt>util.o</tt> changed since the last build of
+     +foo+.
+  3. The command (most probably +CFLAGS+) changed since the last build
+     of +foo+.
+
 Some other goodies: The +make+ method, the SubFile and AutoClean
 tasks, special variables and more. Most of this is documented in
 doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+
+=== Internals
+
+* Rake defines many methods (task, file, desc, FileUtils methods, etc.)
+  in the Object class (i.e. accessible from *each* line of Ruby code)
+  which can get problematic at least if you want to use Rake as a
+  library.
+
+  Rant solves this problem by evaluating Rantfiles in a special
+  context (with +instance_eval+).
+
+* Rake uses global variables and class/class instance variables to
+  store state (tasks, etc.). The effect of this is, that you can have
+  only one Rake application per Ruby interpreter (process) at a time.
+
+  Rant stores application state in a class instance. It is possible to
+  instantiate as many "Rant applications" at the same time as needed.
+  On the other hand, there is currently no public and documented
+  interface to do so (but it will come at least with Rant 1.0.0).

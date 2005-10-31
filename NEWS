@@ -9,18 +9,26 @@ Incompatible changes:
   Use +Rantfile+, +rantfile+ or <tt>root.rant</tt> instead.
 
 Deprecated:
-* The two undocumented Array methods +arglist+ and +shell_pathes+ are
-  deprecated. Use <tt>sys.sp</tt> in Rantfiles instead.
-* rant-import -v option. Use -V or --version instead.
+* The two undocumented Array methods <tt>ary.arglist</tt> and
+  <tt>ary.shell_pathes</tt> are deprecated. Use <tt>sys.sp(ary)</tt>
+  in Rantfiles instead.
+* <tt>rant-import -v</tt> option. Use <tt>-V</tt> or
+  <tt>--version</tt> instead.
 
 Fixes and minor improvements:
-* Fix output of `rant -T' for descriptions with more than two lines.
+* Fix output of <tt>rant -T</tt> for descriptions with more than two lines.
 * Filelists: Same handling of files starting with a dot with all
   supported ruby versions (1.8.0 - 1.9).
+* The <tt>sys.ruby</tt> method uses an absolute path to start the Ruby
+  interpreter. Thus <tt>sys.ruby</tt> also works if ruby is not on the
+  PATH.
+* Fix for latest ruby 1.9, which renamed +fcall+ to +funcall+.
 
 New features:
-* rant-import supports --zip (-z) option for zip-compression now.
-* Tasks with command change recognition.
+* <tt>rant-import</tt> supports <tt>--zip</tt> (<tt>-z</tt>) option
+  for zip-compression now.
+* Tasks with command change recognition. Read
+  doc/command.rdoc[link:files/doc/command_rdoc.html]
 * Improved rule support.
 
 == Rant 0.4.6

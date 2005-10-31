@@ -138,10 +138,11 @@ module Rant
 	end
 	##############################################################
 
-if Object.method_defined? :fcall # in Ruby 1.9 like __send__
+if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 1.9 like __send__
+        @@__send_private__ = Object.method_defined?(:fcall) ? :fcall : :funcall
 	def resolve
 	    @pending = false
-	    @actions.each{ |action| self.fcall(*action) }.clear
+	    @actions.each{ |action| self.__send__(@@__send_private__, *action) }.clear
 	    ix = ignore_rx
 	    if ix
 		@files.reject! { |f| f =~ ix && !@keep[f] }

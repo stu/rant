@@ -60,5 +60,7 @@ Rantfile basics::
     doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
 Advanced Rantfiles::
     doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Tasks with command change recognition::
+    doc/command.rdoc[link:files/doc/command_rdoc.html]
 Rant Overview::
     README[link:files/README.html]

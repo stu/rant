@@ -18,6 +18,7 @@ Rant currently features:
   additional software.
 * Optional recognition of file changes based on MD5 checksums instead
   of file modification times.
+* Tasks with command change recognition.
 * Primitive support for compiling C# sources portably with csc, cscc
   and mcs.
 * Dependency checking for C/C++ source files.
@@ -83,6 +84,8 @@ Compiling C/C++::
     read doc/c.rdoc[link:files/doc/c_rdoc.html]
 Buildfiles in subdirectories::
     read doc/subdirs.rdoc[link:files/doc/subdirs_rdoc.html]
+Tasks with command change recognition::
+    read doc/command.rdoc[link:files/doc/command_rdoc.html]
 Using the Configure plugin::
     read doc/configure.rdoc[link:files/doc/configure_rdoc.html]
 Compiling C#::
