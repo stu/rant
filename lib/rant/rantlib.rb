@@ -344,6 +344,7 @@ class Rant::RantApp
 	# internal use. A private option is distuingished from others
 	# by having +nil+ as description!
 
+        [ "--dry-run",  "-n",   GetoptLong::NO_ARGUMENT, nil    ],
         [ "--import",   "-i",   GetoptLong::REQUIRED_ARGUMENT, nil ],
 	[ "--stop-after-load",	GetoptLong::NO_ARGUMENT, nil	],
 	# Print caller to $stderr on abort.
@@ -860,6 +861,10 @@ class Rant::RantApp
                 @rootdir : @current_subdir})"
             @last_build_subdir = @current_subdir
         end
+        if @opts[:dry_run]
+            task.dry_run
+            true
+        end
     end
 
     private
@@ -958,6 +963,9 @@ class Rant::RantApp
     # of tasks invoked.
     def build(target, opt = {})
 	opt[:force] = true if @force_targets.delete(target)
+        # Currently either the whole application has to by run in
+        # dry-run mode or nothing.
+        opt[:dry_run] = @opts[:dry_run]
 	matching_tasks = 0
 	old_subdir = @current_subdir
 	old_pwd = Dir.pwd

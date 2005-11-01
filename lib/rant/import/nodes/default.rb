@@ -43,11 +43,6 @@ module Rant
 	    @pre_resolved = false
 	    @block = block
 	    @run = false
-	    # success has one of three values:
-	    #	nil	no invoke
-	    #	false	invoked, but fail
-	    #	true	invoked and run successfully
-	    @success = nil
             @receiver = nil
 	end
 
@@ -87,11 +82,6 @@ module Rant
 	    @success == false
 	end
 
-	# Task was run and didn't fail.
-	def done?
-	    @success
-	end
-
 	# Enhance this task with the given dependencies and blk.
 	def enhance(deps = nil, &blk)
 	    if deps
@@ -109,10 +99,6 @@ module Rant
 	    else
 		@block = blk
 	    end
-	end
-
-	def needed?
-	    invoke(:needed? => true)
 	end
 
 	# Returns a true value if task was acutally run.
@@ -319,11 +305,6 @@ module Rant
             true
         end
 
-	def needed?
-	    return false if done?
-	    invoke(:needed? => true)
-	end
-
 	def invoke(opt = INVOKE_OPT)
 	    return circular_dep if @run
 	    @run = true
@@ -384,7 +365,7 @@ module Rant
 	private
 	def run
             goto_task_home
-            @rac.running_task(self)
+            return if @rac.running_task(self)
 	    dir = File.dirname(name)
             @rac.build dir unless dir == "." || dir == "/"
             return unless @block
@@ -457,7 +438,7 @@ module Rant
 	end
 
 	def run
-            @rac.running_task(self)
+            return if @rac.running_task(self)
 	    @rac.sys.mkdir @name unless @isdir
 	    if @block
 		@block.arity == 0 ? @block.call : @block[self]
@@ -537,10 +518,8 @@ module Rant
 	    }
 	    @ts
 	end
-	def needed?
-	    false
-	end
 	def invoke(opt = INVOKE_OPT)
+            # self.timestamp would be required for correctness...
 	    false
 	end
         def related_sources

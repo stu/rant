@@ -218,7 +218,12 @@ EOF
 	    cmd_opts.quiet = true
 	    cmd_opts.each { |opt, value|
 		case opt
-		when "--version", "-v":
+		when "--version":
+		    puts "rant-import #{Rant::VERSION}"
+		    done
+                when "-v":
+                    warn_msg "Option `-v' is deprecated and won't be in",
+                        "release 0.6.0. Use `-V' or `--version' instead!."
 		    puts "rant-import #{Rant::VERSION}"
 		    done
 		when "--help": help

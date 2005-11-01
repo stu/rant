@@ -213,11 +213,12 @@ task "fetch-svn-dump" do
     require 'uri'
     url = URI.parse("http://svn.berlios.de/svndumps/rant-repos.gz")
     req = Net::HTTP::Get.new(url.path)
+    ds = Time.now.strftime("%Y-%m-%d")
     puts "Starting download from: #{url}"
     res = Net::HTTP.start(url.host, url.port) { |http|
         http.request(req)
     }
-    sys.write_to_file "../rant-repos.gz", res.body
+    sys.write_to_file "../rant-repos_#{ds}.gz", res.body
 end
 
 # vim:ft=ruby

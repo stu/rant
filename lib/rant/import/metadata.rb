@@ -8,7 +8,7 @@ module Rant
     def self.init_import_metadata(rac, *rest)
         mi = MetaData::Interface.new(rac)
         rac.var._set("__metadata__", mi)
-        rac.at_return(&mi.method(:save))
+        rac.at_return(&mi.method(:at_rant_return))
         rac.var._init("__autoclean_common__", []) << MetaData::META_FN
     end
     
@@ -103,6 +103,10 @@ module Rant
                 end
                 #STDERR.puts "#{key}:#{value}:#{fn}:#{dir}"
                 set(key, value, fn, dir)
+            end
+
+            def at_rant_return
+                save unless @rac[:dry_run]
             end
 
             # Assumes to be called from the projects root directory.

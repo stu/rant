@@ -1,6 +1,10 @@
 
 = TODO
 
+== Command: Hash interpolation
+
+Decide about behaviour of hash interpolation in Command tasks.
+
 == Don't use +invoke+ result of dependency to check if update is
    necessary
 

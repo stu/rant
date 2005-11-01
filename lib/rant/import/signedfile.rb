@@ -31,7 +31,6 @@ module Rant
                     raise ArgumentError, "prerequisites required"
                 @block = block
                 @run = false
-                @success = nil
                 @receiver = nil
             end
             def prerequisites
@@ -57,9 +56,6 @@ module Rant
             def fail?
                 @success == false
             end
-            def done?
-                @success
-            end
             def enhance(deps = nil, &blk)
                 @pre.concat(deps) if deps
                 if @block
@@ -73,9 +69,6 @@ module Rant
                 else
                     @block = blk
                 end
-            end
-            def needed?
-                invoke(:needed? => true)
             end
             def invoke(opt = INVOKE_OPT)
                 return circular_dep if @run
@@ -226,7 +219,7 @@ module Rant
             end
             private
             def run
-                @rac.running_task(self)
+                return if @rac.running_task(self)
                 @rac.cx.sys.mkdir @name unless test ?d, @name
                 if @block
                     @block.arity == 0 ? @block.call : @block[self]

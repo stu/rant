@@ -15,7 +15,7 @@ class TestDeprecated_0_6_0 < Test::Unit::TestCase
             assert_equal(0, Rant::RantImport.new("-v").run)
         end
         if Rant::VERSION > "0.4.8"
-            assert_match(/-v\bdeprecated\b.*-V.*--version\b/, err)
+            assert_match(/-v.*\bdeprecated\b.*-V.*--version\b/m, err)
         else
             assert err.empty?
         end

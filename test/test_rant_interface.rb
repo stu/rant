@@ -74,11 +74,11 @@ class TestRantInterface < Test::Unit::TestCase
         assert_equal out, out2
     end
     def test_no_such_option
-        out, err = assert_rant :fail, "-n"
+        out, err = assert_rant :fail, "-N"
         assert out.empty?
         lines = err.split(/\n/)
         assert lines.size < 3
-        assert_match(/\[ERROR\].*option.*\bn\b/, lines.first)
+        assert_match(/\[ERROR\].*option.*\bN\b/, lines.first)
     end
     def test_no_such_long_option
         out, err = assert_rant :fail, "--nix"

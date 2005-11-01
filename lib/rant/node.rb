@@ -73,6 +73,11 @@ module Rant
 	    @line_number = nil
 	    @run = false
             @project_subdir = ""
+	    # success has one of three values:
+	    #	nil	no invoke
+	    #	false	invoked, but fail
+	    #	true	invoked and run successfully
+	    @success = nil
 	end
 
         def reference_name
@@ -113,12 +118,13 @@ module Rant
             false
         end
 
+	# Task was run and didn't fail.
 	def done?
-	    @done
+	    @success
 	end
 
 	def needed?
-	    !done?
+            invoke(:needed? => true)
 	end
 
 	# True during invoke. Used to encounter circular dependencies.
@@ -139,8 +145,11 @@ module Rant
 	    return circular_dep if run?
 	    @run = true
 	    begin
-		return needed? if opt[:needed?]
-		self.run if opt[:force] || self.needed?
+		return !done? if opt[:needed?]
+                # we don't need to check for opt[:force] here
+                # since a plain Node is run anyway.
+		self.run if !done?
+                @success = true
 	    ensure
 		@run = false
 	    end
@@ -163,11 +172,23 @@ module Rant
             defined? @block and @block
         end
 
+=begin
+        def invoke_msg
+            @rac.cmd_msg "Invoking #{name.dump}"
+        end
+=end
+
+        def dry_run
+            text = "Executing #{name.dump}"
+            text << " [NOOP]" unless has_actions?
+            @rac.cmd_msg text
+        end
+
         private
 	def run
-	    return unless has_actions?
 	    goto_task_home
-            @rac.running_task(self)
+            return if @rac.running_task(self)
+	    return unless has_actions?
             @receiver.pre_run(self) if defined? @receiver and @receiver
 	    @block.arity == 0 ? @block.call : @block[self] if @block
 	end
