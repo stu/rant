@@ -173,6 +173,9 @@ module Rant
             end
             @command_changed = @cmd_key = @new_sig = @md = nil
         end
+        def pre_action_descs
+            [@command ? "SHELL\n#@command" : "SHELL"]
+        end
         private
         def res_command(node)
             return if @command

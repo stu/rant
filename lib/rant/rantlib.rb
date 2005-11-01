@@ -337,6 +337,8 @@ class Rant::RantApp
 	    "Multiple files may be specified with this option." ],
 	[ "--force-run","-a",	GetoptLong::REQUIRED_ARGUMENT,
 	    "Force rebuild of TARGET and all dependencies."     ],
+        [ "--dry-run",  "-n",   GetoptLong::NO_ARGUMENT,
+            "Print info instead of actually executing actions."  ],
 	[ "--tasks",	"-T",	GetoptLong::NO_ARGUMENT,
 	    "Show a list of all described tasks and exit."	],
 	
@@ -344,7 +346,6 @@ class Rant::RantApp
 	# internal use. A private option is distuingished from others
 	# by having +nil+ as description!
 
-        [ "--dry-run",  "-n",   GetoptLong::NO_ARGUMENT, nil    ],
         [ "--import",   "-i",   GetoptLong::REQUIRED_ARGUMENT, nil ],
 	[ "--stop-after-load",	GetoptLong::NO_ARGUMENT, nil	],
 	# Print caller to $stderr on abort.

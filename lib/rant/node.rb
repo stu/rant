@@ -172,16 +172,14 @@ module Rant
             defined? @block and @block
         end
 
-=begin
-        def invoke_msg
-            @rac.cmd_msg "Invoking #{name.dump}"
-        end
-=end
-
         def dry_run
             text = "Executing #{name.dump}"
             text << " [NOOP]" unless has_actions?
             @rac.cmd_msg text
+            action_descs.each { |ad|
+                @rac.cmd_print "  - "
+                @rac.cmd_msg ad.sub(/\n$/, '').gsub(/\n/, "\n    ")
+            }
         end
 
         private
@@ -192,6 +190,20 @@ module Rant
             @receiver.pre_run(self) if defined? @receiver and @receiver
 	    @block.arity == 0 ? @block.call : @block[self] if @block
 	end
+
+        def action_descs
+            descs = []
+            if defined? @receiver and @receiver
+                descs.concat(@receiver.pre_action_descs)
+            end
+            @block ? descs << action_block_desc : descs
+        end
+
+        def action_block_desc
+            @block.inspect =~ /^#<Proc:[\da-z]+@(.+):(\d+)>$/i
+            fn, ln = $1, $2
+            "Ruby Proc at #{fn.sub(/^#{Regexp.escape @rac.rootdir}\//, '')}:#{ln}"
+        end
 
 	def circular_dep
 	    rac.warn_msg "Circular dependency on task `#{full_name}'."
