@@ -1,0 +1,24 @@
+
+import "sys/more"
+
+gen Action, /\.t$/ do
+    puts 'executing action: rx /\.t$/'
+    source "action.t.rant"
+end
+
+file "action.t.rant" do |t|
+    sys.write_to_file t.name, <<-EOF
+    file "a.t" do |t|
+        sys.touch t.name
+    end
+    file "b.t" do |t|
+        sys.touch t.name
+    end
+    EOF
+end
+
+file "b.tt" do |t|
+    sys.touch t.name
+end
+
+subdirs "sub.t" if test ?d, "sub.t"

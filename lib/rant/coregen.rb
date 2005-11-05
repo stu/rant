@@ -105,6 +105,7 @@ module Rant
 		unless args.size == 1
 		    rac.abort_at(ch, "Rule takes only one argument.")
 		end
+                rac.abort_at(ch, "Rule: block required.") unless block
 		arg = args.first
 		target = nil
 		src_arg = nil
@@ -220,14 +221,38 @@ module Rant
 	end # class Rule
 	class Action
 	    def self.rant_gen(rac, ch, args, &block)
-		unless args.empty?
-		    rac.warn_msg(rac.pos_text(ch[:file], ch[:ln]),
-			"Action doesn't take arguments.")
-		end
-		unless (rac[:tasks] || rac[:stop_after_load])
-		    yield
-		end
+                case args.size
+                when 0:
+                    unless (rac[:tasks] || rac[:stop_after_load])
+                        yield
+                    end
+                when 1:
+                    rx = args.first
+                    unless rx.kind_of? Regexp
+                        rac.abort_at(ch, "Action: argument has " +
+                            "to be a regular expression.")
+                    end
+                    rac.resolve_hooks << self.new(rac, block, rx)
+                    nil
+                else
+                    rac.abort_at(ch, "Action: too many arguments.")
+                end
 	    end
+            def initialize(rant, block, rx)
+                @rant = rant
+                @subdir = @rant.current_subdir
+                @block = block
+                @rx = rx
+            end
+            def call(target, rel_project_dir)
+                if target =~ @rx
+                    @rant.resolve_hooks.delete(self)
+                    @rant.goto_project_dir @subdir
+                    @block.call
+                    @rant.resolve(target, rel_project_dir)
+                end
+            end
+            alias [] call
 	end
     end	# module Generators
 end # module Rant

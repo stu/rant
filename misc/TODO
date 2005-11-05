@@ -1,6 +1,15 @@
 
 = TODO
 
+== More tests for --dry-run
+
+== Behaviour of `gen Rule' without block
+
+Currently dies with <tt>undefined method `arity' for
+nil:NilClass</tt>.
+
+Done (0.4.9), printing an appropriate error message.
+
 == Command: Hash interpolation
 
 Decide about behaviour of hash interpolation in Command tasks.

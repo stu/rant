@@ -40,6 +40,7 @@ unless Regexp.respond_to? :union # new in 1.8.1
 end
 if RUBY_VERSION < "1.8.2"
     class Array
+        undef_method :flatten, :flatten!
         def flatten
             cp = self.dup
             cp.flatten!
@@ -63,11 +64,12 @@ if RUBY_VERSION < "1.8.2"
             end
         end
     end
-end
-if RUBY_VERSION < "1.8.1"
-    module FileUtils
-        def fu_list(arg)
-            arg.respond_to?(:to_ary) ? arg.to_ary : [arg]
+    if RUBY_VERSION < "1.8.1"
+        module FileUtils
+            undef_method :fu_list
+            def fu_list(arg)
+                arg.respond_to?(:to_ary) ? arg.to_ary : [arg]
+            end
         end
     end
 end
@@ -85,7 +87,7 @@ class Array
     def shell_pathes
         warn caller[0]
         warn "[WARNING] Array#shell_pathes is highly deprecated " +
-            "and will not come with future (0.5.0 and later) Rant releases."
+            "and will not come with future (0.5.2 and later) Rant releases."
         warn "Use `ary.map { |path| sys.sp path }' in Rantfiles."
         map { |path| Rant::Sys.sp(path) }
 =begin
@@ -138,8 +140,8 @@ module Rant::Lib
     # Note: This method splits on the pattern <tt>:(\d+)(:|$)</tt>,
     # assuming anything before is the filename.
     def parse_caller_elem(elem)
-	return { :file => "", :ln => 0 } if elem.nil?
-	if elem =~ /^(.+):(\d+)(:|$)/
+	return { :file => "", :ln => 0 } unless elem
+	if elem =~ /^(.+):(\d+)(?::|$)/
 	    { :file => $1, :ln => $2.to_i }
 	else
 	    # should never occur
@@ -862,6 +864,8 @@ class Rant::RantApp
                 @rootdir : @current_subdir})"
             @last_build_subdir = @current_subdir
         end
+        # TODO: model feels sick... this functionality should
+        # be implemented in Node
         if @opts[:dry_run]
             task.dry_run
             true

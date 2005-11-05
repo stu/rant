@@ -1,0 +1,10 @@
+
+import "command"
+
+task :install => "foo.t" do
+    puts "installing foo"
+end
+
+gen Command, "foo.t", "foo.c", "$[sh_echo] $(>) $(<) > $(>)"
+
+@sh_echo = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV.join(' ')\""

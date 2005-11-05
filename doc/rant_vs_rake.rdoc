@@ -83,6 +83,15 @@ Rake:
   3. The command (most probably +CFLAGS+) changed since the last build
      of +foo+.
 
+* Dependency checking for C/C++ source files
+
+    import "c/dependencies"
+
+    gen C::Dependencies, "cdeps"
+        :search => [".", "include"]
+
+    gen Action do source "cdeps" end
+
 Some other goodies: The +make+ method, the SubFile and AutoClean
 tasks, special variables and more. Most of this is documented in
 doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]

@@ -13,6 +13,8 @@ module Test
 		res = 0
 		capture = true
                 newproc = false
+                tmax_1 = false
+                out, err = nil, nil
 		args.flatten!
 		args.reject! { |arg|
 		    if Symbol === arg
@@ -21,6 +23,7 @@ module Test
 			when :v: capture = false
 			when :verbose: capture = false
                         when :x: newproc = true
+                        when :tmax_1: tmax_1 = true
 			else
 			    raise "No such option -- #{arg}"
 			end
@@ -40,13 +43,26 @@ module Test
                     end
                     assert_equal(res, $?.exitstatus)
                 end
-		if capture
-		    capture_std do
-			assert_equal(res, ::Rant::RantApp.new.run(*args))
-		    end
-		else
-		    assert_equal(res, ::Rant::RantApp.new.run(*args))
-		end
+                action = lambda {
+                    if capture
+                        out, err = capture_std do
+                            assert_equal(res, ::Rant::RantApp.new.run(*args))
+                        end
+                    else
+                        assert_equal(res, ::Rant::RantApp.new.run(*args))
+                    end
+                }
+                if tmax_1
+                    th = Thread.new(&action)
+                    unless th.join(1)
+                        th.kill
+                        assert(false,
+                            "execution aborted after 1 second")
+                    end
+                else
+                    action.call
+                end
+                return out, err
 	    end
             def assert_exit(status = 0)
                 assert_equal(status, $?.exitstatus)

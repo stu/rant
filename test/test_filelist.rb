@@ -160,16 +160,18 @@ class TestFileList < Test::Unit::TestCase
     end
     def test_3addition
         cx = Rant::RantApp.new.cx
-        touch_temp %w(a.t1 a.t2 b.t2) do
-            l1 = cx.sys["a*"]
-            l1.exclude "*.t2"
-            l2 = cx.sys["*.t2"]
-            l3 = l1 + l2
-            %w(a.t1 a.t2 b.t2).each { |fn|
-                assert(l3.include(fn), "#{fn} missing")
-            }
-            l3.lazy_uniq!
-            assert_equal(3, l3.size)
+        in_local_temp_dir do
+            touch_temp %w(a.t1 a.t2 b.t2) do
+                l1 = cx.sys["a*"]
+                l1.exclude "*.t2"
+                l2 = cx.sys["*.t2"]
+                l3 = l1 + l2
+                %w(a.t1 a.t2 b.t2).each { |fn|
+                    assert(l3.include(fn), "#{fn} missing")
+                }
+                l3.lazy_uniq!
+                assert_equal(3, l3.size)
+            end
         end
     end
     def test_add_array
