@@ -195,6 +195,7 @@ tasks and adds them as prerequisites to the final file task.
 Rant allows you to constrain variables which are managed by the +var+
 command (and thus can be set from the commandline):
 
+    import "var/numbers"
     var :count, 0..10
 
 This initializes the variable +count+ to 0 and restricts it to the
@@ -221,9 +222,11 @@ And now try to set the count variable from the commandline:
 
 Other available constraints:
 
+    import "var/strings"
     # variable str is ensured to be a string
     var :str, :String
 
+    import "var/booleans"
     # variable b is a bool (always true or false)
     # can be set to "yes", "no", "1", "0", "true", "false"
     var :b, :Bool

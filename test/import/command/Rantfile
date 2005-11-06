@@ -1,5 +1,5 @@
 
-import "command", "autoclean"
+import "var/strings", "var/booleans", "command", "autoclean"
 
 @ruby = Env::RUBY_EXE
 @sh_echo = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV.join(' ')\""

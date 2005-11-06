@@ -1,5 +1,5 @@
 
-import "c/dependencies", "autoclean"
+import "var/numbers", "c/dependencies", "autoclean"
 
 var :deps, 1..3
 

@@ -1,6 +1,8 @@
 
 # This file contains methods that aid in testing Rant.
 
+$-w = true
+
 require 'rant/rantlib'
 require 'rant/import/sys/tgz'
 require 'rant/import/sys/zip'

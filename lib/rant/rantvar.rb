@@ -15,6 +15,7 @@
 #
 # If you're looking for general info about Rant, read the
 # README[link:files/README.html].
+
 module Rant
     VERSION = '0.4.9'
 
@@ -138,16 +139,21 @@ module Rant
 		    else
 			self[arg]
 		    end
-		when 2..3
-		    @current_var, cf, val = *args
-		    self.is cf
-		    self[@current_var] = val if val
+		when 2, 3
+		    vid, cf, val = *args
+                    @current_var = vid  # this line will go in 0.5.4
+                    constrain vid,
+                        get_factory(cf).rant_constraint
+		    self[vid] = val if val
 		else
-		    raise QueryError, "to many arguments"
+		    raise QueryError, "too many arguments"
 		end
 	    end
 
 	    def is ct, *ct_args
+                warn caller[0]
+                warn "method `var.is' is deprecated and will not be " +
+                    "in Rant 0.5.4 and later"
 		constrain @current_var,
 		    get_factory(ct).rant_constraint(*ct_args)
 		self
@@ -166,13 +172,53 @@ module Rant
 	    def get_factory id
 		if String === id || Symbol === id
 		    begin
+                        ### temporary solution ###
+                        raise unless Constraints.const_defined? id
+                        ##########################
 			id = Constraints.const_get(id)
 		    rescue
-			raise NotAConstraintFactoryError.new(id), caller
+                        ### temporary solution ###
+                        id_sym = id.to_sym
+                        rl =
+                        if [:Integer, :IntegerInRange, :Float,
+                            :FloatInRange].include? id_sym
+                            'rant/import/var/numbers'
+                        elsif [:Bool, :BoolTrue].include? id_sym
+                            'rant/import/var/booleans'
+                        elsif :List == id_sym
+                            'rant/import/var/lists'
+                        elsif [:String, :ToString].include? id_sym
+                            'rant/import/var/strings'
+                        else
+                        ##########################
+                            raise NotAConstraintFactoryError.new(id), caller
+                        end
+                        warn "Explicitely <code>import " +
+                            "'#{rl.sub(/^rant\/import\//, '')}'" +
+                            "</code> to use the #{id_sym.inspect} " +
+                            "constraint."
+                        require rl #rant-import:remove
+                        retry
 		    end
 		end
 		unless id.respond_to? :rant_constraint
-		    raise NotAConstraintFactoryError.new(id), caller
+                    ### temporary solution ###
+                    rl =
+                    if id == true || id == false
+                        'rant/import/var/booleans'
+                    elsif id == String
+                        'rant/import/var/strings'
+                    elsif id.kind_of? Range
+                        'rant/import/var/numbers'
+                    else
+                    ##########################
+                        raise NotAConstraintFactoryError.new(id), caller
+                    end
+                    warn "Explicitely <code>import " +
+                        "'#{rl.sub(/^rant\/import\//, '')}'" +
+                        "</code> to use the #{id.inspect} " +
+                        "constraint."
+                    require rl #rant-import:remove
 		end
 		id
 	    end
@@ -278,237 +324,6 @@ module Rant
 	    end
 	end
 
-	module Constraints
-
-	    class String
-		include Constraint
-
-		class << self
-		    alias rant_constraint new
-		end
-
-		def filter(val)
-		    if val.respond_to? :to_str
-			val.to_str
-		    elsif Symbol === val
-			val.to_s
-		    else
-			raise ConstraintError.new(self, val)
-		    end
-		end
-		def default
-		    ""
-		end
-		def to_s
-		    "string"
-		end
-	    end
-
-	    class ToString < String
-		class << self
-		    alias rant_constraint new
-		end
-		def filter(val)
-		    val.to_s
-		end
-	    end
-
-	    class Integer
-		include Constraint
-
-		class << self
-		    def rant_constraint(range = nil)
-			if range
-			    IntegerInRange.new(range)
-			else
-			    self.new
-			end
-		    end
-		end
-
-		def filter(val)
-		    Kernel::Integer(val)
-		rescue
-		    raise ConstraintError.new(self, val)
-		end
-		def default
-		    0
-		end
-		def to_s
-		    "integer"
-		end
-	    end
-
-	    class IntegerInRange < Integer
-		def initialize(range)
-		    @range = range
-		end
-		def filter(val)
-		    i = super
-		    if @range === i
-			i
-		    else
-			raise ConstraintError.new(self, val)
-		    end
-		end
-		def default
-		    @range.min
-		end
-		def to_s
-		    super + " #{@range}"
-		end
-	    end
-
-	    class Float
-		include Constraint
-
-		class << self
-		    def rant_constraint(range = nil)
-			if range
-			    FloatInRange.new(range)
-			else
-			    self.new
-			end
-		    end
-		end
-
-		def filter(val)
-		    Kernel::Float(val)
-		rescue
-		    raise ConstraintError.new(self, val)
-		end
-		def default
-		    0.0
-		end
-		def to_s
-		    "float"
-		end
-	    end
-
-	    class FloatInRange < Float
-		def initialize(range)
-		    @range = range
-		end
-		def filter(val)
-		    i = super
-		    if @range === i
-			i
-		    else
-			raise ConstraintError.new(self, val)
-		    end
-		end
-		def default
-		    @range.first
-		end
-		def to_s
-		    super + " #{@range}"
-		end
-	    end
-
-	    class AutoList
-		include Constraint
-
-		class << self
-		    alias rant_constraint new
-		end
-
-		def filter(val)
-		    if val.respond_to? :to_ary
-			val.to_ary
-		    elsif val.nil?
-			raise ConstraintError.new(self, val)
-		    else
-			[val]
-		    end
-		end
-		def default
-		    []
-		end
-		def to_s
-		    "list or single, non-nil value"
-		end
-	    end
-
-	    class List
-		include Constraint
-
-		class << self
-		    alias rant_constraint new
-		end
-
-		def filter(val)
-		    if val.respond_to? :to_ary
-			val.to_ary
-		    else
-			raise ConstraintError.new(self, val)
-		    end
-		end
-		def default
-		    []
-		end
-		def to_s
-		    "list (Array)"
-		end
-	    end
-
-	    Array = List
-
-	    class Bool
-		include Constraint
-		class << self
-		    alias rant_constraint new
-		end
-		def filter(val)
-		    if ::Symbol === val or ::Integer === val
-			val = val.to_s
-		    end
-		    if val == true
-			true
-		    elsif val == false || val == nil
-			false
-		    elsif val.respond_to? :to_str
-			case val.to_str
-			when /^\s*true\s*$/i:	true
-			when /^\s*false\s*$/i:	false
-			when /^\s*y(es)?\s*$/i:	true
-			when /^\s*n(o)?\s*$/:	false
-			when /^\s*on\s*$/i:	true
-			when /^\s*off\s*$/i:	false
-			when /^\s*1\s*$/:	true
-			when /^\s*0\s*$/:	false
-			else
-			    raise ConstraintError.new(self, val)
-			end
-		    else
-			raise ConstraintError.new(self, val)
-		    end
-		end
-		def default
-		    false
-		end
-		def to_s
-		    "bool"
-		end
-	    end
-
-	    class BoolTrue < Bool
-		def default
-		    true
-		end
-	    end
-
-	    #--
-	    # perhaps this should stay a secret ;)
-	    #++
-	    def true.rant_constraint
-		BoolTrue.rant_constraint
-	    end
-	    def false.rant_constraint
-		Bool.rant_constraint
-	    end
-
-	end	# module Constraints
-
 	# A +vid+ has to be a String to be valid.
 	def valid_vid(obj)
 	    case obj
@@ -537,18 +352,36 @@ module Rant
 	end
 
 	module_function :valid_constraint?, :valid_vid
-    end	# module RantVar
-end	# module Rant
 
-class Range
-    def rant_constraint
-        case first
-        when ::Integer
-            Rant::RantVar::Constraints::IntegerInRange.new(self)
-        when ::Float
-            Rant::RantVar::Constraints::FloatInRange.new(self)
-        else
-            raise NotAConstraintFactoryError.new(self)
-        end
-    end
-end
+	module Constraints
+	    class AutoList
+		include Constraint
+		class << self
+		    alias rant_constraint new
+		end
+		def filter(val)
+		    if val.respond_to? :to_ary
+			val.to_ary
+		    elsif val.nil?
+			raise ConstraintError.new(self, val)
+		    else
+			[val]
+		    end
+		end
+		def default
+		    []
+		end
+		def to_s
+		    "list or single, non-nil value"
+		end
+	    end
+        end # module Constraints
+    end # module RantVar
+end # module Rant
+
+### temporary solution ###
+#require 'rant/import/var/numbers' #rant-import:uncomment
+#require 'rant/import/var/booleans' #rant-import:uncomment
+#require 'rant/import/var/lists' #rant-import:uncomment
+#require 'rant/import/var/strings' #rant-import:uncomment
+##########################

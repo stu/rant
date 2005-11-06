@@ -275,4 +275,14 @@ class TestVar < Test::Unit::TestCase
     ensure
 	assert_equal(0, Rant::RantApp.new.run("-fvar.rf", "clean", "-q"))
     end
+    def test_rant_import
+	@rac.args.replace %w(-fvar.rf show_num)
+        run_import "-q", "ant.t"
+        assert_exit
+        out = run_ruby("ant.t", "-fvar.rf", "show_num")
+        assert_exit
+	assert_match(/num 1.1/, out)
+    ensure
+        Rant::Sys.rm_f "ant.t"
+    end
 end

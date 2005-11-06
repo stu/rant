@@ -441,10 +441,20 @@ EOF
         # Note:: The comment with the module name in line 3 of the
         #        input is very important.
         def filter_reopen_module(script)
+            loop {
+                script, done = filter_reopen_module_onepass(script)
+                break(script) if done
+            }
+        end
+
+        # Returns true as second return value if at no useless
+        # statement was removed.
+        def filter_reopen_module_onepass(script)
             lines = []
             buffer = []
             identifier = nil # class/module name
-            keyword = nil # class or module
+            keyword = nil # `class' or `module'
+            done = true
             script.split(/\n/).each { |line|
                 if identifier
                     if line.strip.empty?
@@ -454,6 +464,7 @@ EOF
                         lines << ""
                         buffer.clear
                         identifier = keyword = nil
+                        done = false
                     else
                         lines.concat buffer
                         buffer.clear
@@ -468,7 +479,7 @@ EOF
                     lines << line
                 end
             }
-            lines.join("\n") << "\n"
+           [lines.join("\n") << "\n", done]
         end
 
     end	# class RantImport
