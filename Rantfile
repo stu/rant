@@ -221,4 +221,50 @@ task "fetch-svn-dump" do
     sys.write_to_file "../rant-repos_#{ds}.gz", res.body
 end
 
+task "rb-stats" do
+    files = sys["lib/**/*.rb"]
+    lines = 0
+    code_lines = 0
+    files.each { |fn|
+        l, c =  count_rb_lines(fn)
+        lines += l
+        code_lines += c
+    }
+    puts "Number of Ruby files under lib/: #{files.size}"
+    puts "  #{lines} total lines"
+    puts "  #{code_lines} LOC"
+
+    files.exclude(%r{^lib/rant/archive})
+
+    lines = 0
+    code_lines = 0
+    files.each { |fn|
+        l, c =  count_rb_lines(fn)
+        lines += l
+        code_lines += c
+    }
+    puts "  without lib/rant/archive/: #{files.size}"
+    puts "    #{lines} total lines"
+    puts "    #{code_lines} LOC"
+end
+
+def count_rb_lines(fn)
+    lines = 0
+    code_lines = 0
+    in_multiline_comment = false
+    File.readlines(fn).each { |line|
+        lines += 1
+        case line
+        when /=end(\s|$)/:
+            in_multiline_comment = false
+            next
+        when /^\s*$/, /^\s*#/: next
+        when /^=begin(\s|$)/
+            in_multiline_comment = true
+        end
+        code_lines += 1 unless in_multiline_comment
+    }
+    [lines, code_lines]
+end
+
 # vim:ft=ruby

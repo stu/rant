@@ -50,6 +50,14 @@ And a good habit would be to wrap the +source+ expression in an
     # invoked.
     gen Action do source "c_dependencies" end
 
+or more selective:
+
+    gen C::Dependencies
+
+    # Do dependency checking when Rant looks at the first file
+    # ending in ".h" or ".c"
+    gen Action, /\.(h|c)$/ do source "c_dependencies" end
+
 For a little example project using the C::Dependency generator look
 into the doc/examples/c_dependencies[link:../examples/c_dependencies]
 directory of the Rant distribution.

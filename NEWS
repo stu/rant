@@ -1,6 +1,32 @@
 
 = Rant NEWS
 
+== Rant 0.5.0
+
+Besides the below listed deprecations, this release is backwards
+compatible to 0.4.8.
+
+Deprecated:
+* The undocumented <tt>var.is</tt> method. It won't be in release
+  0.5.4 and later.
+* To use a (numeric) range as variable constraint, you should
+  explicitely <tt>import "var/numbers"</tt> now. Also explicitely
+  <tt>import "var/strings"</tt> to use the <tt>:String</tt>
+  constraint and <tt>import "var/booleans"</tt> to use the
+  <tt>:Bool</tt> constraint. Read <em>Constraining variables</em> in
+  doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+
+Fixes and minor improvements:
+* Fix a few warnings from ruby 1.8.0/1.8.1.
+
+New features:
+* The <tt>--dry-run</tt> (<tt>-n</tt>) option for +rant+. Read
+  doc/rant.rdoc[link:files/doc/rant_rdoc.html]. 
+* +Action+ takes a regular expression now. When rant looks at a file
+  that matches the regular expression, the action block will get
+  executed once.
+  Read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]. 
+
 == Rant 0.4.8
 
 Incompatible changes:

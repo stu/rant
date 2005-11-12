@@ -287,6 +287,88 @@ it plain in the Rantfile.
 An Action block also won't be run when our Rantfile is read by
 rant-import.
 
+=== More selective actions
+
+If a regular expression is given as argument to the Action generator,
+the block will be executed the first time Rant searches for a task
+matching this regular expression.
+
+An artifical example:
+
+    import "sys/more"
+
+    gen Action, /\.t$/ do
+        puts "executing action for files/tasks ending in `.t'"
+        source "t.rant"
+    end
+
+    file "t.rant" do |t|
+        sys.write_to_file t.name, <<-EOF
+            task "a.t" do
+                puts "making a.t"
+            end
+            task "b.t" do
+                puts "making b.t"
+            end
+        EOF
+    end
+
+    task :a do
+        puts "making a"
+    end
+
+    task :default => ["a", "a.t", "b.t"]
+
+Running rant:
+
+    % rant
+    making a
+    executing action for files/tasks ending in `.t'
+    writing 128 bytes to file `t.rant'
+    making a.t
+    making b.t
+
+rant performed the following steps:
+
+1. Invoke task +default+
+
+2. Invoke first prerequisite of +default+, which happens to be +a+.
+
+3. Execute action block of task +a+.
+
+   Output: "making a"
+
+4. Search for a task for the second prerequisite of +default+, which
+   happens to be <tt>a.t</tt>.
+
+5. Since no task with the name <tt>a.t</tt> exists, it checks for a
+   matching action/rule. The only defined action matches, so the
+   action block is executed.
+
+   Output: "executing action for files/tasks ending in `.t'"
+
+6. The action block contains a +source+ statement, which will first
+   cause a build of <tt>t.rant</tt>.
+
+   Output: "writing 128 bytes to file `t.rant'"
+
+   After the build, <tt>t.rant</tt> will be read as Rantfile.
+
+7. The action block is done, the action is "deleted".
+
+8. Now, Rant finds a task with the name <tt>a.t</tt>, invokes it and
+   executes the associated ruby block.
+
+   Output: "making a.t"
+
+9. Invoke last prerequisite of +default+, which happens to be
+   <tt>b.t</tt> and execute the associated ruby block.
+
+   Output: "making b.t"
+
+Generally, an action is usable to autogenerate a (bigger) set of tasks
+that are needed by a subset of other tasks.
+
 == See also
 
 Rantfile basics::

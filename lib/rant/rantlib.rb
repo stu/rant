@@ -453,6 +453,10 @@ class Rant::RantApp
 	    end
 	end
     end
+    def resolve_root_ref(path)
+        return File.join(@rootdir, path[1..-1]) if path =~ /^@/
+        path.sub(/^\\(?=@)/, '')
+    end
     # Returns an absolute path. If path resolves to a directory this
     # method ensures that the returned absolute path doesn't end in a
     # slash.

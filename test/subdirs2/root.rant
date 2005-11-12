@@ -1,5 +1,8 @@
 
-import "autoclean", "subfile"
+import "autoclean", "subfile", "command"
+
+@sh_cat = "#{sys.sp Env::RUBY_EXE} -e \"print ARGF.read\""
+@sh_puts = "#{sys.sp Env::RUBY_EXE} -e \"puts ARGV\""
 
 def define_print_task(name)
     task name do |t|
@@ -19,6 +22,13 @@ end
 file "b.t" do |t|
     write t.name
 end
+
+file "config.t" do |t|
+    var :config => "config\n"
+    write(t.name, var[:config])
+end
+
+gen Command, "c1.t", ["sub1/c1.t"], "$[sh_puts] ${<} > $(>)"
 
 gen SubFile, "t/t", "a.t" => "b.t" do |t|
     write(t.name, "abc")

@@ -116,7 +116,7 @@ module Rant
 		# holds constraints for values in @store
 		@constraints = {}
 		# set by default query
-		@current_var = nil
+		@current_var = nil # this line will go in 0.5.4
 	    end
 
 	    def query(*args, &block)
@@ -129,7 +129,7 @@ module Rant
 		    if Hash === arg
 			if arg.size == 1
 			    arg.each { |k,v|
-				@current_var = k
+				@current_var = k # this line will go in 0.5.4
 				self[k] = v if self[k].nil?
 			    }
 			    self
@@ -141,7 +141,7 @@ module Rant
 		    end
 		when 2, 3
 		    vid, cf, val = *args
-                    @current_var = vid  # this line will go in 0.5.4
+                    @current_var = vid # this line will go in 0.5.4
                     constrain vid,
                         get_factory(cf).rant_constraint
 		    self[vid] = val if val

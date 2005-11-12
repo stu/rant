@@ -10,4 +10,7 @@ file "sub.t" => "@a.t" do |t|
     sys.cp sys.expand_path(t.source), t.name
 end
 
+gen Command, "c1.t", "@config.t", "$[sh_cat] ${<} > $(>)"
+gen Command, "c2.t", "@config.t", "$[sh_cat] ${prerequisites} > $(name)"
+
 gen Directory, "dir.t"

@@ -113,8 +113,8 @@ module Rant
         def val_for_interp_var(var)
             case var
             when "name": self.name
-            when "prerequisites": self.prerequisites
-            when "source": self.source
+            when "prerequisites": prerequisites.map { |n| rac.resolve_root_ref(n) }
+            when "source": rac.resolve_root_ref(source)
             else
                 cx = rac.cx
                 val = cx.var._get(var) || (
@@ -143,8 +143,8 @@ module Rant
         def val_for_interp_sym(sym)
             case sym
             when ">": name
-            when "<": prerequisites
-            when "-": source
+            when "<": prerequisites.map { |n| rac.resolve_root_ref(n) }
+            when "-": rac.resolve_root_ref(source)
             end
         end
     end

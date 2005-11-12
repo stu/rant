@@ -40,6 +40,44 @@ steps (roughly):
    invoked. If the "default" task doesn't exist, the first task will
    be invoked.
 
+=== Dry-Run
+
+If you run rant in dry-run mode, it will print the actions it would
+execute instead of actually executing them. This can be useful in
+debugging your Rantfiles. To enable it, give the <tt>--dry-run</tt>,
+option or its short form, <tt>-n</tt>, on the commandline.
+
+Example Rantfile:
+
+    import "command"
+
+    task :install => "foo" do
+      sys.install "foo", "/usr/local/bin", :mode => 0755
+    end
+
+    gen Command, "foo", "foo.c", "cc -o $(>) $(<)"
+
+Running rant in dry-run mode:
+
+    % rant -n
+    Executing "foo"
+    - SHELL
+      cc -o foo foo.c
+    Executing "install"
+    - Ruby Proc at Rantfile:3
+
+Running rant in "normal" mode:
+
+    % rant
+    cc -o foo foo.c
+    install -c -m 0755 foo /usr/local/bin
+
+Running rant in dry-run mode again:
+
+    % rant -n
+    Executing "install"
+    - Ruby Proc at Rantfile:3
+
 == See also
 
 Rant Overview::

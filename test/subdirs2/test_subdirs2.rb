@@ -236,4 +236,23 @@ EOF
         assert err.empty?
         assert_equal "sub00/a", out.split(/\n/).last
     end
+    def test_command
+        out, err = assert_rant "c1.t"
+        assert err.empty?
+        assert_file_content "config.t", "config\n"
+        assert_file_content "sub1/c1.t", "config\n"
+        assert_file_content "c1.t", "sub1/c1.t\n"
+        out, err = assert_rant "c1.t"
+        assert err.empty?
+        assert out.empty?
+    end
+    def test_command_in_sub
+        Dir.chdir "sub1"
+        out, err = assert_rant "c2.t"
+        assert_file_content "../config.t", "config\n"
+        assert_file_content "c2.t", "config\n"
+        out, err = assert_rant "c2.t"
+        assert err.empty?
+        assert out.split(/\n/).size < 2
+    end
 end
