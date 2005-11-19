@@ -140,7 +140,7 @@ task :t180 do |t|
     # my installed testrb version doesn't work with ruby-1.8.0
     sys.cd "test"
     if var[:TEST]
-        sys "ruby180", "-rtest/unit", "-I", sys.expand_path("@lib"),
+        sys "ruby180", "-w", "-rtest/unit", "-I", sys.expand_path("@lib"),
             "-I", sys.expand_path("."), var[:TEST].sub(/^test\//, '')
     else
         sys "ruby180 ts_all.rb"

@@ -1,6 +1,11 @@
 
 = TODO
 
+== Convinient symlink method
+
+Implement a Rant::Sys.symlink (or similar name) method that converts
+destination filenames to absolute pathes before actual linking.
+
 == More tests for --dry-run
 
 == Behaviour of `gen Rule' without block

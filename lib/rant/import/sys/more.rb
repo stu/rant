@@ -6,8 +6,9 @@
 module Rant
     module Sys
         def write_to_file(fn, content)
+            content = content.to_str
             fu_output_message "writing #{content.size} bytes to file `#{fn}'"
-            open fn, "w" do |f|
+            File.open fn, "w" do |f|
                 f.write content
             end
         end

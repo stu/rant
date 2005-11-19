@@ -658,6 +658,10 @@ end
 	    end
 	end
 
+        def ln_f(src, dest)
+            ln(src, dest, :force => true)
+        end
+
 	# Split a path in all elements.
 	def split_all(path)
 	    base, last = File.split(path)

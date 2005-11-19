@@ -154,20 +154,16 @@ explain it a little bit. The +sys+ command can be used in three ways:
 1. <b>File system operations</b>
 
    The first form is with no arguments. It returns an object on which
-   you can invoke the methods of the +FileUtils+ module that comes
-   with ruby.
+   you can invoke methods for common file system operations:
+
    Examples are:
-	sys.rm "file1", "file2", ...	# remove files
+
+	sys.rm ["file1", "file2"]       # remove files
 	sys.cp "src", "dest"	 	# copy from "src" do "dest"
-	sys.mkdir "dir"		 	# create directory "dir"
-   For a list of all available methods invoke ri:
-	% ri FileUtils
-   which will also show documentation for them.
-   Additionally you have the following methos which are not in the
-   FileUtils module:
-	sys.ruby "arg1", "arg2", ... # invoke the ruby interpreter
-	sys.safe_ln "src", "dest"    # create a hardlink or fall back to
-				     # copying
+	sys.mkdir "dir"                 # create directory "dir"
+
+   For a list of all available methods read
+   doc/sys.rdoc[link:files/doc/sys_rdoc.html].
 
 2. <b>Running external commands</b>
 

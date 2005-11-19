@@ -67,7 +67,8 @@ module Test
                 return out, err
 	    end
             def assert_exit(status = 0)
-                assert_equal(status, $?.exitstatus)
+                assert_equal(status, $?.exitstatus,
+                    "exit status expected to be #{status} but is #{$?.exitstatus}")
             end
             def assert_file_content(fn, content, *opts)
                 assert(test(?f, fn), "`#{fn}' doesn't exist")
@@ -80,6 +81,21 @@ module Test
             if RUBY_VERSION < "1.8.1"
                 def assert_raise(*args, &block)
                     assert_raises(*args, &block)
+                end
+            end
+            def assert_raise_kind_of(klass)
+                e = nil
+                begin
+                    yield
+                rescue Exception => e
+                end
+                if e.nil?
+                    flunk("Exception `#{klass}' expected but non risen.")
+                else
+                    unless e.kind_of? klass
+                        flunk("Exception `#{klass}' expected " +
+                            "but `#{e.class}' thrown")
+                    end
                 end
             end
 	end # class TestCase

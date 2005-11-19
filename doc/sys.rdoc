@@ -1,0 +1,565 @@
+
+Last update: $Date$
+
+== sys methods
+
+The +sys+ object, which is accessible from anywhere in an Rantfile,
+provides many methods for common file system operations like deleting,
+copying, moving, comparing and writing files. 
+
+Unless explicitely mentioned otherwise, the following statements apply
+to all below documented methods:
+
+1. Portable across all supported platforms.
+2. Ignore the return value!
+3. The messages printed to standard output may change.
+4. Error conditions are reported through exceptions of class
+   +SystemCallError+ or subclasses of +SystemCallError+.
+
+The following methods print messages to standard output:
+
+* <b>cd(dir)</b>
+
+  Change the current directory to +dir+. +dir+ may be an absolute path
+  or a path relative to the current directory.
+  If a block is given, the current directory will be changed to +dir+,
+  then the block is executed and it is ensured, that after block
+  execution the old working directory is resumed (even if an exception
+  is thrown during block execution).
+
+  Examples:
+
+    # relative path
+    sys.pwd             # => "/home/user"
+    sys.cd "tmp"        # prints "cd tmp"
+    sys.pwd             # => "/home/user/tmp"
+    sys.cd ".."         # prints "cd .."
+    sys.pwd             # => "/home/user"
+
+    # absolute path
+    sys.cd "/etc"       # prints "cd /etc"
+    sys.pwd             # => "/etc"
+
+    # relative path, with block
+    sys.pwd             # => "/home/user"
+    sys.cd "tmp" do
+        sys.pwd         # => "/home/user/tmp"
+        # perform some operations, may
+        # also call sys.cd
+        sys.cd "/etc"
+    end
+    sys.pwd             # => "/home/user"
+
+* <b>rm(file)</b>
+
+  Remove +file+. +file+ may be an absolute or relative path (string).
+  If +file+ is an array of strings or a filelist, remove all entries
+  of +file+.
+
+  Examples:
+
+    # remove the file "util.o" in the current directory
+    sys.rm "util.o"     # prints "rm util.o"
+
+    # remove all files ending in ".o" in the "lib" directory
+    sys.rm sys["lib/*.o"]
+
+  Raises a +SystemCallError+ if +file+ doesn't exist or is a
+  directory.
+
+* <b>rm_f(file)</b>
+
+  Same as <tt>rm(file)</tt>, but doesn't throw an exception if +file+
+  doesn't exist.
+
+  Example:
+
+    # remove "main.o" if it exists
+    sys.rm_f "main.o"   # prints "rm -f main.o"
+
+* <b>rmdir(dir)</b>
+
+  Remove the empty directory +dir+. +dir+ may be a list of strings, a
+  filelist or a string. Raises a +SystemCallError+ if +dir+ is not
+  empty or doesn't exist.
+
+  Examples:
+
+    # remove empty directory "/home/user/tmp"
+    sys.rmdir "/home/user/tmp"
+
+    # remove empty directory, relative path
+    sys.rmdir "tmp"
+
+    # remove empty directories "tmp" and "/usr/local/tmp"
+    sys.rmdir ["tmp", "/usr/local/tmp"]
+
+    # remove all (empty) directories in the current directory ending
+    # in ".t"
+    sys.rmdir sys["*.t"]
+
+* <b>rm_r(entry)</b>
+
+  If +entry+ is a (relative or absolute) path to a file, simply
+  removes the file. If +entry+ is a directory, remove the directory
+  and all its contents (including subdirectories).
+
+  If +entry+ is an array of pathes or a filelist, remove all entries
+  listed in +entry+ (directories are removed, including their
+  contents, too).
+
+  Examples:
+
+    # remove the "tmp" directory and all its contents
+    sys.rm_r "tmp"      # prints "rm -r tmp"
+
+  Raises a +SystemCallError+ if +entry+ doesn't exist.
+
+* <b>rm_rf(entry)</b>
+
+  Does the same as <tt>rm_r(entry)</tt>, but doesn't raise an
+  exception if +entry+ doens't exist.
+
+  Example:
+
+    # remove the "tmp" directory and all its contents if it exists
+    sys.rm_rf "tmp"     # prints "rm -rf tmp"
+
+* <b>mkdir(dir)</b>
+  
+  If +dir+ is a string, create the new directory +dir+. +dir+ may be a
+  relative or absolute path. 
+
+  Examples:
+
+    # relative path
+    sys.mkdir "foo"
+
+    # absolute path
+    sys.mkdir "/home/user/foo"
+
+  If +dir+ is a list of strings, or a filelist, create all directories
+  listed in +dir+.
+
+  Example:
+
+    # with array, creates directory "foo" and directory "bar"
+    sys.mkdir ["foo", "bar"]
+
+  Raises a +SystemCallError+ if a file/directory with this name
+  already exists.
+
+* <b>mkdir_p(dir)</b>
+
+  Creates the directory +dir+ and all its parent directories, if
+  necessary. Does nothing if +dir+ already exists.
+
+  If +dir+ is an array/filelist, creates all directories listed in
+  +dir+.
+
+  Examples:
+
+    # creates "/usr" if a directory of this name doesn't exist
+    # creates "/usr/local" if a directory of this name doesn't exist
+    # creates "/usr/local/bin" if a directory of this name doesn't exist
+    sys.mkdir_p "/usr/local/bin"    # prints "mkdir -p /usr/local/bin"
+
+    # creates the three given pathes
+    sys.mkdir_p ["foo/include", "foo/src/util", "foo/src/ui"]
+
+* <b>cp(src, dest)</b>
+
+  If +src+ is a (relative or absolute) path to a file, copy the file
+  +src+ to +dest+.
+
+  Example:
+
+    # copy "main.c" to "build/main.c"
+    sys.cp "main.c", "build/main.c"     # prints "cp main.c build/main.c"
+
+  If +dest+ is a directory, copy +src+ to <tt>dest/src</tt>.
+  If +src+ is an array of strings or a filelist, copy all files listed
+  in +src+ to the directory +dest+.
+
+  Examples:
+
+    # copy "main.c" to the "build" directory
+    sys.cp "main.c", "build"
+
+    # copy all files ending in ".c" from the current directory to the
+    # "build" directory
+    sys.cp sys["*.c"], "build"
+
+  Raises a +SystemCallError+ if +src+ is a directory or doesn't exist.
+
+* <b>cp_r(src, dest)</b>
+
+  Does the same as <tt>cp(src, dest)</tt>, but also accepts a
+  directory/directories as +src+. Directories are recursively copied
+  to +dest+.
+
+  Example:
+
+    # Recursively copy all files/directories in the "src" directory
+    # to the (existing) "/backup" directory.
+    sys.cp_r sys["src/*"], "/backup"    # prints "cp -r <list of src/* files> /backup"
+
+* <b>mv(src, dest)</b>
+
+  If +src+ is a path (string), move the file +src+ to +dest+.
+
+  Example:
+    
+    # move "build/foo.exe" to "dist/foo.exe"
+    sys.mv "build/foo.exe", "dist/foo.exe"      # prints "mv build/foo.exe dist/foo.exe"
+
+  If +dest+ is a directory, move +src+ do <tt>dest/src</tt>. If +src+
+  is an array of pathes or a filelist, move all entries of +src+ to
+  the directory +dest+.
+
+  Example:
+
+    # move all files ending in ".exe" from the "build" directory to
+    # the "dist" directory
+    sys.mv sys["build/*.exe"], "dist"
+
+  +src+ may also be a (empty or non-empty) directory. Of course a
+  mixed array/filelist of "normal" files and directories is also
+  allowed.
+
+  Raises a +SystemCallError+ if +src+ is an array/filelist and +dest+
+  is not a directory.
+
+* <b>touch(file)</b>
+  
+  +file+ may be a single path to a file, an array of pathes or a
+  filelist. Updates the modification time and the access time of all
+  files. If a file doesn't exist, creates an empty one with this name.
+
+  Examples:
+    
+    # "main.c" is a file, update its modification time
+    sys.touch "main.c"
+
+    # "ts1" and "ts2" don't exist, create two empty files
+    sys.touch ["ts1", "ts2"]
+
+* <b>safe_ln(src, dest)</b>
+
+  This creates a hardlink +dest+ which points to the same file as
+  +src+, on platforms that support hardlinks. Simply copies +src+ to
+  +dest+ on other platforms.
+
+  Example:
+
+    # link or copy "main.c" to "package/main.c"
+    sys.safe_ln "main.c", "package/main.c"
+        # prints "ln main.c package/main.c" if a hardlink is created
+        # prints "cp main.c package/main.c" if is main.c is copied
+
+* <b>ln(src, dest)</b>
+
+  Creates a hardlink +dest+ which points to the same file as +src+. If
+  +dest+ is a directory, creates the hardlink <tt>dest/src</tt>.
+
+  Example:
+
+    # link "main.c" to "package/main.c"
+    sys.ln "main.c", "package"      # prints "ln main.c package"
+
+  Raises a +SystemCallError+ if +dest+ is a file or doesn't exist.
+
+  Note::    Not all file systems and operating systems support hard
+            links. On those systems, the +ln+ method will raise an
+            <tt>Errno::EOPNOTSUPP</tt> exception. Consider using the
+            +safe_ln+ method instead.
+
+* <b>ln_f(src, dest)</b>
+
+  Same as <tt>ln(src, dest)</tt>, but overwrites +dest+ if +dest+
+  is a file.
+
+  Example:
+
+    # link "main.c" to "package/main.c", overwriting any existing
+    # "package/main.c" file
+    sys.ln_f "main.c", "package"
+
+    # ... equivalent to
+    sys.ln_f "main.c", "package/main.c"
+
+* <b>ln_s(src, dest)</b>
+
+  Creates a symbolic link +dest+ which points to +src+. If +dest+ is a
+  directory, creates the symbolic link <tt>dest/src</tt>.
+
+  Examples:
+
+    # Create the symbolic link "NEWS" to the existing file "ChangeLog"
+    sys.ln_s "ChangeLog", "NEWS"    # prints "ln -s ChangeLog NEWS"
+
+  Raises a +SystemCallError+ if +dest+ is the name of an existing
+  file or +src+ doesn't exist.
+
+  Note::    Not all file systems and operating systems support
+            symbolic links. On those systems, the +ln_s+ method will
+            raise an <tt>Errno::EOPNOTSUPP</tt> exception.
+
+* <b>ln_sf(src, dest)</b>
+
+  Same as <tt>ln_s(src, dest)</tt>, but overwrites +dest+ if +dest+
+  exists.
+
+  Example:
+
+    # Create the symbolic link "NEWS" to the existing file
+    # "ChangeLog", overwrite any existing "NEWS" file.
+    sys.ln_s "ChangeLog", "NEWS"    # prints "ln -sf ChangeLog NEWS"
+
+* <b>install(src, dest, options = {})</b>
+
+  Copy file +src+ to +dest+ if +dest+ doesn't exist or differs from
+  +src+. Install +src+ to <tt>dest/src</tt> if +dest+ is a directory.
+  If +src+ is an array/filelist, installs each entry in +src+ under
+  the +dest+ directory.
+
+  Options is a hash which may contain the following keys:
+
+  <tt>:mode</tt>::      If given, after copying the mode of the target
+                        file(s) is changed to the integer given as
+                        value.
+
+  <tt>:preserve</tt>::  Takes either +true+ or +false+. If given and
+                        +true+, the target file(s) will have the same
+                        access and modification times as the source
+                        file(s).
+  
+  Examples:
+
+    # copy the file "./ruby" to "/usr/local/bin/ruby19" and change the
+    # mode of the target file to 0755.
+    sys.install "ruby", "/usr/local/bin/ruby19", :mode => 0755
+
+    # install all files in the "lib" directory in "/usr/lib/foo" and
+    # change the access and modification times of the target files to
+    # match those of their source files.
+    sys.install sys["lib/*"], "/usr/lib/foo", :preserve => true
+
+* <b>chmod(mode, file)</b>
+
+  +file+ may be a single file name or an array/filelist. Changes the
+  file permissions of all given files to the bit pattern represented
+  by the integer +mode+.
+
+  Examples:
+
+    # make file "/usr/local/bin/ruby" executable
+    sys.chmod 0755, "/usr/local/bin/ruby"   # prints "chmod 0755 /usr/local/bin/ruby"
+
+    # make all files in the "bin" directory executable
+    sys.chmod 0755, sys["bin/*"]
+
+  Note::    Not all file systems/operating systems support the same
+            permission bits. This method will only set the supported
+            ones.
+
+* <b>ruby(arg1, arg2, ...)</b>
+
+  Starts a new ruby interpreter with the given arguments.
+
+  Example:
+
+    sys.ruby "setup.rb", "--prefix=/usr"    # prints "<absolute path to ruby> setup.rb --prefix=/usr"
+  
+  IMPORTANT::   It does NOT start a subshell.
+
+  Bad Example:
+
+    # This probably does not do what was intended. Ruby will search
+    # for the script file with the name "setup.rb --prefix=/usr"!
+    sys.ruby "setup.rb --prefix=/usr"
+
+  Note::    Rant determines the absolute path to the ruby interpreter
+            which is running the current Rant instance. It uses this
+            path to start a new ruby interpreter. As a result, this
+            method will also work when "ruby" is not on the PATH.
+
+* <b>write_to_file(fn, text)</b>
+
+  Requires <tt>import "sys/more"</tt>
+
+  Write the string +text+ to the file with name +fn+. If the file
+  already exists, it is overwritten, otherwise a new file is created.
+
+  Example:
+
+    import "sys/more"
+
+    sys.write_to_file "version", "1.2.0\n"  # => prints "writing 6 bytes to file `version'"
+
+* <b>unpack_tgz(fn, options = {})</b>
+
+  Requires <tt>import "sys/tgz"</tt>
+
+  Unpack the gzipped tar archive file with the file name +fn+ in the
+  current directory. If +options+ contains the key <tt>:in</tt>, its
+  value will be used as name of the output directory.
+
+  Example:
+
+    import "sys/tgz"
+
+    # Creates the "pkg" directory if it doesn't exist and unpacks all
+    # contents of "rant-0.4.6.tgz" in the "pkg" directory.
+    sys.unpack_tgz "rant-0.4.6.tgz", :in => "pkg"
+
+  Existing files will be overwritten.
+
+* <b>unpack_zip(fn, options = {})</b>
+
+  Requires <tt>import "sys/zip"</tt>
+
+  Unpack the zip archive file with the file name +fn+ in the current
+  directory. If +options+ contains the key <tt>:in</tt>, its value
+  will be used as name of the output directory.
+
+  Example:
+
+    import "sys/zip"
+
+    # Creates the "pkg" directory if it doesn't exist and unpacks all
+    # contents of "rant-0.4.6.zip" in the "pkg" directory.
+    sys.unpack_zip "rant-0.4.6.zip", :in => "pkg"
+
+  Existing files will be overwritten.
+
+The following methods are "silent", i.e. they don't print messages to
+standard output:
+
+* <b>pwd</b>
+
+  Returns the current working directory as string.
+
+  Example:
+
+    sys.pwd             # => "/home/user"
+
+* <b>compare_file(a, b)</b>
+
+  Returns true if the files +a+ and +b+ have the same contents, false
+  otherwise.
+
+  Example:
+
+    unless sys.compare_file("lib/main.c", "/backup/main.c")
+        puts "lib/main.c differs from /backup/main.c"
+    end
+
+  Raises a +SystemCallError+ if +a+ or +b+ is not a file.
+
+* <b>uptodate?(new, old_list)</b>
+
+  Returns true if the file with name +new+ is newer (checked by file
+  modification time) than all files listed in the +old_list+
+  array/filelist. A non-existent file (including +new+) is considered
+  older than any other file.
+
+  Example:
+
+    unless sys.uptodate?("foo.exe", sys["src/*.c", "include/*.h"])
+        puts "(re)build of foo.exe required"
+    end
+
+* <b>expand_path(path)</b>
+
+  Resolves any "." or ".." elements in +path+ and expands +path+ to an
+  absolute path. Replaces a leading <tt>@</tt> character with an
+  absolute path to the project's root directory. Returns the resulting
+  path string.
+
+  Examples, assuming current directory is "/home/user/project/sub"
+  and project root directory is "/home/user/project":
+
+    sys.expand_path("README")           # => "/home/user/project/sub/README"
+    sys.expand_path("./README")         # => "/home/user/project/sub/README"
+    sys.expand_path("@README")          # => "/home/user/project/README"
+    sys.expand_path("../../README")     # => "/home/user/README"
+    sys.expand_path("/@README")         # => "/@README"
+    sys.expand_path("subsub/./../")     # => "/home/user/project/sub"
+
+* <b>split_all(path)</b>
+
+  Splits +path+ into all its elements and returns and array.
+
+  Examples:
+
+    sys.split_all("abc")                # => ["abc"]
+    sys.split_all("foo/bar")            # => ["foo", "bar"]
+    sys.split_all("foo/bar/baz")        # => ["foo", "bar", "baz"]
+
+* <b>escape(arg)</b>
+
+  Escapes all spaces in +arg+ for the shell which is used on the
+  current platform. Returns the escaped string.
+
+  Example:
+
+    sys.escape("foo bar")
+        # gives on Windows: '"foo bar"'
+        # other systems: 'foo\ bar'
+
+  If +arg+ is an array (or filelist) all elements are escaped and the
+  resulting strings joined together, seperated by spaces.
+
+  Example:
+
+    sys.escape(["foo bar", "arg 2"])
+        # gives on Windows: '"foo bar" "arg 2"'
+        # other systems: 'foo\ bar arg\ 2'
+
+  Note::    Might escape more special shell characters in the future.
+
+* <b>sp(path)</b>
+
+  Does the same as <tt>escape(path)</tt>, but also replaces all
+  slashes with backslashes on windows.
+
+  Example:
+
+    libdir = "/home/user/program files/d"
+    sources = ["foo bar.d", "util.d"]
+    sys "dmd #{sys.sp sources} -offoo -I#{sys.sp libdir}"
+        # executes the command
+        #   on windows: 'dmd "foo bar.d" util.d -offoo -I"/home/user/program files/d"'
+        #   other systems: 'dmd foo\ bar.d util.d -offoo -I/home/user/program\ files/d'
+
+* <b>glob(pattern1, pattern2, ...)</b>
+
+  <b>[pattern1, pattern2, ...]</b>
+
+  Returns a filelist including the given patterns. For a discussion of
+  filelists, read
+  doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+
+  Examples:
+
+    # the following two are equivalent
+    sys.glob("*.c", "*.h")
+    sys["*.c", "*.h"]
+
+  Filelists created with this method, ignore entries starting with a
+  dot.
+
+* <b>glob_all(pattern1, pattern2, ...)</b>
+
+  Like <tt>glob(pattern1, pattern2, ...)</tt>, but the created filelist
+  doesn't ignore entries starting with a dot.
+
+== See also
+
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
+Rant Overview::
+    README[link:files/README.html]
