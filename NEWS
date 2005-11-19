@@ -3,8 +3,9 @@
 
 == Rant 0.5.0
 
-Besides the below listed deprecations, this release is backwards
-compatible to 0.4.8.
+Incompatible changes:
+* The undocumented filelist methods +no_file+, +no_suffix+ and
+  +no_prefix+ require <tt>import "filelist/more"</tt> now.
 
 Deprecated:
 * The undocumented <tt>var.is</tt> method. It won't be in release

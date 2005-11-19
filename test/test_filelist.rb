@@ -392,6 +392,7 @@ class TestFileList < Test::Unit::TestCase
         end
     end
     def test_no_file
+        require 'rant/import/filelist/more'
         cx = Rant::RantApp.new.cx
         touch_temp %w(a.t b.t) do
             fl = cx.sys["*.t"]
