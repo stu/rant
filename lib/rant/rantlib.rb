@@ -998,6 +998,8 @@ class Rant::RantApp
     # Currently always returns an array (which might actually be an
     # empty array, but never nil).
     def resolve(task_name, rel_project_dir = @current_subdir)
+        # alternative implementation:
+        #   rec_save_resolve(task_name, nil, rel_project_dir)
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
 	when nil
@@ -1020,6 +1022,23 @@ class Rant::RantApp
 	end
     end
     public :resolve
+
+    def rec_save_resolve(task_name, excl_hook, rel_project_dir = @current_subdir)
+	s = @tasks[expand_path(rel_project_dir, task_name)]
+	case s
+	when nil
+	    @resolve_hooks.each { |s|
+                next if s == excl_hook
+		s = s[task_name, rel_project_dir]
+		return s if s
+	    }
+	    []
+	when Rant::Node: [s]
+	else
+	    s
+	end
+    end
+    public :rec_save_resolve
 
     # This hook will be invoked when no matching task is found for a
     # target. It may create one or more tasks for the target, which is

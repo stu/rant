@@ -47,7 +47,7 @@ any directory/file named "CVS" or ending in ~. Examples would be:
     xy~
     src/util.c~
 
-=== More on selecting files with the glob operator
+=== Selecting files with filelists
 
 The sys[] operator actually returns a _filelist_ object, which behaves
 similar to an array. There are many methods for filelist objects, here

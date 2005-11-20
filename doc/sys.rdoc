@@ -538,7 +538,7 @@ standard output:
   <b>[pattern1, pattern2, ...]</b>
 
   Returns a filelist including the given patterns. For a discussion of
-  filelists, read
+  filelists, read <em>Selecting files with filelists</em> in
   doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
 
   Examples:

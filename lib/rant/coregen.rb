@@ -179,16 +179,9 @@ module Rant
                         have_src = true
                         src = @src_proc[target]
                         if src.respond_to? :to_ary
-                            src.each { |f|
-                                if @rant.resolve(f).empty? && !test(?e, f)
-                                    have_src = false
-                                    break
-                                end
-                            }
+                            have_src = src.to_ary.all? { |s| have_src?(s) }
                         else
-                            if @rant.resolve(src).empty? && !test(?e, src)
-                                have_src = false
-                            end
+                            have_src = have_src?(src)
                         end
                         if have_src
                             create_nodes(rel_project_dir, target, src)
@@ -197,6 +190,10 @@ module Rant
                 end
                 alias [] call
                 private
+                def have_src?(name)
+                    !@rant.rec_save_resolve(name, self).empty? or
+                        test(?e, name)
+                end
                 def create_nodes(rel_project_dir, target, deps)
                     case nodes = @block[target, deps]
                     when Array: nodes
@@ -211,6 +208,11 @@ module Rant
             end
             class FileHook < Hook
                 private
+                def have_src?(name)
+                    test(?e, name) or
+                        @rant.rec_save_resolve(name, self
+                            ).any? { |t| t.file_target? }
+                end
                 def create_nodes(rel_project_dir, target, deps)
                     t = @rant.file(:__caller__ => @ch,
                             target => deps, &@block)

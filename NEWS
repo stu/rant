@@ -19,14 +19,17 @@ Deprecated:
 
 Fixes and minor improvements:
 * Fix a few warnings from ruby 1.8.0/1.8.1.
+* Documentation for common file system operations and path
+  manipulation methods.  Read
+  doc/sys.rdoc[link:files/doc/sys_rdoc.html]. 
 
 New features:
 * The <tt>--dry-run</tt> (<tt>-n</tt>) option for +rant+. Read
   doc/rant.rdoc[link:files/doc/rant_rdoc.html]. 
-* +Action+ takes a regular expression now. When rant looks at a file
-  that matches the regular expression, the action block will get
-  executed once.
-  Read doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]. 
+* +Action+ takes a regular expression now. When rant looks for a
+  task/file that matches the regular expression, the action block will
+  get executed once.  Read <em>More selective actions</em> in
+  doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]. 
 
 == Rant 0.4.8
 

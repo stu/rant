@@ -125,6 +125,12 @@ module Rant
 	    @files.size
 	end
 
+        alias _object_respond_to? respond_to?
+        private :_object_respond_to?
+        def respond_to?(msg)
+            _object_respond_to?(msg) or @files.respond_to?(msg)
+        end
+
 	def method_missing(sym, *args, &block)
 	    if @files.respond_to? sym
 		resolve if @pending
@@ -368,6 +374,11 @@ end
         def apply_ary_method_1(meth, arg1, block=nil)
             @files.send meth, arg1, &block
         end
+=begin
+        def apply_lazy_operation(meth, args, block)
+            @files.send(meth, *args, &block)
+        end
+=end
     end	# class FileList
 
     class RacFileList < FileList
@@ -596,15 +607,17 @@ end
 
 	# If supported, make a hardlink, otherwise
 	# fall back to copying.
-	def safe_ln(*args)
+	def safe_ln(src, dest)
+            dest = dest.to_str
+            src = src.respond_to?(:to_ary) ? src.to_ary : src.to_str
 	    unless Sys.symlink_supported
-		cp(*args)
+		cp(src, dest)
 	    else
 		begin
-		    ln(*args)
-		rescue Exception #Errno::EOPNOTSUPP
+		    ln(src, dest)
+		rescue Exception # SystemCallError # Errno::EOPNOTSUPP
 		    Sys.symlink_supported = false
-		    cp(*args)
+		    cp(src, dest)
 		end
 	    end
 	end

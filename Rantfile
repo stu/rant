@@ -35,6 +35,10 @@ gen RubyPackage, "rant#{var :pkg_ext}" do |t|
     t.package_task
 end
 
+task "dist-files" do
+    puts dist_files
+end
+
 desc "Generate documentation."
 gen RubyDoc do |g|
     g.verbose = true

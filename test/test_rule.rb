@@ -1,8 +1,7 @@
 
-require 'test/unit'
-require 'rant/rantlib'
 require 'tutil'
-require 'fileutils'
+require 'test/unit'
+require 'rant/import/sys/more'
 
 # Ensure we run in testproject directory.
 $testDir ||= File.expand_path(File.dirname(__FILE__))
@@ -72,6 +71,108 @@ class TestRule < Test::Unit::TestCase
             assert_match(/Rule\b.*block required\b/, lines[1])
         end
     end
+    def test_empty_extension_target
+        in_local_temp_dir do
+            Rant::Sys.write_to_file "root.rant", <<-EOF
+                gen Rule, "" => ".t" do |t|
+                    sys.cp t.source, t.name
+                end
+            EOF
+            Rant::Sys.write_to_file "a.t", "abc\n"
+            out, err = assert_rant :tmax_1, "a"
+            assert err.empty?
+            assert !out.empty?
+            assert_file_content "a", "abc\n"
+            out, err = assert_rant :tmax_1, "a"
+            assert err.empty?
+            assert out.empty?
+        end
+    end
+=begin
+    # TODO: needs change in prerequisite handling of file tasks
+    def test_file_hook_only_file_source
+        in_local_temp_dir do
+            Rant::Sys.write_to_file "Rantfile", <<-EOF
+                gen Rule, :o => :c do |t|
+                    sys.cp t.source, t.name
+                end
+                task "a.c" do |t|
+                    puts t.name
+                end
+                file "b.c" do |t|
+                    sys.write_to_file t.name, "ok\n"
+                end
+                task "d.c" do |t|
+                    puts "task for d.c"
+                end
+                file "d.c" do |t|
+                    sys.write_to_file t.name, "ok 2\n"
+                end
+            EOF
+            out, err = assert_rant :fail, "a.o"
+            assert out.empty?
+            assert_match(/ERROR\b.*\ba\.o/, err)
+            assert !test(?e, "a.o")
+            out, err = assert_rant "b.o"
+            assert err.empty?
+            assert !out.empty?
+            assert_file_content "b.o", "ok\n"
+            out, err = assert_rant "d.o"
+            assert err.empty?
+            lines = out.split(/\n/)
+            assert_equal 1, lines.size
+            assert_match(/writing to file/, lines[0])
+            assert lines[0] =~ /task for/
+            out, err = assert_rant "b.o"
+            assert err.empty?
+            assert out.empty?
+            out, err = assert_rant "d.o"
+            assert err.empty?
+            assert out.empty?
+        end
+    end
+    def test_file_hook_only_file_source_md5
+        in_local_temp_dir do
+            Rant::Sys.write_to_file "Rantfile", <<-EOF
+                gen Rule, :o => :c do |t|
+                    sys.cp t.source, t.name
+                end
+                task "a.c" do |t|
+                    puts t.name
+                end
+                file "b.c" do |t|
+                    sys.write_to_file t.name, "ok\n"
+                end
+                task "d.c" do |t|
+                    puts "task for d.c"
+                end
+                file "d.c" do |t|
+                    sys.write_to_file t.name, "ok 2\n"
+                end
+            EOF
+            out, err = assert_rant :fail, "-imd5", "a.o"
+            assert out.empty?
+            assert_match(/ERROR\b.*\ba\.o/, err)
+            assert !test(?e, "a.o")
+            out, err = assert_rant "-imd5", "b.o"
+            assert err.empty?
+            assert !out.empty?
+            assert_file_content "b.o", "ok\n"
+            out, err = assert_rant "-imd5", "d.o"
+            assert err.empty?
+            lines = out.split(/\n/)
+            assert_equal 1, lines.size
+            assert_match(/writing to file/, lines[0])
+            assert lines[0] =~ /task for/
+            out, err = assert_rant "-imd5", "b.o"
+            assert err.empty?
+            assert out.empty?
+            out, err = assert_rant "-imd5", "d.o"
+            assert err.empty?
+            assert out.empty?
+        end
+    end
+=end
 if Rant::Env.find_bin("cc") && Rant::Env.find_bin("gcc")
     # Note: we are assuming that "cc" invokes "gcc"!
     def test_cc
