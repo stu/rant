@@ -1,6 +1,4 @@
 
-Last update: $Date$
-
 == sys methods
 
 The +sys+ object, which is accessible from anywhere in an Rantfile,
@@ -246,21 +244,21 @@ The following methods print messages to standard output:
 
 * <b>safe_ln(src, dest)</b>
 
-  This creates a hardlink +dest+ which points to the same file as
-  +src+, on platforms that support hardlinks. Simply copies +src+ to
+  This creates a hard link +dest+ which points to the same file as
+  +src+, on platforms that support hard links. Simply copies +src+ to
   +dest+ on other platforms.
 
   Example:
 
     # link or copy "main.c" to "package/main.c"
     sys.safe_ln "main.c", "package/main.c"
-        # prints "ln main.c package/main.c" if a hardlink is created
+        # prints "ln main.c package/main.c" if a hard link is created
         # prints "cp main.c package/main.c" if is main.c is copied
 
 * <b>ln(src, dest)</b>
 
-  Creates a hardlink +dest+ which points to the same file as +src+. If
-  +dest+ is a directory, creates the hardlink <tt>dest/src</tt>.
+  Creates a hard link +dest+ which points to the same file as +src+. If
+  +dest+ is a directory, creates the hard link <tt>dest/src</tt>.
 
   Example:
 
@@ -270,9 +268,11 @@ The following methods print messages to standard output:
   Raises a +SystemCallError+ if +dest+ is a file or doesn't exist.
 
   Note::    Not all file systems and operating systems support hard
-            links. On those systems, the +ln+ method will raise an
-            <tt>Errno::EOPNOTSUPP</tt> exception. Consider using the
-            +safe_ln+ method instead.
+            links.
+            On operating systems without support for hard links,
+            a +NotImplementedError+ exception is risen.
+            If the operating system supports hard links, but the file
+            system not, a +SystemCallError+ is risen.
 
 * <b>ln_f(src, dest)</b>
 
@@ -302,8 +302,11 @@ The following methods print messages to standard output:
   file or +src+ doesn't exist.
 
   Note::    Not all file systems and operating systems support
-            symbolic links. On those systems, the +ln_s+ method will
-            raise an <tt>Errno::EOPNOTSUPP</tt> exception.
+            symbolic links.
+            On operating systems without support for symbolic links, a
+            +NotImplementedError+ exception is risen.  If the
+            operating system supports symbolic links, but the file
+            system not, a +SystemCallError+ is risen.
 
 * <b>ln_sf(src, dest)</b>
 

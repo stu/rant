@@ -1,6 +1,31 @@
 
+== Rule recursion
+
+Since Rant 0.4.9, rules created with <tt>gen Rule</tt> no longer
+recurse. This means, that when looking for the Rule's source(s), this
+specific rule itself is ignored. This prevents infinite recursion.
+
+Consider:
+
+    gen Rule, "o" => ".foo" do something end
+
+Say we call <tt>make "bo"</tt>.
+
+Rant pre 0.4.9 behaviour:
+
+The rule matches anything ending in "o". Since "bo" ends in "o", the
+rule matches and searches for the source "b.foo". No task is defined
+for "b.foo", but again our only rule matches and thus searches for the
+source "b.fo.foo". Now we have our infinite recursion.
+
+Rant 0.4.9 and later behaviour:
+
+The only rule matches and searches for the source "b.foo". When a rule
+searches for a source, the rule itself is excluded. No infinite
+recursion.
+
 == Rant::Env.find_bin...
-... could honour PATHEXT on windows.
+... should honour PATHEXT on windows.
 
 == Task alias
 Since +alias+ is a Ruby keyword, we could use +nick+ to create task

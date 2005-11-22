@@ -255,6 +255,7 @@ def extract_requires(script, dynamic_requires = [])
 end
 
 module Rant::TestUtil
+    TEST_HARDLINK_BROKEN = Rant::Env.on_windows? && RUBY_VERSION < "1.8.4"
     def in_local_temp_dir(dirname = "t")
         dirname = dirname.dup
         base_dir = Dir.pwd
@@ -269,6 +270,44 @@ module Rant::TestUtil
     def write_to_file(fn, content)
         open fn, "w" do |f|
             f.write content
+        end
+    end
+    # replacement for core <tt>test(?-, a, b)</tt> which is eventually
+    # corrupted
+    if TEST_HARDLINK_BROKEN
+        def test_hardlink(a, b, opts = {})
+            # test(?-, a, b) corrupt in ruby < 1.8.4 (final)
+            # on Windows
+            
+            unless defined? @@corrupt_test_hardlink_msg
+                @@corrupt_test_hardlink_msg = true
+                puts "\n*** Ruby core test for hardlinks " +
+                    "[test(?-, file1, file2)] considered broken. Using heuristics for unit tests. ***"
+            end
+
+            # Use some heuristic instead.
+            if test(?l, a)
+                return test(?l, b) &&
+                    File.readlink(a) == File.readlink(b)
+            else
+                return false if test(?l, b)
+            end
+            content = File.read(a)
+            return false unless File.read(b) == content
+            if opts[:allow_write]
+                if content.size > 1
+                    Rant::TestUtil.write_to_file(a, content[0])
+                else
+                    Rant::TestUtil.write_to_file(a, "hardlink test\n")
+                end
+                File.read(a) == File.read(b)
+            else
+                true
+            end
+        end
+    else
+        def test_hardlink(a, b, opts = {})
+            test(?-, a, b)
         end
     end
     extend self

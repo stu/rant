@@ -6,7 +6,7 @@ require 'rant/import/sys/more'
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestSysMethods < Test::Unit::TestCase
-    #include Rant::TestUtil
+    include Rant::TestUtil
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir($testDir)
@@ -329,12 +329,12 @@ class TestSysMethods < Test::Unit::TestCase
         assert_equal ca, cb
         assert err.empty?
         lines = out.split(/\n/)
-        assert_equal 1, lines.size
-        assert_match(/(ln|cp)\s+a\.t\s+b\.t/, lines[0])
-        lines[0] =~ /(ln|cp)\s+a\.t\s+b\.t/
-        puts "\nhardlinks #{$1 == "ln" ? "" : "not"} supported"
+        assert lines.size == 1 || lines.size == 2
+        assert_match(/(ln|cp)\s+a\.t\s+b\.t/, lines[-1])
+        lines[-1] =~ /(ln|cp)\s+a\.t\s+b\.t/
+        puts "\n*** hardlinks #{$1 == "ln" ? "" : "not"} supported ***"
         if $1 == "ln"
-            assert test(?-, "b.t", "a.t")
+            assert test_hardlink("a.t", "b.t", :allow_write => true)
         end
     end
     def test_compare_file
@@ -369,7 +369,8 @@ class TestSysMethods < Test::Unit::TestCase
                 @sys.ln "a.t", "b.t"
             rescue Exception => e
                 puts "\n*** hard links not supported ***"
-                assert(e.kind_of?(Errno::EOPNOTSUPP), 
+                assert(e.kind_of?(SystemCallError) ||
+                       e.kind_of?(NotImplementedError), 
                     "exception Errno::EOPNOTSUPP " +
                     "expected but #{e.class} risen")
             end
@@ -377,7 +378,8 @@ class TestSysMethods < Test::Unit::TestCase
         if e
             assert !test(?e, "b.t")
         else
-            assert test(?-, "b.t", "a.t")
+            #assert test(?-, "b.t", "a.t")
+            assert test_hardlink("a.t", "b.t")
             assert !test(?l, "b.t") # shouldn't be necessary
             assert_file_content "b.t", "abc\n"
             assert err.empty?
@@ -393,7 +395,8 @@ class TestSysMethods < Test::Unit::TestCase
                     @sys.ln "a.t", "t"
                 end
             end
-            assert test(?-, "t/a.t", "a.t")
+            #assert test(?-, "t/a.t", "a.t")
+            assert test_hardlink("t/a.t", "a.t")
             assert_file_content "t/a.t", "abc\n"
 
             Rant::Sys.touch "c.t"
@@ -402,7 +405,8 @@ class TestSysMethods < Test::Unit::TestCase
                     @sys.ln "a.t", "c.t"
                 end
             end
-            assert !test(?-, "c.t", "a.t")
+            #assert !test(?-, "c.t", "a.t")
+            assert !test_hardlink("c.t", "a.t")
             assert_file_content "c.t", ""
 
             capture_std do
@@ -410,7 +414,8 @@ class TestSysMethods < Test::Unit::TestCase
                     @sys.ln_f "a.t", "c.t"
                 end
             end
-            assert test(?-, "c.t", "a.t")
+            #assert test(?-, "c.t", "a.t")
+            assert test_hardlink("c.t", "a.t")
             assert_file_content "c.t", "abc\n"
         end
     end
@@ -422,7 +427,9 @@ class TestSysMethods < Test::Unit::TestCase
                 @sys.ln_s "a.t", "b.t"
             rescue Exception => e
                 puts "\n*** symbolic links not supported ***"
-                assert(e.kind_of?(Errno::EOPNOTSUPP), 
+                # TODO: raises NotImplementedError on WinXP/NTFS/ruby-1.8.2
+                assert(e.kind_of?(SystemCallError) ||
+                       e.kind_of?(NotImplementedError),
                     "exception Errno::EOPNOTSUPP " +
                     "expected but #{e.class} risen")
             end

@@ -19,8 +19,9 @@ Deprecated:
 
 Fixes and minor improvements:
 * Fix a few warnings from ruby 1.8.0/1.8.1.
+* Prevent infinite rule recursion.
 * Documentation for common file system operations and path
-  manipulation methods.  Read
+  manipulation methods. Read
   doc/sys.rdoc[link:files/doc/sys_rdoc.html]. 
 
 New features:

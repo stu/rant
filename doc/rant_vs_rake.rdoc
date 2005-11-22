@@ -87,10 +87,14 @@ Rake:
 
     import "c/dependencies"
 
+    # save dependencies between source/header files in the file
+    # "cdeps"; search for include files in "." and "include" dirs
     gen C::Dependencies, "cdeps"
         :search => [".", "include"]
 
-    gen Action do source "cdeps" end
+
+    # load dependency information when Rant looks at a C file
+    gen Action, /\.(c|h)/ do source "cdeps" end
 
 Some other goodies: The +make+ method, the SubFile and AutoClean
 tasks, special variables and more. Most of this is documented in

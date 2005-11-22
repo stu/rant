@@ -17,7 +17,7 @@
 # README[link:files/README.html].
 
 module Rant
-    VERSION = '0.4.9'
+    VERSION = '0.5.0'
 
     # Those are the filenames for rantfiles.
     # Case matters!
