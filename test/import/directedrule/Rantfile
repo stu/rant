@@ -16,7 +16,7 @@ gen Directory, "build.t"
 gen Directory, "build2.t"
 
 gen Action do
-    rac.build "build.t"
+    make "build.t"
 end
 
 gen DirectedRule, "build2.t" => ["src.t"], '.2a' => '.2b' do |t|

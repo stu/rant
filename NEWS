@@ -1,6 +1,15 @@
 
 = Rant NEWS
 
+== Rant 0.5.2
+
+Incompatible changes:
+* The two undocumented Array methods <tt>ary.arglist</tt> and
+  <tt>ary.shell_pathes</tt>, which are deprecated since release 0.4.8,
+  are removed with this release. Use <tt>sys.sp(ary)</tt>
+  in Rantfiles instead.
+* The method +rac+ which is deprecated since release 0.4.6 is gone.
+
 == Rant 0.5.0
 
 Incompatible changes:

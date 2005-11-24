@@ -74,47 +74,6 @@ if RUBY_VERSION < "1.8.2"
     end
 end
 
-class Array
-
-    # Concatenates all elements like #join(' ') but also puts quotes
-    # around strings that contain a space.
-    def arglist
-        warn caller[0]
-        warn "[WARNING] Use `sys.sp(ary)' in Rantfiles instead of deprecated Array#arglist."
-        Rant::Sys.sp(self)
-    end
-
-    def shell_pathes
-        warn caller[0]
-        warn "[WARNING] Array#shell_pathes is highly deprecated " +
-            "and will not come with future (0.5.2 and later) Rant releases."
-        warn "Use `ary.map { |path| sys.sp path }' in Rantfiles."
-        map { |path| Rant::Sys.sp(path) }
-=begin
-	entry = nil
-	if ::Rant::Env.on_windows?
-	    self.collect { |entry|
-		entry = entry.to_s.tr("/", "\\")
-		if entry.include? ' '
-		    '"' + entry + '"'
-		else
-		    entry
-		end
-	    }
-	else
-	    self.collect { |entry|
-		entry = entry.to_s
-		if entry.include? ' '
-		    "'" + entry + "'"
-		else
-		    entry
-		end
-	    }
-	end
-=end
-    end
-end
-
 class String
     def sub_ext(ext, new_ext = nil)
 	if new_ext
@@ -217,6 +176,7 @@ module RantContext
         rant.make(*args, &block)
     end
 
+=begin
     # +rac+ stands for "rant compiler"
     def rac
         ch = Rant::Lib.parse_caller_elem caller[0]
@@ -224,6 +184,7 @@ module RantContext
             "Method `rac' is deprecated. Use `rant' instead.")
 	rant
     end
+=end
 end	# module RantContext
 
 class RantAppContext

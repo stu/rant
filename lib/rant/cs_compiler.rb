@@ -277,7 +277,7 @@ module Rant
 	    resources.each { |p|
 		cc_args << " -fresources=#{Env.shell_path(p)}"
 	    }
-	    cc_args << " " << sources.arglist if sources
+	    cc_args << " " << Rant::Sys.sp(sources) if sources
 	    cc_args
 	end
 
@@ -302,7 +302,7 @@ module Rant
 	    resources.each { |p|
 		cc_args << " /res:#{Env.shell_path(p)}"
 	    }
-	    cc_args << " " << sources.arglist if sources
+	    cc_args << " " << Rant::Sys.sp(sources) if sources
 	    cc_args
 	end
 
@@ -328,7 +328,7 @@ module Rant
 	    resources.each { |p|
 		cc_args << " -resource:#{Env.shell_path(p)}"
 	    }
-	    cc_args << " " << sources.arglist if sources
+	    cc_args << " " << Rant::Sys.sp(sources) if sources
 	    cc_args
 	end
 
