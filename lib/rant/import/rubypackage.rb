@@ -244,6 +244,16 @@ class Rant::Generators::RubyPackage
 	    spec = Gem::Specification.new do |s|
 		map_to_gemspec(s)
 	    end
+
+            # fix for YAML bug in Ruby 1.8.3 and 1.8.4 previews
+            if RUBY_VERSION == "1.8.3" or
+                RUBY_VERSION == "1.8.4" && RUBY_RELEASE_DATE < "2005-12-24"
+                def spec.to_yaml(*args, &block)
+                    yaml = super
+                    yaml =~ /^---/ ? yaml : "--- #{yaml}"
+                end
+            end
+            
 	    fn = nil
 	    begin
 		fn = Gem::Builder.new(spec).build
