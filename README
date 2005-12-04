@@ -96,6 +96,9 @@ Upgrading::
     read the NEWS[link:files/NEWS.html] for new features, not
     backwards compatible changes and other issues.
 
+The Rant::FileList class::
+    read doc/filelist.rdoc[link:files/doc/filelist_rdoc.html]
+
 == Copying
 
 Copyright (C) 2005  Stefan Lang

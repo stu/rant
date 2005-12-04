@@ -154,13 +154,13 @@ module Rant::Generators::Archive
 	    fl = @files ? @files.dup : []
 	    if @manifest
                 fl = read_manifest unless @files
-                fl = Rant::RacFileList.filelist(@rac, fl)
-                fl << @manifest
+                fl = Rant::FileList(fl)
+                fl.keep(@manifest)
 	    elsif @files_only
-                fl = Rant::RacFileList.filelist(@rac, fl)
+                fl = Rant::FileList(fl)
 		fl.no_dirs
             else
-                fl = Rant::RacFileList.filelist(@rac, fl)
+                fl = Rant::FileList(fl)
 	    end
             # remove leading `./' relicts
             @res_files = fl.map! { |fn| fn.sub(/^\.\/(?=.)/,'') }

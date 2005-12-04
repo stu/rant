@@ -32,19 +32,6 @@ end
 module Rant
     class RacFileList < FileList
 
-        # Returns files if <tt>FileList === files</tt>, otherwise
-        # a new RacFileList with <tt>file.to_ary</tt> as initial set
-        # of files.
-        def self.filelist(rac, files)
-            return files if FileList === files
-            fl = self.new(rac)
-            fl.instance_eval {
-                @pending = false
-                @files = files.to_ary
-            }
-            fl
-        end
-
 	attr_reader :subdir
 	attr_reader :basedir
 
@@ -271,37 +258,54 @@ module Rant
     # instance of this class.
     class SysObject
 	include Sys
-
-	def initialize(rac)
-	    @rac = rac or
-		raise ArgumentError, "controller required"
+	def initialize(rant)
+	    @rant = rant or
+		raise ArgumentError, "rant application required"
 	end
-
+        # Preferred over directly modifying var[:ignore]. var[:ignore]
+        # might go in future.
+        def ignore(*patterns)
+            @rant.var[:ignore].concat(patterns)
+            nil
+        end
+        def filelist(arg)
+            if arg.respond_to?(:to_rant_filelist)
+                arg.to_rant_filelist
+            elsif arg.respond_to?(:to_ary)
+                RacFileList.new(@rant).concat(arg.to_ary)
+            elsif arg.respond_to?(:to_str)
+                RacFileList.new(@rant, arg.to_str)
+            else
+                raise TypeError,
+                    "cannot convert #{arg.class} into Rant::FileList"
+            end
+        end
+        # corresponds to <code>Rant::FileList[*patterns]</code>.
+	def [](*patterns)
+	    RacFileList.new(@rant, *patterns)
+	end
+        # corresponds to <code>Rant::FileList.glob(*patterns,
+        # &block)</code>.
 	def glob(*patterns, &block)
-	    fl = RacFileList.new(@rac, *patterns)
+	    fl = RacFileList.new(@rant, *patterns)
             fl.ignore(".", "..")
             if block_given? then yield fl else fl end
 	end
-
+        # corresponds to <code>Rant::FileList.glob_all(*patterns,
+        # &block)</code>.
         def glob_all(*patterns, &block)
-	    fl = RacFileList.new(@rac, *patterns)
+	    fl = RacFileList.new(@rant, *patterns)
             fl.match_dotfiles
             fl.ignore(".", "..") # use case: "*.*" as pattern
             if block_given? then yield fl else fl end
         end
-
-	def [](*patterns)
-	    RacFileList.new(@rac, *patterns)
-	end
-
         def expand_path(path)
-            File.expand_path(@rac.project_to_fs_path(path))
+            File.expand_path(@rant.project_to_fs_path(path))
         end
-
 	private
-	# Delegates FileUtils messages to +rac+.
+	# Delegates FileUtils messages to +rant+.
 	def fu_output_message(cmd)
-	    @rac.cmd_msg cmd
+	    @rant.cmd_msg cmd
 	end
     end
 end # module Rant

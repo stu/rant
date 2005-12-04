@@ -4,6 +4,19 @@
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
 module Rant
+    def FileList(arg)
+        if arg.respond_to?(:to_rant_filelist)
+            arg.to_rant_filelist
+        elsif arg.respond_to?(:to_ary)
+            FileList.new.concat(arg.to_ary)
+        elsif arg.respond_to?(:to_str)
+            FileList.new(arg.to_str)
+        else
+            raise TypeError,
+                "cannot convert #{arg.class} into Rant::FileList"
+        end
+    end
+    module_function :FileList
     class FileList
         include Enumerable
 
@@ -78,9 +91,12 @@ module Rant
         end
         alias to_a to_ary
         alias entries to_ary    # entries: defined in Enumerable
+        def to_rant_filelist
+            self
+        end
         def +(other)
-            if other.kind_of? FileList
-                c = other.dup
+            if other.respond_to? :to_rant_filelist
+                c = other.to_rant_filelist.dup
                 c.actions.concat(@actions)
                 c.files.concat(@files)
                 c.pending = !c.actions.empty?
@@ -92,7 +108,8 @@ module Rant
                 c.pending = true
                 c
             else
-                raise "argument has to be an Array or FileList"
+                raise TypeError,
+                    "cannot add #{other.class} to Rant::FileList"
             end
         end
         # Use this method to append +file+ to this list. +file+ will
@@ -121,8 +138,12 @@ module Rant
         # this list.
         def concat(ary)
             resolve if @pending
-            ix = ignore_rx
-            @files.concat(ary.to_ary.reject { |f| f =~ ix })
+            if ix = ignore_rx
+                @files.concat(ary.to_ary.reject { |f| f =~ ix })
+            else
+                # Array#concat(arg) calls arg.to_ary anyway
+                @files.concat(ary)
+            end
             self
         end
         # Number of entries in this filelist.
@@ -297,7 +318,9 @@ end
         def sub_ext(ext, new_ext=nil)
             map { |f| f._rant_sub_ext ext, new_ext }
         end
-        alias ext sub_ext
+        def ext(ext_str)
+            sub_ext(ext_str)
+        end
         # Remove all entries which contain a directory with the
         # given name.
         # If no argument or +nil+ given, remove all directories.

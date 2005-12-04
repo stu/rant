@@ -1,0 +1,632 @@
+
+== Rant::FileList
+
+A +FileList+ object is in essence a list of path names. It behaves
+similar to an array of strings, but provides useful methods to include
+files based on so called "glob" patterns, i.e. strings containing
+wildcards and similar special characters.
+
+The examples in this document show how to use the +FileList+ class as
+library from other ruby applications/libraries.
+
+To use the <tt>Rant::FileList</tt> class, you must <tt>require
+"rant/filelist"</tt> first. This will define the following constants:
+
+Rant::              Module, used as namespace for all Rant code.
+Rant::VERSION::     The Rant version in use, e.g. <tt>"0.5.2"</tt>.
+Rant::FileList::    The filelist class.
+
+It is recommended to not <tt>include Rant</tt> at the toplevel for use
+in libraries or bigger applications. A better technique is to assign
+often used constants to shorter names, e.g.:
+
+    FileList = Rant::FileList
+
+=== Creating a Rant::FileList
+
+There a four ways to obtain a +FileList+ object:
+
+* <b>Rant::FileList.new(*patterns)</b>
+
+  <b>Rant::FileList[*patterns]</b>
+
+  Create a filelist which contains all file names matching one of
+  +patterns+. Each of +patterns+ is a glob pattern as described under
+  <em>Glob pattern syntax</em>.
+
+  Per default, all files/directories starting with a dot are ignored,
+  unless a pattern explicitely matches names starting with a dot.
+
+  Examples:
+
+    require 'rant/filelist'
+
+    # Create an empty filelist
+    fl = Rant::FileList.new
+    fl.entries                      # => []
+
+    # Create a filelist containing all file names ending in ".c" from
+    # the current directory
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+
+    # Create a filelist containing the "README" file from the current
+    # directory (if it exists) and all files ending in ".rdoc" under
+    # the "doc" directory and its subdirectories.
+    fl = Rant::FileList["README", "doc/**/*.rdoc"]
+    fl.entries                      # => ["README", "doc/foo.rdoc", "doc/html/emit.rdoc", "doc/tutorials/html/creating.rdoc"]
+
+    # Create a filelist containing all files starting with a dot and
+    # ending in ".rdoc" under the "doc" directory.
+    fl = Rant::FileList["doc/.*.rdoc"]
+    fl.entries                      # => ["doc/.bar.rdoc"]
+
+  Note::    The order of the file names in the filelist and in the
+            array returned by the +entries+ method is unspecified.
+
+* <b>Rant::FileList.glob(*patterns) { |filelist| ... }</b>
+
+  The same as <tt>Rant::FileList.new(*patterns)</tt> but yields the
+  new filelist to the block if a block is given. Additionally, it
+  won't include the "." (current) and ".." (parent) directory entries.
+
+  If a block is given, returns the return value of the block,
+  otherwise the new filelist.
+
+  Examples:
+
+    require 'rant/filelist'
+
+    Rant::FileList.glob("*.*) do |fl|
+        fl.exclude "*.bak", "*~"
+        fl.entries
+    end                             # => ["README.txt", "setup.rb"]
+
+    fl = Rant::FileList.glob(".*")
+    fl.entries                      # => [".svn", ".README.txt.swp"]
+
+    # compare the last example with the result of using
+    # Rant::FileList.new:
+    fl = Rant::FileList.new(".*")
+    fl.entries                      # => [".", "..", ".svn", ".README.txt.swp"]
+
+* <b>Rant::FileList.glob_all(*patterns) { |filelist| ... }</b>
+
+  The same as <tt>Rant::FileList.glob(*patterns)</tt> but also
+  includes files starting with a dot.
+
+  Examples:
+
+    require 'rant/filelist'
+
+    Rant::FileList.glob_all("*.*) do |fl|
+        fl.exclude "*.bak", "*~"
+        fl.entries
+    end                             # => ["README.txt", "setup.rb", ".README.txt.swp"]
+
+* <b>Rant::FileList(arg)</b>
+
+  Tries to convert +arg+ to an Rant::FileList object.
+  
+  If +arg+ responds to +to_rant_filelist+, the result of
+  <tt>arg.to_rant_filelist</tt> is returned.
+  
+  If +arg+ responds to +to_ary+, a new filelist object containing the
+  entries of <tt>arg.to_ary</tt> is returned.
+  
+  If +arg+ is a string, it is interpreted as a glob pattern.
+
+  Examples:
+
+    require 'rant/filelist'
+
+    fl = Rant::FileList.new
+    Rant::FileList(fl)          # => fl
+
+    # convert array to filelist
+    a = ["foo", "bar"]
+    fl = Rant::FileList(a)      # => new Rant::FileList
+    fl.entries                  # => ["foo", "bar"]
+
+    fl = Rant::FileList("*.c")
+    fl.entries                  # => ["main.c", "util.c"]
+
+    # obj doesn't respond to one of to_rant_filelist, to_ary, to_str
+    obj = Object.new
+    fl = Rant::FileList(obj)    # => raises TypeError
+
+=== Rant::FileList instance methods
+
+The <tt>Rant::FileList</tt> class includes the +Enumerable+ module.
+Thus you can call all methods provided by the +Enumerable+ module on
++FileList+ instances. You can read the +ri+ documentation for those
+methods:
+
+    % ri Enumerable
+
+Note that the method +map+ (alias +collect+) has slightly different
+semantics as documented by +Enumerable+. Read below for documentation.
+
+Most <tt>Rant::FileList</tt> instance methods are _lazy_. This means
+that the actual work (e.g. glob pattern expansion) isn't done unless
+the filelists entries are being read.
+
+Following is a list of <tt>Rant::FileList</tt> instance methods. All
+lazy methods are marked with <em>-lazy-</em>. All methods that force
+evaluation of previously specified lazy operations, are marked with
+<em>-eager-</em>. Note that not all methods marked with
+<em>-eager-</em> are guaranteed to hold this predicate in future
+versions. The <em>-eager-</em> marker is just intended as additional
+information. To force execution of all previously lazy operations,
+call the +resolve+ method.
+
+    rb_names = Rant::FileList["**/*.rb"].map { |fn| File.basename(fn) }
+
+    # force expansion of the glob pattern "**/*.rb" and execution of
+    # the map operation
+    rb_names.resolve
+
+Note that you need to call +resolve+ only if the actual point in time
+of execution is important, e.g. this could be if a map operation has
+side effects like printing to standard output.
+
+* <b>include(*patterns)</b>  <em>-lazy-</em>
+
+  <b>glob(*patterns)</b>
+
+  Include the file names specified by the glob patterns +patterns+.
+  For exact glob pattern syntax read the section <em>Glob pattern
+  syntax</em> below.
+
+  Returns +self+.
+
+  Examples:
+
+    require 'rant/filelist'
+    fl = Rant::FileList.new
+    fl.include "**/*.{c,h}", "main.cpp"
+    fl.entries                      # => ["lib/util.c", "include/util.h", "config.h", "main.cpp"]
+
+  Note::    No specific order of entries included with this method is
+            guaranteed.
+
+* <b>exclude(*patterns)</b>  <em>-lazy-</em>
+
+  Remove all entries matching one of +patterns+. Each of +patterns+ is
+  either a regular expression or a glob pattern as described under the
+  section <em>Glob pattern syntax</em>, *except* that *currently* the
+  characters <tt>{</tt> and <tt>}</tt> (curly braces) are not treated
+  special.
+
+  A call to +exclude+ does not effect entries added later to the
+  filelist.
+
+  Returns +self+.
+
+  Examples:
+
+    require 'rant/filelist'
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "main.c~"]
+    fl.exclude("*~")
+    fl.entries                      # => ["main.c"]
+    fl.include("*.h")
+    fl.entries                      # => ["main.c", "main.h", "main.h~"]
+    fl.exclude(/~$/)
+    fl.entries                      # => ["main.c", "main.h"]
+
+* <b>shun(*names)</b>  <em>-lazy-</em>
+
+  Remove all entries whose base name or one of its parent directory
+  names is in +names+.
+
+  A call to +shun+ does not effect entries added later to the
+  filelist.
+
+  Returns +self+.
+
+  Examples:
+
+    require 'rant/filelist'
+    fl = Rant::FileList["**/*"]
+    fl.entries                      # => ["CVS", "README", "README.CVS", "sub/CVS", "sub/README", "sub/CVS/foo", "sub/foo/bar"]
+    fl.shun("CVS")
+    fl.entries                      # => ["README", "README.CVS", "sub/README", "sub/foo/bar"]
+
+* <b>ignore(*patterns)</b>  <em>-lazy-</em>
+
+  This filelist will never contain an entry matching one of
+  +patterns+. Each element of +patterns+ is either a regular
+  expression or a string. If the pattern is a string it matches all
+  entries which have the string as base name or parent directory name.
+
+  This method applies to all previously added entries and to all
+  entries that will be added in the future.
+
+  Returns +self+.
+
+  Examples:
+
+    fl = Rant::FileList["**/*"]
+    fl.entries                      # => ["CVS", "README", "README.CVS", "sub/CVS", "sub/README", "sub/CVS/foo", "sub/foo/bar"]
+
+    fl.ignore("CVS")
+    fl.entries                      # => ["README", "README.CVS", "sub/README", "sub/foo/bar"]
+
+    fl.concat("dir/CVS", "dir")
+    # note that fl doesn't contain "dir/CVS"
+    fl.entries                      # => ["README", "README.CVS", "sub/README", "sub/foo/bar", "dir"]
+
+* <b>no_dir</b>  <em>-lazy-</em>
+
+  Remove all existing directories.
+
+  A call to +no_dir+ does not effect entries added later to the
+  filelist.
+
+  Returns +self+.
+
+  Examples:
+
+    require 'rant/filelist'
+    # create a filelist including all files in the current directory
+    # and its subdirectories (recursive).
+    fl = Rant::FileList["**/*"]
+    fl.entries                    => ["README", "lib", "bin", "bin/rant", "lib/rant.rb"]
+    fl.no_dir
+    # now fl doesn't contain directory entries
+    fl.entries                    => ["README", "bin/rant", "lib/rant.rb"]
+
+* <b>no_dir(dir)</b>  <em>-lazy-</em>
+
+  Remove all entries with a parent directory with the name +dir+ and
+  all directories with a base name of +dir+.
+
+  A call to this method does not effect entries added later to the
+  filelist.
+
+  Returns +self+.
+
+  Examples:
+
+    fl = Rant::FileList["**/*"]
+    fl.entries                      # => ["README", "coverage", "coverage/index.html", "bin/coverage", "test/coverage", "test/coverage/index.html", "test/test_foo.rb"]
+    fl.no_dir("coverage")
+    # assumin "bin/coverage" is not a directory
+    fl.entries                      # => ["README", "bin/coverage", "test/test_foo.rb"]
+
+* <b>select { |fn| ... }</b>  <em>-lazy-</em>
+
+  <b>find_all { |fn| ... }</b>
+
+  Returns a copy of this filelist which contains only the elements for
+  which the given block returns true. The calling filelist object
+  isn't modified.
+
+  Examples:
+
+    # create a list of all files in the current directory and its
+    # subdirectories
+    all_files = Rant::FileList["**/*"].no_dir
+
+    # create a list which contains the file names of all empty files
+    empty_files = all_files.select { |fn| File.size(fn) == 0 }
+
+    puts "The following files are empty:"
+    # print the file names, one per line
+    puts empty_files
+
+* <b>map { |fn| ... }</b>  <em>-lazy-</em>
+
+  <b>collect { |fn| ... }</b>
+
+  Each entry of this filelist is passed in turn to the given block.
+  The method returns a copy of this filelist with all entries replaced
+  by the return value of block execution.
+
+  The calling filelist object is not modified.
+
+  Examples:
+
+    names = Rant::FileList["**/*"]
+
+    # create a filelist containing only absolute pathes
+    abs_pathes = names.map { |fn| File.expand_path(fn) }
+
+* <b>ext(ext_str)</b>  <em>-lazy-</em>
+
+  Returns a new filelist containing the same entries as this list, but
+  all entries have the extension +ext_str+.
+
+  The calling filelist object is not modified.
+
+  Examples:
+
+    c_files = Rant::FileList["*.c"]
+    c_files.entries                 # => ["a.c", "b.c"]
+    obj_files = c_files.ext("o")
+    obj_files.entries               # => ["a.o", "b.o"]
+
+    files = Rant::FileList(["a.c", "b", "c.en.doc", "d.txt"])
+    txt_files = file.ext("txt")
+    txt_files.entries               # => ["a.txt", "b.txt", "c.en.txt", "d.txt"]
+
+* <b>uniq!</b>  <em>-lazy-</em>
+
+  Removes duplicate entries.
+
+  Returns +self+.
+
+  Examples:
+
+    files = Rant::FileList(["a", "b", "a", "a"])
+    files.uniq!
+    files.entries                   # => ["a", "b"]
+
+* <b>sort!</b>  <em>-lazy-</em>
+
+  Sort the entries in this list in alphabetical order.
+
+  Returns +self+.
+
+  Examples:
+
+    fl = Rant::FileList(["b", "a", "c"])
+    fl.sort!
+    fl.entries                      # => ["a", "b", "c"]
+
+* <b>map! { |fn| ... }</b>  <em>-lazy-</em>
+
+  Pass each entry to the given block and replace it by the return
+  value of the block.
+
+  Returns +self+.
+
+  Examples:
+
+    # get a list of directories containing C source files
+    src_dirs =
+        Rant::FileList.glob "**/*.{c,h}" do |fl|
+            fl.map! { |fn| File.dirname(fn) }
+            fl.uniq!
+        end
+
+* <b>reject! { |fn| ... }</b>  <em>-lazy-</em>
+
+  Pass each entry to the given block and remove those entries for
+  which the block returns a true value.
+
+  Returns +self+.
+
+  Examples:
+
+    non_empty_files = Rant::FileList["**/*"].reject! { |fn|
+        stat = File.stat(fn)
+        !stat.file? or stat.zero?
+    }
+
+* <b>resolve</b>  <em>-eager-</em>
+
+  Execute all lazy operations.
+
+  Returns +self+.
+
+* <b>to_s</b>  <em>-eager-</em>
+
+  Joins all entries with a single space as separator. Spaces in
+  entries are escaped for the shell used on the current platform.
+
+  Examples:
+
+    txt_files = Rant::FileList["*.txt"]
+    txt_files.entries                # => ["User Manual.txt", "README.txt"]
+    txt_files.to_s
+        # on windows: '"User Manual.txt" README.txt'
+        # unix/linux: 'User\ Manual.txt README.txt'
+
+    # start the vim editor to edit all text files
+    system "vim #{txt_files}"
+    
+  Note::    Might escape more special shell characters in the future.
+
+* <b>entries</b>  <em>-eager-</em>
+
+  <b>to_a</b>
+  
+  <b>to_ary</b>
+
+  Convert this filelist to an array.
+
+  Examples:
+
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+
+  Especially the definition of the +to_ary+ method has much impact on
+  how a filelist object is treated by Ruby libraries. Per convention,
+  an object that responds to +to_ary+ can be passed to most methods
+  that expect an actual array. So, in most cases you can use a
+  filelist object where an array is expected.
+
+  Examples:
+
+    a = ["foo", "bar"]
+    a.concat Rant::FileList["*.c"]
+    a                               # => ["foo", "bar", "main.c", "util.c"]
+
+    # remove all object files
+    require 'fileutils'
+    FileUtils.rm_f Rant::FileList["**/*.o"]
+
+    # flattening an array (a somewhat artifical example ;)
+    a = ["foo"]
+    a << Rant::FileList["*.c"].ext("o")
+    a.flatten                       # => ["foo", "main.o", "util.o"]
+
+* <b>+(other)</b>  <em>-lazy-</em>
+
+  Returns a new filelist containing the entries of +self+ and +other+.
+  +other+ has to respond to +to_rant_filelist+ or to +to_ary+,
+  otherwise a +TypeError+ is risen.
+
+  Examples:
+
+    c_files = Rant::FileList["*.c"]
+    h_files = Rant::FileList["*.h"]
+    src_files = c_files + h_files
+
+    c_files.entries                 # => ["main.c", "util.c"]
+    h_files.entries                 # => ["main.h", "util.h"]
+    src_files.entries               # => ["main.c", "util.c", "main.h", "util.h"]
+
+* <b>size</b>  <em>-eager-</em>
+
+  Returns the number of entries in this filelist.
+
+  Examples:
+
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+    fl.size                         # => 2
+
+* <b>empty?</b>  <em>-eager-</em>
+
+  Returns true if this filelist doesn't contain any entry.
+
+  Examples:
+
+    fl = Rant::FileList([])
+    fl.empty?                       # => true
+
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+    fl.empty?                       # => false
+
+* <b>join(sep = ' ')</b>  <em>-eager-</em>
+
+  Join the entries together to form a single string. Entries are
+  seperated with the given separator string +sep+ or a single space if
+  +sep+ is not given.
+
+  Examples:
+
+    fl = Rant::FileList(["a", "b"])
+    fl.join                         # => "a b"
+    fl.join("\n")                   # => "a\nb"
+
+* <b>pop</b>  <em>-eager-</em>
+
+  Removes the last element and returns it, or +nil+ if this filelist
+  is empty.
+
+  Examples:
+
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+    fl.pop                          # => "util.c"
+    fl.entries                      # => ["main.c"]
+
+* <b>push(entry)</b>  <em>-eager-</em>
+
+  Append +entry+ to this filelist.
+
+  Returns +self+.
+
+  Examples:
+
+    fl = Rant::FileList["*.c"]
+    fl.push("foo")
+    fl.entries                      # => ["main.c", "util.c", "foo"]
+
+* <b>shift</b>  <em>-eager-</em>
+
+  Removes the first entry and returns it. Returns +nil+ if the
+  filelist is empty.
+
+  Examples:
+
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+    fl.shift                        # => "main.c"
+    fl.entries                      # => ["util.c"]
+
+* <b>unshift(entry)</b>  <em>-eager-</em>
+
+  Insert +entry+ at the first position.
+
+  Examples:
+
+    fl = Rant::FileList["*.c"]
+    fl.entries                      # => ["main.c", "util.c"]
+    fl.unshift("foo")
+    fl.entries                      # => ["foo", "main.c", "util.c"]
+
+* <b>keep(entry)</b>
+
+  Add +entry+ to this filelist. +entry+ will stay in this list, even
+  if it matches a pattern given to +exclude+ or +ignore+. The position
+  of +entry+ in this list is unspecified.
+
+  Examples:
+
+    fl = Rant::FileList.new
+    fl.include "README.txt", "README.txt~"
+    fl.keep "NEWS.txt"
+    fl.keep "NEWS.txt~"
+    fl.exclude "*~"
+    fl.uniq!
+    # Note that "README.txt~" was excluded, but "NEWS.txt~" not.
+    fl.entries                      # => ["README.txt", "NEWS.txt", "NEWS.txt~"]
+
+* <b>to_rant_filelist</b>
+
+  Returns +self+.
+
+=== Glob pattern syntax
+
+The syntax used for filelist glob patterns is the same as for the
+<tt>Dir.glob</tt> Ruby core method.
+
+Basically, a glob pattern is a string where a few characters are
+treated special. Unless otherwise mentioned, a pattern is matched
+against the file/directory entries in the current directory. The
+following is a list of characters that get special treatment:
+
+(Parts of this documentation are taken from the output of <tt>% ri
+Dir.glob</tt>, Ruby 1.8.4).
+
+<tt>*</tt>::    Match any file/directory. Can be restricted, e.g.
+                "*.txt" matches all files/directories ending in
+                ".txt". The pattern "\*a\*" matches any entry
+                containing the character "a". The pattern "bar*"
+                matches any entry starting with "bar". The pattern
+                "lib/*.rb" matches any entry under the "lib" directory
+                that ends in ".rb".
+
+<tt>**</tt>::   Matches directories recursively. E.g. the pattern
+                "**/*.rb" matches all entries in the current directory
+                and all its subdirectories (recursively) that end in
+                ".rb".
+
+<tt>?</tt>::    Matches any one character.
+
+<tt>[set]</tt>:: Matches any one character in +set+. E.g. the pattern
+                 "ca[rt]s" matches the entries "cars" and "cats".
+
+<tt>{p,q}</tt>:: Matches either literal +p+ or literal +q+.
+                 Matching literals may be more than one character in
+                 length. More than two literals may be specified.
+
+<tt>\\</tt>::   Escapes the following special character. E.g. while
+                pattern "a*b" would match any entry starting with "a"
+                and ending with "b", the pattern "a\*b" literally
+                matches the entry "a*b".
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
