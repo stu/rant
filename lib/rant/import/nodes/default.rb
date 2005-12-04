@@ -222,8 +222,12 @@ module Rant
 		    end
 		end
 	    }
-	    @pre.flatten!
-	    @pre.compact!
+            if @pre.kind_of? Rant::FileList
+                @pre.resolve
+            else
+                @pre.flatten!
+                @pre.compact!
+            end
 	    @pre_resolved = true
 	end
     end	# class Task

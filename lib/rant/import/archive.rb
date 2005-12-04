@@ -163,7 +163,7 @@ module Rant::Generators::Archive
                 fl = Rant::RacFileList.filelist(@rac, fl)
 	    end
             # remove leading `./' relicts
-            @res_files = fl.lazy_map! { |fn| fn.sub(/^\.\/(?=.)/,'') }
+            @res_files = fl.map! { |fn| fn.sub(/^\.\/(?=.)/,'') }
             if defined?(@dist_path) && @dist_path
                 # Remove entries from the dist_path directory, which
                 # would create some sort of weird recursion.
@@ -172,7 +172,7 @@ module Rant::Generators::Archive
                 # but since I tapped into this trap frequently now...
                 @res_files.exclude(/^#{Regexp.escape @dist_path}/)
             end
-            @res_files.lazy_uniq!.lazy_sort!
+            @res_files.uniq!.sort!
 	end
 
 	# Creates an (eventually) temporary manifest file and yields

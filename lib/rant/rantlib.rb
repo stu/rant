@@ -8,8 +8,8 @@
 # the GNU LGPL, Lesser General Public License version 2.1.
 
 require 'getoptlong'
+require 'rant/init'
 require 'rant/rantvar'
-require 'rant/rantenv'
 require 'rant/rantsys'
 require 'rant/node'
 require 'rant/import/nodes/default' # could be optimized away
@@ -25,70 +25,16 @@ require 'rant/coregen'
 # this object.
 Rant::MAIN_OBJECT = self
 
-unless Process::Status.method_defined?(:success?) # new in 1.8.2
-    class Process::Status
-        def success?; exitstatus == 0; end
-    end
-end
-unless Regexp.respond_to? :union # new in 1.8.1
-    def Regexp.union(*patterns)
-        # let's hope it comes close to ruby-1.8.1 and upwards...
-        return /(?!)/ if patterns.empty?
-        # i guess the options are lost
-        Regexp.new(patterns.join("|"))
-    end
-end
-if RUBY_VERSION < "1.8.2"
-    class Array
-        undef_method :flatten, :flatten!
-        def flatten
-            cp = self.dup
-            cp.flatten!
-            cp
-        end
-        def flatten!
-            res = []
-            flattened = false
-            self.each { |e|
-                if e.respond_to? :to_ary
-                    res.concat(e.to_ary)
-                    flattened = true
-                else
-                    res << e
-                end
-            }
-            if flattened
-                replace(res)
-                flatten!
-                self
-            end
-        end
-    end
-    if RUBY_VERSION < "1.8.1"
-        module FileUtils
-            undef_method :fu_list
-            def fu_list(arg)
-                arg.respond_to?(:to_ary) ? arg.to_ary : [arg]
-            end
-        end
-    end
-end
-
 class String
-    def sub_ext(ext, new_ext = nil)
-	if new_ext
-	    self.sub(/#{Regexp.escape ext}$/, new_ext)
-	else
-	    self.sub(/(\.[^.]*$)|$/, ".#{ext}")
-	end
-    end
+    alias sub_ext _rant_sub_ext
     def to_rant_target
         self
     end
 end
 
+# This module and its methods don't belong to Rant's public API.
+# For (Rant) internal usage only!
 module Rant::Lib
-
     # Parses one string (elem) as it occurs in the array
     # which is returned by caller.
     # E.g.:
@@ -99,21 +45,101 @@ module Rant::Lib
     # Note: This method splits on the pattern <tt>:(\d+)(:|$)</tt>,
     # assuming anything before is the filename.
     def parse_caller_elem(elem)
-	return { :file => "", :ln => 0 } unless elem
-	if elem =~ /^(.+):(\d+)(?::|$)/
-	    { :file => $1, :ln => $2.to_i }
-	else
-	    # should never occur
-	    $stderr.puts "parse_caller_elem: #{elem.inspect}"
-	    { :file => elem, :ln => 0 }
-	end
-	
-	#parts = elem.split(":")
-	#{ :file => parts[0], :ln => parts[1].to_i }
+        return { :file => "", :ln => 0 } unless elem
+        if elem =~ /^(.+):(\d+)(?::|$)/
+            { :file => $1, :ln => $2.to_i }
+        else
+            # should never occur
+            $stderr.puts "parse_caller_elem: #{elem.inspect}"
+            { :file => elem, :ln => 0 }
+        end
+        
+        #parts = elem.split(":")
+        #{ :file => parts[0], :ln => parts[1].to_i }
     end
     module_function :parse_caller_elem
+end # module Lib
 
-end
+module Rant::Console
+    RANT_PREFIX		= "rant: "
+    ERROR_PREFIX	= "[ERROR] "
+    WARN_PREFIX		= "[WARNING] "
+    def msg_prefix
+	if defined? @msg_prefix and @msg_prefix
+	    @msg_prefix
+	else
+	    RANT_PREFIX
+	end
+    end
+    def msg(*text)
+        pre = msg_prefix
+        $stderr.puts "#{pre}#{text.join("\n" + ' ' * pre.length)}"
+    end
+    def vmsg(importance, *text)
+        msg(*text) if verbose >= importance
+    end
+    def err_msg(*text)
+        pre = msg_prefix + ERROR_PREFIX
+        $stderr.puts "#{pre}#{text.join("\n" + ' ' * pre.length)}"
+    end
+    def warn_msg(*text)
+        pre = msg_prefix + WARN_PREFIX
+        $stderr.puts "#{pre}#{text.join("\n" + ' ' * pre.length)}"
+    end
+    def ask_yes_no text
+        $stderr.print msg_prefix + text + " [y|n] "
+        case $stdin.readline
+        when /y|yes/i: true
+        when /n|no/i: false
+        else
+            $stderr.puts(' ' * msg_prefix.length +
+                "Please answer with `yes' or `no'")
+            ask_yes_no text
+        end
+    end
+    def prompt text
+        $stderr.print msg_prefix + text
+        input = $stdin.readline
+	input ? input.chomp : input
+    end
+    def option_listing opts
+	rs = ""
+	opts.each { |lopt, *opt_a|
+	    if opt_a.size == 2
+		# no short option
+		mode, desc = opt_a
+	    else
+		sopt, mode, desc = opt_a
+	    end
+	    next unless desc	# "private" option
+	    optstr = ""
+	    arg = nil
+	    if mode != GetoptLong::NO_ARGUMENT
+		if desc =~ /(\b[A-Z_]{2,}\b)/
+		    arg = $1
+		end
+	    end
+	    if lopt
+		optstr << lopt
+		if arg
+		    optstr << " " << arg
+		end
+		optstr = optstr.ljust(30)
+	    end
+	    if sopt
+		optstr << "   " unless optstr.empty?
+		optstr << sopt
+		if arg
+		    optstr << " " << arg
+		end
+	    end
+	    rs << "  #{optstr}\n"
+	    rs << "      #{desc.split("\n").join("\n      ")}\n"
+	}
+	rs
+    end
+    extend self
+end # module Rant::Console
 
 # The methods in this module are the public interface to Rant that can
 # be used in Rantfiles.

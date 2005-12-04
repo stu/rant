@@ -1,5 +1,5 @@
 
-require 'rant/rantenv'
+require 'rant/init'
 
 module Rant
     # An object extending this module acts as an

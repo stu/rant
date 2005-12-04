@@ -92,9 +92,9 @@ class TestFileList < Test::Unit::TestCase
 	    assert(l.include?("2.tt"))
 	end
     end
-    def test_initialize_with_yield
+    def test_glob_with_yield
 	touch_temp %w(a.t b.t a.tt b.tt) do
-	    list = fl { |l|
+	    list = Rant::FileList.glob { |l|
 		l.include "*.t", "*.tt"
 		l.exclude "a*"
 	    }
@@ -169,7 +169,7 @@ class TestFileList < Test::Unit::TestCase
                 %w(a.t1 a.t2 b.t2).each { |fn|
                     assert(l3.include(fn), "#{fn} missing")
                 }
-                l3.lazy_uniq!
+                l3.uniq!
                 assert_equal(3, l3.size)
             end
         end
@@ -181,7 +181,7 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(2, l1.size)
 	    assert_equal(3, l2.size)
 	    assert(l2.include?("x"))
-            assert_equal("x", l2.last)
+            assert_equal("x", l2.to_a.last)
 	end
     end
     def test_2add_array
@@ -252,11 +252,16 @@ class TestFileList < Test::Unit::TestCase
 	    assert(!l.include?("fl.t/a~"))
 	    assert(!l.include?("fl.t/CVS"))
 	end
-	l[0] = "CVS"
+
+        # change in Rant 0.5.1
+	# l[0] = "CVS"
+        l.unshift "CVS"
+        
 	assert(!l.include?("CVS"))
     ensure
 	FileUtils.rm_rf "fl.t"
     end
+=begin Makes no sense since Rant 0.5.1
     def test_return_from_array_method
 	touch_temp "a.t" do
 	    l = fl("a.t", "a.t")
@@ -265,13 +270,14 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(1, ul.size)
 	end
     end
+=end
     def test_return_self_from_array_method
 	touch_temp "a.t", "b.t" do
 	    l = fl("*.t")
 	    sl = l.sort!
 	    assert_same(l, sl)
-	    assert_equal("a.t", l.first)
-	    assert_equal("b.t", l[1])
+	    assert_equal("a.t", l.to_a.first)
+	    assert_equal("b.t", l.to_a[1])
 	end
     end
     def test_sys_with_cd
@@ -332,7 +338,11 @@ class TestFileList < Test::Unit::TestCase
 	cx = Rant::RantApp.new.cx
 	touch_temp %w(a.t .a.t b.t .b.t) do
 	    l1 = cx.sys["*.t"]
-	    l1.glob_flags |= File::FNM_DOTMATCH
+
+            # change in Rant 0.5.1
+	    #l1.glob_flags |= File::FNM_DOTMATCH
+            l1.match_dotfiles
+
 	    l2 = cx.sys["*.t"]
 	    assert_equal(4, l1.size)
 	    assert_equal(2, l2.size)

@@ -4,6 +4,8 @@
 import "md5"
 import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper sys/more)
 
+ENV["RANT_DEV_LIB_DIR"] = sys.expand_path("lib")
+
 task :default => :test
 
 dist_files = sys["{bin,lib,test,doc,misc}/**/*"]
@@ -135,9 +137,23 @@ gen RubyTest, :tc do |t|
 end
 
 desc "Run all tests."
-gen RubyTest, :tall do |g|
-    g.libs << "test"
-    g.test_files = sys["test/**/test_*.rb"]
+task :tall do
+    puts "Running build tool tests..."
+    make "trantfile"
+    puts "Build tool tests successful."
+    puts "Running library tests..."
+    make "tlib"
+    puts "All tests (build tool and library) successful."
+end
+
+gen RubyTest, :trantfile do |t|
+    t.libs << "test"
+    t.test_files = sys["test/**/test_*.rb"].exclude("test/lib/*")
+end
+
+gen RubyTest, :tlib do |t|
+    t.libs << "test"
+    t.test_files = sys["test/lib/**/test_*.rb"]
 end
 
 task :t180 do |t|
@@ -238,7 +254,7 @@ task "rb-stats" do
     puts "  #{lines} total lines"
     puts "  #{code_lines} LOC"
 
-    files.exclude(%r{^lib/rant/archive})
+    files.exclude("lib/rant/archive*")
 
     lines = 0
     code_lines = 0

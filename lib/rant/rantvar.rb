@@ -1,5 +1,5 @@
 
-# rantvar.rb - Constants required by all Rant code.
+# rantvar.rb - Support for the +var+ method in Rantfiles.
 #
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 #
@@ -17,7 +17,6 @@
 # README[link:files/README.html].
 
 module Rant
-    VERSION = '0.5.1'
 
     # Those are the filenames for rantfiles.
     # Case matters!

@@ -4,7 +4,7 @@
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
 require 'fileutils'
-require 'rant/rantenv'
+require 'rant/import/filelist/core'
 
 # Fix FileUtils::Verbose visibility issue
 if RUBY_VERSION == "1.8.3"
@@ -20,367 +20,16 @@ if RUBY_VERSION == "1.8.3"
     end
 end
 
-module Rant
-
-    class FileList
-	include Enumerable
-
-	ESC_SEPARATOR = Regexp.escape(File::SEPARATOR)
-	ESC_ALT_SEPARATOR = File::ALT_SEPARATOR ?
-	    Regexp.escape(File::ALT_SEPARATOR) : nil
-
-	# Flags for the File::fnmatch method.
-	# Initialized to 0.
-	attr_accessor :glob_flags
-	
-	attr_accessor :ignore_rx
-        protected :ignore_rx=
-
-	class << self
-	    def [](*patterns)
-		new(*patterns)
-	    end
-	end
-
-	def initialize(*patterns)
-	    @glob_flags = 0
-	    @files = []
-	    @actions = patterns.map { |pat| [:apply_include, pat] }
-	    @ignore_rx = nil
-	    @pending = true
-            @keep = {}
-	    yield self if block_given?
-	end
-
-	def dup
-	    c = super
-	    c.files = @files.dup
-	    c.actions = @actions.dup
-	    c.ignore_rx = @ignore_rx.dup if @ignore_rx
-            c.instance_variable_set(:@keep, @keep.dup)
-	    c
-	end
-
-	protected
-	attr_accessor :actions, :files
-	attr_accessor :pending
-
-	public
-	### Methods having an equivalent in the Array class. #########
-
-	def each(&block)
-	    resolve if @pending
-	    @files.each(&block)
-	end
-
-	def to_ary
-            #puts caller
-	    resolve if @pending
-	    @files
-	end
-
-	def to_a
-	    to_ary
-	end
-
-	def +(other)
-            if FileList === other
-		c = other.dup
-		c.actions.concat(@actions)
-		c.files.concat(@files)
-		c.pending = !c.actions.empty?
-		c
-            elsif other.respond_to? :to_ary
-		c = dup
-                c.actions <<
-                    [:apply_ary_method_1, :concat, other.to_ary.dup]
-                c.pending = true
-		c
-            else
-		raise "argument has to be an Array or FileList"
-            end
-	end
-
-        # Use this method to append +file+ to this list. +file+ will
-        # stay in this list even if it matches an exclude or ignore
-        # pattern.
-        #
-        # Returns self.
-        def <<(file)
-            @actions << [:apply_ary_method_1, :push, file]
-            @keep[file] = true
-            @pending = true
-            self
+if RUBY_VERSION < "1.8.1"
+    module FileUtils
+        undef_method :fu_list
+        def fu_list(arg)
+            arg.respond_to?(:to_ary) ? arg.to_ary : [arg]
         end
-
-	def concat(ary)
-	    resolve if @pending
-	    ix = ignore_rx
-	    @files.concat(ary.to_ary.reject { |f| f =~ ix })
-	    self
-	end
-
-	def size
-	    resolve if @pending
-	    @files.size
-	end
-
-        alias _object_respond_to? respond_to?
-        private :_object_respond_to?
-        def respond_to?(msg)
-            _object_respond_to?(msg) or @files.respond_to?(msg)
-        end
-
-	def method_missing(sym, *args, &block)
-	    if @files.respond_to? sym
-		resolve if @pending
-		fh = @files.hash
-		rv = @files.send(sym, *args, &block)
-		@pending = true unless @files.hash == fh
-		rv.equal?(@files) ? self : rv
-	    else
-		super
-	    end
-	end
-	##############################################################
-
-if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 1.9 like __send__
-        @@__send_private__ = Object.method_defined?(:fcall) ? :fcall : :funcall
-	def resolve
-	    @pending = false
-	    @actions.each{ |action| self.__send__(@@__send_private__, *action) }.clear
-	    ix = ignore_rx
-	    if ix
-		@files.reject! { |f| f =~ ix && !@keep[f] }
-	    end
-	end
-elsif RUBY_VERSION < "1.8.2"
-	def resolve
-	    @pending = false
-	    @actions.each{ |action| self.__send__(*action) }.clear
-	    ix = ignore_rx
-            @files.reject! { |f|
-                unless @keep[f]
-                    next(true) if ix && f =~ ix
-                    if @glob_flags & File::FNM_DOTMATCH != File::FNM_DOTMATCH
-                        if ESC_ALT_SEPARATOR
-                            f =~ /(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)\..*
-                                ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x
-                        else
-                            f =~ /(^|#{ESC_SEPARATOR}+)\..*
-                                (#{ESC_SEPARATOR}+|$)/x
-                        end
-                    end
-                end
-            }
-	end
-else
-	def resolve
-	    @pending = false
-	    @actions.each{ |action| self.__send__(*action) }.clear
-	    ix = ignore_rx
-	    if ix
-		@files.reject! { |f| f =~ ix && !@keep[f] }
-	    end
-	end
+    end
 end
 
-	def include(*patterns)
-	    patterns.flatten.each { |pat|
-		@actions << [:apply_include, pat]
-	    }
-	    @pending = true
-	    self
-	end
-	alias glob include
-
-	def apply_include(pattern)
-	    @files.concat Dir.glob(pattern, @glob_flags)
-	end
-	private :apply_include
-
-	def exclude(*patterns)
-	    patterns.each { |pat|
-		if Regexp === pat
-		    @actions << [:apply_exclude_rx, pat]
-		else
-		    @actions << [:apply_exclude, pat]
-		end
-	    }
-	    @pending = true
-	    self
-	end
-
-	def ignore(*patterns)
-	    patterns.each { |pat|
-		add_ignore_rx(Regexp === pat ? pat : mk_all_rx(pat))
-	    }
-	    @pending = true
-	    self
-	end
-
-	def add_ignore_rx(rx)
-	    @ignore_rx =
-	    if @ignore_rx
-		Regexp.union(@ignore_rx, rx)
-	    else
-		rx
-	    end
-	end
-	private :add_ignore_rx
-
-	def apply_exclude(pattern)
-	    @files.reject! { |elem|
-		File.fnmatch?(pattern, elem, @glob_flags) && !@keep[elem]
-	    }
-	end
-	private :apply_exclude
-
-	def apply_exclude_rx(rx)
-	    @files.reject! { |elem|
-		elem =~ rx && !@keep[elem]
-	    }
-	end
-	private :apply_exclude_rx
-
-	def exclude_all(*files)
-	    files.each { |file|
-		@actions << [:apply_exclude_rx, mk_all_rx(file)]
-	    }
-	    @pending = true
-	    self
-	end
-	alias shun exclude_all
-
-	if File::ALT_SEPARATOR
-	    # TODO: check for FS case sensitivity?
-	    def mk_all_rx(file)
-		/(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)#{Regexp.escape(file)}
-		    ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x
-	    end
-	else
-	    def mk_all_rx(file)
-		/(^|#{ESC_SEPARATOR}+)#{Regexp.escape(file)}
-		    (#{ESC_SEPARATOR}+|$)/x
-	    end
-	end
-	private :mk_all_rx
-
-	def select(&block)
-	    d = dup
-            d.actions << [:apply_select, block]
-            d.pending = true
-	    d
-	end
-        alias find_all select
-
-	def apply_select blk
-	    @files = @files.select(&blk)
-	end
-	private :apply_select
-
-        def map(&block)
-            d = dup
-            d.actions << [:apply_ary_method, :map!, block]
-            d.pending = true
-            d
-        end
-        alias collect map
-
-        def sub_ext(ext, new_ext=nil)
-            map { |f| f.sub_ext ext, new_ext }
-        end
-
-	# Remove all entries which contain a directory with the
-	# given name.
-	# If no argument or +nil+ given, remove all directories.
-	#
-	# Example:
-	#	file_list.no_dir "CVS"
-	# would remove the following entries from file_list:
-	#	CVS/
-	#       src/CVS/lib.c
-	#       CVS/foo/bar/
-	def no_dir(name = nil)
-	    @actions << [:apply_no_dir, name]
-	    @pending = true
-	    self
-	end
-
-	def apply_no_dir(name)
-	    entry = nil
-	    unless name
-		@files.reject! { |entry|
-		    test(?d, entry) && !@keep[entry]
-		}
-		return
-	    end
-	    elems = nil
-	    @files.reject! { |entry|
-                next if @keep[entry]
-		elems = Sys.split_all(entry)
-		i = elems.index(name)
-		if i
-		    path = File.join(*elems[0..i])
-		    test(?d, path)
-		else
-		    false
-		end
-	    }
-	end
-	private :apply_no_dir
-
-	# Get a string with all entries. This is very usefull
-	# if you invoke a shell:
-	#	files # => ["foo/bar", "with space"]
-	#	sh "rdoc #{files.arglist}"
-	# will result on windows:
-	#	rdoc foo\bar "with space"
-	# on other systems:
-	#	rdoc foo/bar with\ space
-	def arglist
-            Rant::Sys.sp to_ary
-	end
-        alias to_s arglist
-
-        # Same as #uniq! but evaluation is delayed until the next read
-        # access (e.g. by calling #each). Always returns self.
-        def lazy_uniq!
-            @actions << [:apply_ary_method, :uniq!]
-            @pending = true
-            self
-        end
-
-        # Same as #sort! but evaluation is delayed until the next read
-        # access (e.g. by calling #each). Always returns self.
-        def lazy_sort!
-            @actions << [:apply_ary_method, :sort!]
-            @pending = true
-            self
-        end
-
-        # Same as #map! but evaluation is delayed until the next read
-        # access (e.g. by calling #each). Always returns self.
-        def lazy_map!(&block)
-            @actions << [:apply_ary_method, :map!, block]
-            @pending = true
-            self
-        end
-
-        private
-        def apply_ary_method(meth, block=nil)
-            @files.send meth, &block
-        end
-        def apply_ary_method_1(meth, arg1, block=nil)
-            @files.send meth, arg1, &block
-        end
-=begin
-        def apply_lazy_operation(meth, args, block)
-            @files.send(meth, *args, &block)
-        end
-=end
-    end	# class FileList
-
+module Rant
     class RacFileList < FileList
 
         # Returns files if <tt>FileList === files</tt>, otherwise
@@ -422,17 +71,16 @@ end
 
 	alias filelist_resolve resolve
 	def resolve
-	    Dir.chdir(@basedir) { filelist_resolve }
+	    Sys.cd(@basedir) { filelist_resolve }
 	end
 
-	def each(&block)
+	def each_cd(&block)
 	    old_pwd = Dir.pwd
-	    resolve if @pending
-	    Dir.chdir(@basedir)
-	    filelist_resolve
+	    Sys.cd(@basedir)
+	    filelist_resolve if @pending
 	    @files.each(&block)
 	ensure
-	    Dir.chdir(old_pwd)
+	    Sys.cd(old_pwd)
 	end
 
 	private
@@ -460,7 +108,7 @@ end
 
 	def each_entry(&block)
 	    @lists.each { |list|
-		list.each(&block)
+		list.each_cd(&block)
 	    }
 	end
 
@@ -566,44 +214,19 @@ end
             end
 	end
 
-	# Returns a string that can be used as a valid path argument
-	# on the shell respecting portability issues.
-	def sp(arg)
-            if arg.respond_to? :to_ary
-                arg.to_ary.map{ |e| sp e }.join(' ')
-            else
-                _escaped_path arg
-            end
-	end
-
-        # Escape special shell characters (currently only spaces).
-        # Flattens arrays and returns always a single string.
-        def escape(arg)
-            if arg.respond_to? :to_ary
-                arg.to_ary.map{ |e| escape e }.join(' ')
-            else
-                _escaped arg
+        def cd(dir, &block)
+            fu_output_message "cd #{dir}"
+            orig_pwd = Dir.pwd
+            Dir.chdir dir
+            if block
+                begin
+                    block.arity == 0 ? block.call : block.call(Dir.pwd)
+                ensure
+                    fu_output_message "cd -"
+                    Dir.chdir orig_pwd
+                end
             end
         end
-
-        if Env.on_windows?
-            def _escaped_path(path)
-		_escaped(path.to_s.tr("/", "\\"))
-            end
-            def _escaped(arg)
-		sarg = arg.to_s
-		return sarg unless sarg.include?(" ")
-		sarg << "\\" if sarg[-1].chr == "\\"
-                "\"#{sarg}\""
-            end
-        else
-            def _escaped_path(path)
-                path.to_s.gsub(/(?=\s)/, "\\")
-            end
-            alias _escaped _escaped_path
-        end
-        private :_escaped_path
-        private :_escaped
 
 	# If supported, make a hardlink, otherwise
 	# fall back to copying.
@@ -626,19 +249,11 @@ end
             ln(src, dest, :force => true)
         end
 
-	# Split a path in all elements.
-	def split_all(path)
-	    base, last = File.split(path)
-	    return [last] if base == "." || last == "/"
-	    return [base, last] if base == "/"
-	    split_all(base) + [last]
-	end
-
         def split_path(str)
             str.split(Env.on_windows? ? ";" : ":")
         end
 
-	extend self
+        extend self
 
         if RUBY_VERSION >= "1.8.4"  # needed by 1.9.0, too
             class << self
@@ -664,16 +279,15 @@ end
 
 	def glob(*patterns, &block)
 	    fl = RacFileList.new(@rac, *patterns)
-	    fl.instance_eval(&block) if block
-	    fl
+            fl.ignore(".", "..")
+            if block_given? then yield fl else fl end
 	end
 
         def glob_all(*patterns, &block)
 	    fl = RacFileList.new(@rac, *patterns)
-            fl.ignore(".", "..")
-            fl.glob_flags |= File::FNM_DOTMATCH
-	    fl.instance_eval(&block) if block
-	    fl
+            fl.match_dotfiles
+            fl.ignore(".", "..") # use case: "*.*" as pattern
+            if block_given? then yield fl else fl end
         end
 
 	def [](*patterns)

@@ -9,6 +9,13 @@ Incompatible changes:
   are removed with this release. Use <tt>sys.sp(ary)</tt>
   in Rantfiles instead.
 * The method +rac+ which is deprecated since release 0.4.6 is gone.
+* Filelists no longer respond to all Array methods.
+
+Fixes and minor improvements:
+* A bug in the YAML library of Ruby 1.8.3/1.8.4-preview1 prevented
+  created gems to work with other ruby versions. Since this Rant
+  release gems created with a RubyPackage task and Ruby 1.8.3 will
+  work with all Ruby versions (with gem support, of course).
 
 == Rant 0.5.0
 

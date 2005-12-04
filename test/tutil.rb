@@ -11,6 +11,28 @@ require 'fileutils'
 module Test
     module Unit
 	class TestCase
+            def ext_rb_test(script, opts = {})
+                out = nil
+                Rant::TestUtil.in_local_temp_dir do
+                    script_fn = opts[:fn] || "fl.rb"
+                    dirs = (opts[:dirs] || []).dup
+                    touch = (opts[:touch] || []).dup
+                    touch.each { |fn| dirs << File.dirname(fn) }
+                    dirs.each { |dir|
+                        next if [".", "..", "/"].include?(dir)
+                        Rant::Sys.mkdir_p dir
+                    }
+                    touch.each { |fn| Rant::Sys.touch fn }
+                    Rant::Sys.write_to_file script_fn, script
+                    if opts[:return] == :stdout
+                        out = `#{Rant::Sys.sp Rant::Env::RUBY_EXE} -w -I#{Rant::Sys.sp ENV['RANT_DEV_LIB_DIR']} #{Rant::Sys.sp script_fn}`
+                    else
+                        Rant::Sys.ruby "-w", "-I", ENV["RANT_DEV_LIB_DIR"], script_fn
+                    end
+                    assert_exit(0, opts[:msg])
+                end
+                out
+            end
 	    def assert_rant(*args)
 		res = 0
 		capture = true
@@ -66,9 +88,10 @@ module Test
                 end
                 return out, err
 	    end
-            def assert_exit(status = 0)
-                assert_equal(status, $?.exitstatus,
-                    "exit status expected to be #{status} but is #{$?.exitstatus}")
+            def assert_exit(status = 0, msg = nil)
+                msg ||= "exit status expected to be "
+                    "#{status} but is #{$?.exitstatus}"
+                assert_equal(status, $?.exitstatus, msg)
             end
             def assert_file_content(fn, content, *opts)
                 assert(test(?f, fn), "`#{fn}' doesn't exist")
