@@ -578,9 +578,76 @@ side effects like printing to standard output.
     # Note that "README.txt~" was excluded, but "NEWS.txt~" not.
     fl.entries                      # => ["README.txt", "NEWS.txt", "NEWS.txt~"]
 
+* <b>each { |entry| ... }</b>
+
+  Iterate over the filelist entries.
+
+  Examples:
+
+    # cat.rb - A simple cat program using Ruby glob patterns.
+    require 'rant/filelist'
+    Rant::FileList[*ARGV].no_dir.each { |file| print File.read(file) }
+
+    # example usage: print contents of all Ruby files under lib
+    % cat.rb "lib/**/*.rb"
+
 * <b>to_rant_filelist</b>
 
   Returns +self+.
+
+* <b>dup</b>
+
+  Returns a copy of +self+. Thus after calling this method, there are
+  two equal filelist objects. It is guaranteed that modifications of
+  of one filelist do not affect the other filelist, as long as the
+  entry strings aren't modified.
+
+  Examples:
+
+    a = Rant::FileList["*.c"]
+    a.entries                       # => ["main.c", "util.c"]
+
+    b = a.dup
+    b.entries                       # => ["main.c", "util.c"]
+
+    a.include("*.h")
+    a.entries                       # => ["main.c", "util.c", "main.h", "util.h"]
+    # b not affected
+    b.entries                       # => ["main.c", "util.c"]
+
+    # Note: the original entry strings aren't modified.
+    # a not affected
+    b.map! { |entry| entry.capitalize }
+    b.entries                       # => ["Main.c", "Util.c"]
+    a.entries                       # => ["main.c", "util.c", "main.h", "util.h"]
+
+    c = a.dup
+    # DON'T DO THAT. Look at the previous example on how to accomplish
+    # the same.
+    c.each { |entry| entry.capitalize! }
+    c.entries                       # => ["Main.c", "Util.c", "Main.h", "Util.h"]
+    # Now the state of a is unspecified: The individual entries may be
+    # capitalized of not!
+
+* <b>copy</b>
+
+  Returns a deep copy of +self+. Thus after calling this method, there
+  are two equal filelist objects. It is guaranteed that modification
+  of one filelist (or its entries) has no impact on the other
+  filelist.
+
+  Examples:
+
+    a = Rant::FileList["*.c"]
+    a.entries                       # => ["main.c", "util.c"]
+
+    b = a.copy
+    b.entries                       # => ["main.c", "util.c"]
+
+    b.each { |entry| entry.capitalize! }
+    b.entries                       # => ["Main.c", "Util.c"]
+
+    a.entries                       # => ["main.c", "util.c"]
 
 === Glob pattern syntax
 

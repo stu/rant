@@ -44,23 +44,31 @@ module Rant
             @add_ignore_args = []
 	    update_ignore_rx
 	end
-
+        def dup
+            c = super
+            c.instance_variable_set(
+                :@add_ignore_args, @add_ignore_args.dup)
+            c
+        end
+        def copy
+            c = super
+            c.instance_variable_set(
+                :@add_ignore_args, @add_ignore_args.map { |e| e.dup })
+            c
+        end
         alias filelist_ignore ignore
         def ignore(*patterns)
             @add_ignore_args.concat patterns
             self
         end
-
 	def ignore_rx
 	    update_ignore_rx
 	    @ignore_rx
 	end
-
 	alias filelist_resolve resolve
 	def resolve
 	    Sys.cd(@basedir) { filelist_resolve }
 	end
-
 	def each_cd(&block)
 	    old_pwd = Dir.pwd
 	    Sys.cd(@basedir)
@@ -69,7 +77,6 @@ module Rant
 	ensure
 	    Sys.cd(old_pwd)
 	end
-
 	private
 	def update_ignore_rx
 	    ri = @rac.var[:ignore]
@@ -200,7 +207,8 @@ module Rant
                 sh(args.unshift(Env::RUBY_EXE), &block)
             end
 	end
-
+        # Returns the value of +block+ if a block is given, a true
+        # value otherwise.
         def cd(dir, &block)
             fu_output_message "cd #{dir}"
             orig_pwd = Dir.pwd
@@ -212,6 +220,8 @@ module Rant
                     fu_output_message "cd -"
                     Dir.chdir orig_pwd
                 end
+            else
+                self
             end
         end
 

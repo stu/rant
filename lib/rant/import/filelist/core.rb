@@ -49,9 +49,33 @@ module Rant
             @pending = !@actions.empty?
             @keep = {}
         end
+        def dup
+            c = super
+            c.files = @files.dup
+            c.actions = @actions.dup
+            c.ignore_rx = @ignore_rx.dup if @ignore_rx
+            c.instance_variable_set(:@keep, @keep.dup)
+            c
+        end
+        def copy
+            c = super
+            c.files = @files.map { |entry| entry.dup }
+            c.actions = @actions.dup
+            c.ignore_rx = @ignore_rx.dup if @ignore_rx
+            # alternative approach: copy & freeze "keep" entries on
+            # inclusion in the keep hash
+            keep = {}
+            @keep.each_key { |entry| keep[entry] = true }
+            c.instance_variable_set(:@keep, keep)
+            c
+        end
+        # Currently for Rant internal use only. Might go in future
+        # releases.
         def ignore_dotfiles?
             (@glob_flags & File::FNM_DOTMATCH) != File::FNM_DOTMATCH
         end
+        # Currently for Rant internal use only. Might go in future
+        # releases.
         def ignore_dotfiles=(bool)
             if bool
                 @glob_flags &= ~File::FNM_DOTMATCH
@@ -62,17 +86,12 @@ module Rant
         # Has the same effect as <tt>ignore_dotfiles = false</tt>.
         #
         # Returns self.
+        #
+        # Currently for Rant internal use only. Might go in future
+        # releases.
         def match_dotfiles
             @glob_flags |= File::FNM_DOTMATCH
             self
-        end
-        def dup
-            c = super
-            c.files = @files.dup
-            c.actions = @actions.dup
-            c.ignore_rx = @ignore_rx.dup if @ignore_rx
-            c.instance_variable_set(:@keep, @keep.dup)
-            c
         end
 
         protected
@@ -188,6 +207,7 @@ if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 
             if ix
                 @files.reject! { |f| f =~ ix && !@keep[f] }
             end
+            self
         end
 elsif RUBY_VERSION < "1.8.2"
         def resolve
@@ -208,6 +228,7 @@ elsif RUBY_VERSION < "1.8.2"
                     end
                 end
             }
+            self
         end
 else
         # Force evaluation of all patterns.
@@ -218,6 +239,7 @@ else
             if ix
                 @files.reject! { |f| f =~ ix && !@keep[f] }
             end
+            self
         end
 end
         # Include entries matching one of +patterns+ in this filelist.
