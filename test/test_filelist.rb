@@ -8,7 +8,7 @@ class TestFileList < Test::Unit::TestCase
     include Rant::TestUtil
 
     def fl(*args, &block)
-	Rant::FileList.new(*args, &block)
+	Rant::FileList.glob(*args, &block)
     end
     def touch_temp(*args)
 	files = args.flatten
@@ -337,11 +337,12 @@ class TestFileList < Test::Unit::TestCase
     def test_sys_glob_flags
 	cx = Rant::RantApp.new.cx
 	touch_temp %w(a.t .a.t b.t .b.t) do
-	    l1 = cx.sys["*.t"]
+	    l1 = cx.sys.glob
 
             # change in Rant 0.5.1
 	    #l1.glob_flags |= File::FNM_DOTMATCH
-            l1.match_dotfiles
+            l1.glob_dotfiles
+            l1.include("*.t")
 
 	    l2 = cx.sys["*.t"]
 	    assert_equal(4, l1.size)

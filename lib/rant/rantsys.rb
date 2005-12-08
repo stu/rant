@@ -35,11 +35,11 @@ module Rant
 	attr_reader :subdir
 	attr_reader :basedir
 
-	def initialize(rac, *patterns)
+	def initialize(rac, store = [])
+	    super(store)
 	    @rac = rac
 	    @subdir = @rac.current_subdir
 	    @basedir = Dir.pwd
-	    super(*patterns)
 	    @ignore_hash = nil
             @add_ignore_args = []
 	    update_ignore_rx
@@ -278,13 +278,12 @@ module Rant
             @rant.var[:ignore].concat(patterns)
             nil
         end
+        # corresponds to <code>Rant::FileList(arg)</code>
         def filelist(arg)
             if arg.respond_to?(:to_rant_filelist)
                 arg.to_rant_filelist
             elsif arg.respond_to?(:to_ary)
                 RacFileList.new(@rant).concat(arg.to_ary)
-            elsif arg.respond_to?(:to_str)
-                RacFileList.new(@rant, arg.to_str)
             else
                 raise TypeError,
                     "cannot convert #{arg.class} into Rant::FileList"
@@ -292,20 +291,19 @@ module Rant
         end
         # corresponds to <code>Rant::FileList[*patterns]</code>.
 	def [](*patterns)
-	    RacFileList.new(@rant, *patterns)
+	    RacFileList.new(@rant).hide_dotfiles.include(*patterns)
 	end
         # corresponds to <code>Rant::FileList.glob(*patterns,
         # &block)</code>.
 	def glob(*patterns, &block)
-	    fl = RacFileList.new(@rant, *patterns)
+	    fl = RacFileList.new(@rant).hide_dotfiles.include(*patterns)
             fl.ignore(".", "..")
             if block_given? then yield fl else fl end
 	end
         # corresponds to <code>Rant::FileList.glob_all(*patterns,
         # &block)</code>.
         def glob_all(*patterns, &block)
-	    fl = RacFileList.new(@rant, *patterns)
-            fl.match_dotfiles
+	    fl = RacFileList.new(@rant).include(*patterns)
             fl.ignore(".", "..") # use case: "*.*" as pattern
             if block_given? then yield fl else fl end
         end

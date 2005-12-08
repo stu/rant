@@ -209,31 +209,11 @@ explain it a little bit. It can be used in three ways:
 
         file "program" => sys["*.o"]
 
-   The task "program" depends on all files ending in ".o". Rant uses
-   the Dir::glob method internally to resolve patterns, so you can
-   read the ri docs to get an overview:
-
-        ri Dir::glob
-
-   From now on we'll call <tt>sys[...]</tt> the <em>glob
-   operator</em>.
-
-   You can give more patterns:
-
-        c_files = sys["**/*.h", "**/*.c"]
-
-   gives a list of all files ending in ".h" or ".c" in the current
-   directory and all subdirectories.
-
-   The object returned by the glob operator _behaves_ like an array of
-   strings, so it is possible to pass it to methods expecting an array.
-   If you're getting errors or experience strange behaviour convert
-   the list explicetely to an array:
-
-        # method foo_bar is hardcoded to check for an object of class
-        # Array
-        foo_bar(c_files.to_a)
-
+   The task "program" depends on all files ending in ".o".
+    
+   For extensive documentation read 
+   doc/sys_filelist.rdoc[link:files/doc/sys_filelist_rdoc.html].
+   
 === Generators
 
 The *gen* function takes a generator which usually creates one or more
@@ -469,5 +449,7 @@ Packaging::
     doc/package.rdoc[link:files/doc/package_rdoc.html]
 Ruby project howto::
     doc/rubyproject.rdoc[link:files/doc/rubyproject_rdoc.html]
+Using filelists in Rantfiles::
+   doc/sys_filelist.rdoc[link:files/doc/sys_filelist_rdoc.html]
 Rant Overview::
     README[link:files/README.html]

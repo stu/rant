@@ -9,8 +9,8 @@ module Rant
             arg.to_rant_filelist
         elsif arg.respond_to?(:to_ary)
             FileList.new.concat(arg.to_ary)
-        elsif arg.respond_to?(:to_str)
-            FileList.new(arg.to_str)
+            # or?
+            #FileList.new(arg.to_ary)
         else
             raise TypeError,
                 "cannot convert #{arg.class} into Rant::FileList"
@@ -26,28 +26,25 @@ module Rant
 
         class << self
             def [](*patterns)
-                new(*patterns)
+                new.hide_dotfiles.include(*patterns)
             end
             def glob(*patterns)
-                fl = new(*patterns)
-                fl.ignore(".", "..")
+                fl = new.hide_dotfiles.ignore(".", "..").include(*patterns)
                 if block_given? then yield fl else fl end
             end
             def glob_all(*patterns)
-                fl = new(*patterns)
-                fl.match_dotfiles
-                fl.ignore(".", "..") # use case: "*.*" as pattern
+                fl = new.ignore(".", "..").include(*patterns)
                 if block_given? then yield fl else fl end
             end
         end
 
-        def initialize(*patterns)
-            @glob_flags = 0
-            @files = []
-            @actions = patterns.map { |pat| [:apply_include, pat] }
+        def initialize(store = [])
+            @pending = false
+            @def_glob_dotfiles = true
+            @files = store
             @ignore_rx = nil
-            @pending = !@actions.empty?
             @keep = {}
+            @actions = []
         end
         def dup
             c = super
@@ -64,33 +61,39 @@ module Rant
             c.ignore_rx = @ignore_rx.dup if @ignore_rx
             # alternative approach: copy & freeze "keep" entries on
             # inclusion in the keep hash
-            keep = {}
-            @keep.each_key { |entry| keep[entry] = true }
-            c.instance_variable_set(:@keep, keep)
+            h_keep = {}
+            @keep.each_key { |entry| h_keep[entry] = true }
+            c.instance_variable_set(:@keep, h_keep)
             c
         end
         # Currently for Rant internal use only. Might go in future
         # releases.
-        def ignore_dotfiles?
-            (@glob_flags & File::FNM_DOTMATCH) != File::FNM_DOTMATCH
+        def glob_dotfiles?
+            @def_glob_dotfiles
         end
         # Currently for Rant internal use only. Might go in future
         # releases.
-        def ignore_dotfiles=(bool)
-            if bool
-                @glob_flags &= ~File::FNM_DOTMATCH
-            else
-                @glob_flags |= File::FNM_DOTMATCH
-            end
+        def glob_dotfiles=(flag)
+            @def_glob_dotfiles = flag ? true : false
         end
-        # Has the same effect as <tt>ignore_dotfiles = false</tt>.
+        # Has the same effect as <tt>glob_dotfiles = false</tt>.
         #
         # Returns self.
         #
         # Currently for Rant internal use only. Might go in future
         # releases.
-        def match_dotfiles
-            @glob_flags |= File::FNM_DOTMATCH
+        def hide_dotfiles
+            @def_glob_dotfiles = false
+            self
+        end
+        # Has the same effect as <tt>glob_dotfiles = true</tt>.
+        #
+        # Returns self.
+        #
+        # Currently for Rant internal use only. Might go in future
+        # releases.
+        def glob_dotfiles
+            @def_glob_dotfiles = true
             self
         end
 
@@ -209,27 +212,6 @@ if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 
             end
             self
         end
-elsif RUBY_VERSION < "1.8.2"
-        def resolve
-            @pending = false
-            @actions.each{ |action| self.__send__(*action) }.clear
-            ix = ignore_rx
-            @files.reject! { |f|
-                unless @keep[f]
-                    next(true) if ix && f =~ ix
-                    if @glob_flags & File::FNM_DOTMATCH != File::FNM_DOTMATCH
-                        if ESC_ALT_SEPARATOR
-                            f =~ /(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)\..*
-                                ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x
-                        else
-                            f =~ /(^|#{ESC_SEPARATOR}+)\..*
-                                (#{ESC_SEPARATOR}+|$)/x
-                        end
-                    end
-                end
-            }
-            self
-        end
 else
         # Force evaluation of all patterns.
         def resolve
@@ -243,18 +225,51 @@ else
         end
 end
         # Include entries matching one of +patterns+ in this filelist.
-        def include(*patterns)
+        def include(*pats)
+            @def_glob_dotfiles ? glob_all(*pats) : glob_nix(*pats)
+        end
+        alias glob include
+        # Unix style glob: hide files starting with a dot
+        def glob_nix(*patterns)
             patterns.flatten.each { |pat|
-                @actions << [:apply_include, pat]
+                @actions << [:apply_glob_nix, pat]
             }
             @pending = true
             self
         end
-        alias glob include
-        def apply_include(pattern)
-            @files.concat Dir.glob(pattern, @glob_flags)
+        def glob_all(*patterns)
+            patterns.flatten.each { |pat|
+                @actions << [:apply_glob_all, pat]
+            }
+            @pending = true
+            self
         end
-        private :apply_include
+        if RUBY_VERSION < "1.8.2"
+            # Dir.glob of Ruby releases before 1.8.2 returned dotfiles
+            # even if File::FNM_DOTMATCH was not set.
+            FN_DOTFILE_RX_ = ESC_ALT_SEPARATOR ?
+                /(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)\..*
+                    ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x :
+                /(^|#{ESC_SEPARATOR}+)\..* (#{ESC_SEPARATOR}+|$)/x
+            def apply_glob_nix(pattern)
+                inc_files = Dir.glob(pattern)
+                # it's not 100% correct, but it works for most use
+                # cases
+                unless pattern =~ /(^|\/)\./
+                    inc_files.reject! { |fn| fn =~ FN_DOTFILE_RX_ }
+                end
+                @files.concat(inc_files)
+            end
+        else
+            def apply_glob_nix(pattern)
+                @files.concat(Dir.glob(pattern))
+            end
+        end
+        private :apply_glob_nix
+        def apply_glob_all(pattern)
+            @files.concat(Dir.glob(pattern, File::FNM_DOTMATCH))
+        end
+        private :apply_glob_all
         # Exclude all entries matching one of +patterns+ from this
         # filelist.
         #
@@ -288,7 +303,7 @@ end
         private :add_ignore_rx
         def apply_exclude(pattern)
             @files.reject! { |elem|
-                File.fnmatch?(pattern, elem, @glob_flags) && !@keep[elem]
+                File.fnmatch?(pattern, elem, File::FNM_DOTMATCH) && !@keep[elem]
             }
         end
         private :apply_exclude
@@ -298,14 +313,14 @@ end
             }
         end
         private :apply_exclude_rx
-        def exclude_all(*names)
+        def shun(*names)
             names.each { |name|
                 @actions << [:apply_exclude_rx, mk_all_rx(name)]
             }
             @pending = true
             self
         end
-        alias shun exclude_all
+        alias exclude_all shun  # exclude_all: slightly deprecated
         if File::ALT_SEPARATOR
             # TODO: check for FS case sensitivity?
             def mk_all_rx(file)

@@ -89,7 +89,7 @@ module Test
                 return out, err
 	    end
             def assert_exit(status = 0, msg = nil)
-                msg ||= "exit status expected to be "
+                msg ||= "exit status expected to be " +
                     "#{status} but is #{$?.exitstatus}"
                 assert_equal(status, $?.exitstatus, msg)
             end

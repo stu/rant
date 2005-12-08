@@ -113,8 +113,6 @@ There a four ways to obtain a +FileList+ object:
   
   If +arg+ responds to +to_ary+, a new filelist object containing the
   entries of <tt>arg.to_ary</tt> is returned.
-  
-  If +arg+ is a string, it is interpreted as a glob pattern.
 
   Examples:
 
@@ -128,10 +126,7 @@ There a four ways to obtain a +FileList+ object:
     fl = Rant::FileList(a)      # => new Rant::FileList
     fl.entries                  # => ["foo", "bar"]
 
-    fl = Rant::FileList("*.c")
-    fl.entries                  # => ["main.c", "util.c"]
-
-    # obj doesn't respond to one of to_rant_filelist, to_ary, to_str
+    # obj doesn't respond to one of to_rant_filelist, to_ary
     obj = Object.new
     fl = Rant::FileList(obj)    # => raises TypeError
 
@@ -693,6 +688,8 @@ Dir.glob</tt>, Ruby 1.8.4).
 
 Rant Overview::
     README[link:files/README.html]
+Using filelists in Rantfiles::
+    doc/sys_filelist.rdoc[link:files/doc/sys_filelist_rdoc.html]
 Rantfile basics::
     doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
 Advanced Rantfiles::

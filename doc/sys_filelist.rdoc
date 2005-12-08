@@ -1,0 +1,114 @@
+
+== Using filelists in Rantfiles
+
+You can find documentation for Rant's +FileList+ class in the file
+doc/filelist.rdoc[link:files/doc/filelist_rdoc.html]. This document
+describes how you can use filelists in your Rant build scripts
+(Rantfiles).
+
+First of all, you don't need to <tt>require</tt> or <tt>import</tt>
+anything to use filelists in Rantfiles. Additionally the
+<tt>Rant::FileList</tt> class is directly available as +FileList+.
+Thus, for example, instead of typing:
+
+    c_files = Rant::FileList["*.c"]
+
+you can type:
+
+    c_files = FileList["*.c"]
+
+Again, you don't need to <tt>require "rant/filelist"</tt>.
+
+Often there are files/directories you want to always ignore when using
+filelists. This could be the "CVS" directories if you are using the
+CVS version control system or simply all backup files.
+
+Rant allows you to specify a set of patterns once for your project
+with the <tt>sys.ignore</tt> method.
+
+E.g. place the following line of code in your Rantfile:
+
+    sys.ignore "CVS", /~$/
+
+In the Rant::FileList documentation there are four ways to create a
+filelist documented. In Rantfiles:
+
+    instead of                          |   use
+    -----------------------------------------------------------------
+    Rant::FileList[*patterns]           |   sys[*patterns]
+    Rant::FileList.glob(*patterns)      |   sys.glob(*patterns)
+    Rant::FileList.glob_all(*patterns)  |   sys.glob_all(*patterns)
+    Rant::FileList(list)                |   sys.filelist(list)
+
+The <tt>sys</tt> variants of filelist creation all honour the project
+wide ignore patterns set by <tt>sys.ignore</tt>.
+
+Let's look at an example. First an Rantfile using the "normal"
+filelist constructors:
+
+    all_files = FileList["**/*"].ignore("CVS", /~$/)
+    lib_files = FileList["lib/**/*.rb"].ignore("CVS")
+    pkg_files = FileList["bin/*", "lib/**/*.rb", "test/**/*"].ignore("CVS", /~$/)
+    backup_files = FileList["**/*~"]
+
+    # define tasks
+
+I admit that the example is a bit exaggerated, but in essence you
+always have to care that you don't accidently include a backup file or
+some file living under a "CVS" directory. Now look at the equivalent
+Rantfile using <tt>sys</tt> to create filelists.
+
+    sys.ignore "CVS", /~$/
+    all_files = sys["**/*"]
+    lib_files = sys["lib/**/*.rb"]
+    pkg_files = sys["bin/*", "lib/**/*.rb", "test/**/*"]
+    backup_files = FileList["**/*~"]
+
+    # define tasks
+
+Now, per default CVS directories and backup files won't appear in
+filelists. We use a "stateless" filelist for +backup_files+, since all
+backup files would be ignored otherwise.
+
+== Where to use filelists?
+
+Basically, you can use a filelist wherever you can use an array. The
+following is a list of use cases where filelists are handy.
+
+* As prerequisite list for a task. Example:
+
+    # get a list of all c files
+    c_files = sys["**/*.c"]
+    # get a list of all resulting object files
+    obj_files = c_files.ext("o")
+
+    # static library "foo" depends on all object files
+    file "libfoo.a" => obj_files do |t|
+        # build t.name from t.prerequisites (obj_files)
+    end
+
+* As argument to file system operations. Example:
+
+    task :clean do
+        # remove all backup files
+        sys.rm_f FileList["**/*~"]
+    end
+
+* If you want to apply an operation to a list of files, e.g.
+  substituting a variable in text files. Example:
+
+    # Do something with all files in the project
+    sys["**/*"].no_dir.each { |filename|
+        # do something with the file "filename"
+    }
+
+== See also
+
+Rant Overview::
+    README[link:files/README.html]
+Rant::FileList documentation::
+    doc/filelist.rdoc[link:files/doc/filelist_rdoc.html]
+Rantfile basics::
+    doc/rantfile.rdoc[link:files/doc/rantfile_rdoc.html]
+Advanced Rantfiles::
+    doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
