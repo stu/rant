@@ -555,4 +555,13 @@ class TestSysMethods < Test::Unit::TestCase
         end
         assert_file_content "a.t", "hello\n"
     end
+    def test_regular_filename
+        if Rant::Env.on_windows?
+            assert_equal "a/b", Rant::Sys.regular_filename('a\b')
+            assert_equal "a/b", @sys.regular_filename('a\\\\b')
+        else
+            assert_equal "a/b", Rant::Sys.regular_filename("a/b")
+            assert_equal "a/b", @sys.regular_filename("a//b")
+        end
+    end
 end

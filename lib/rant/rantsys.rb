@@ -278,12 +278,17 @@ module Rant
             @rant.var[:ignore].concat(patterns)
             nil
         end
-        # corresponds to <code>Rant::FileList(arg)</code>
-        def filelist(arg)
-            if arg.respond_to?(:to_rant_filelist)
+        # <code>sys.filelist(arg)</code>::
+        #       corresponds to <code>Rant::FileList(arg)</code>
+        # <code>sys.filelist</code>::
+        #       corresponds to <code>Rant::FileList.new</code>
+        def filelist(arg = Rant.__rant_no_value__)
+            if Rant.__rant_no_value__.equal?(arg)
+                RacFileList.new(@rant)
+            elsif arg.respond_to?(:to_rant_filelist)
                 arg.to_rant_filelist
             elsif arg.respond_to?(:to_ary)
-                RacFileList.new(@rant).concat(arg.to_ary)
+                RacFileList.new(@rant, arg.to_ary)
             else
                 raise TypeError,
                     "cannot convert #{arg.class} into Rant::FileList"

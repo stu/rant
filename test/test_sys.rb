@@ -63,6 +63,10 @@ class TestSys < Test::Unit::TestCase
 	assert_equal(pl.size, 1,
 	    '../ should be "split" into one element')
 	assert_equal(pl[0], "..")
+        assert_equal ["."], Rant::Sys.split_all("./")
+        assert_equal ["."], Rant::Sys.split_all(".")
+        assert_equal [".", "foo"], Rant::Sys.split_all("./foo")
+        assert_equal [], Rant::Sys.split_all("")
     end
     def test_expand_path
         in_local_temp_dir do

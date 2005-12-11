@@ -1,0 +1,27 @@
+
+== Rant libraries
+
+The Rant build tool contains much code that can be reused in other
+Ruby applications or libraries. This document provides an overview of
+what is "officially" supported.
+
+As Rant matures, more classes will be provided to drive Rant
+programmatically or just to allow reuse of library code.
+
+=== Rant::FileList class
+
+This class provides an abstraction over the <tt>Dir.glob</tt> and
+<tt>File.fnmatch</tt> methods. In many cases it can be used instead of
+the +Find+ module in Ruby's standard library.
+
+Read doc/filelist.rdoc[link:files/doc/filelist_rdoc.html] for full
+documentation of the <tt>Rant::FileList</tt> class.
+
+== See also
+
+Rant Homepage::
+    http://make.ruby-co.de
+Rant Overview::
+    README[link:files/README.html]
+Rant::FileList documentation::
+    doc/filelist.rdoc[link:files/doc/filelist_rdoc.html]

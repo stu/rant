@@ -7,6 +7,10 @@ $testDir ||= File.expand_path(File.dirname(__FILE__))
 class TestFileList < Test::Unit::TestCase
     include Rant::TestUtil
 
+    def assert_entries(entry_ary, fl)
+        assert_equal entry_ary.size, fl.size
+        entry_ary.each { |entry| assert fl.include?(entry) }
+    end
     def fl(*args, &block)
 	Rant::FileList.glob(*args, &block)
     end
@@ -22,8 +26,75 @@ class TestFileList < Test::Unit::TestCase
     def setup
 	# Ensure we run in test directory.
 	Dir.chdir($testDir) unless Dir.pwd == $testDir
+        @rant = Rant::RantApp.new
+        @cx = @rant.cx
+        @sys = @cx.sys
     end
     def teardown
+    end
+    def test_create_new
+        @sys.ignore %r{_}
+        fl = @sys.filelist
+        assert fl.kind_of?(Rant::FileList)
+        assert fl.empty?
+        fl.concat ["ab", "c_d"]
+        assert_equal ["ab"], fl.entries
+    end
+    def test_create_bracket_op
+        in_local_temp_dir do
+            Rant::Sys.touch ["a.t", ".a.t"]
+            fl = @sys["*.t"]
+            assert_entries(["a.t"], fl)
+        end
+    end
+    def test_create_glob
+        in_local_temp_dir do
+            Rant::Sys.touch ["a.t", ".a.t"]
+            fl = @sys.glob("*.t")
+            assert_entries(["a.t"], fl)
+            fl = @sys.glob(".*.t")
+            # note: no "." and ".." entries
+            assert_entries([".a.t"], fl)
+            fl = @sys.glob("*.t") do |fl|
+                fl.glob ".*.t"
+            end
+            assert_equal ["a.t", ".a.t"], fl.entries
+        end
+    end
+    def test_create_glob_all
+        in_local_temp_dir do
+            Rant::Sys.touch ["a.t", ".a.t"]
+            fl = @sys.glob_all("*.t")
+            assert_entries(["a.t", ".a.t"], fl)
+            fl = @sys.glob_all(".*.t")
+            # note: no "." and ".." entries
+            assert_entries([".a.t"], fl)
+            fl = @sys.glob_all("*.t") do |fl|
+                fl.keep(".")
+            end
+            assert_entries ["a.t", ".a.t", "."], fl
+        end
+    end
+    def test_conversion_from_filelist
+        fl1 = @sys.filelist
+        fl2 = @sys.filelist(fl1)
+        assert fl1.equal?(fl2)  # same object
+    end
+    def test_conversion_from_ary
+        @sys.ignore "foo"
+        fl = @sys.filelist(["foo", "bar"])
+        assert fl.kind_of?(Rant::FileList)
+        assert_equal ["bar"], fl.entries
+    end
+    def test_conversion_type_error
+        assert_raise_kind_of(TypeError) do
+            fl = @sys.filelist(Object.new)
+        end
+    end
+    def test_conversion_type_error_nil
+        assert_raise_kind_of(TypeError) do
+            fl = @sys.filelist(nil)
+        end
     end
     def test_in_flatten
 	touch_temp %w(1.t 2.t) do
@@ -35,7 +106,7 @@ class TestFileList < Test::Unit::TestCase
 	    assert_equal(2, [fl("*.t")].flatten.size)
 	end
     end
-    def test_exclude_all
+    def test_exclude_name
 	l = fl
 	inc_list = %w(
 	    CVS_ a/b a
@@ -44,7 +115,7 @@ class TestFileList < Test::Unit::TestCase
 	    CVS a/CVS a/CVS/b CVS/CVS //CVS /CVS/ /a/b/CVS/c
 	    ).map! { |f| f.tr "/", File::SEPARATOR }
 	l.concat(not_inc_list + inc_list)
-	l.exclude_all "CVS"
+	l.exclude_name "CVS"
 	inc_list.each { |f|
 	    assert(l.include?(f))
 	}
@@ -110,7 +181,7 @@ class TestFileList < Test::Unit::TestCase
 	touch_temp %w(a.t b.t c.t d.t) do
 	    list = fl "a*"
 	    list.exclude("a*", "b*").include(*%w(b* c* d*))
-	    assert(list.exclude_all("d.t").equal?(list))
+	    assert(list.exclude_name("d.t").equal?(list))
 	    assert(list.include?("b.t"))
 	    assert(list.include?("c.t"))
 	    assert(!list.include?("a.t"))

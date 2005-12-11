@@ -536,13 +536,26 @@ standard output:
         #   on windows: 'dmd "foo bar.d" util.d -offoo -I"/home/user/program files/d"'
         #   other systems: 'dmd foo\ bar.d util.d -offoo -I/home/user/program\ files/d'
 
+* <b>regular_filename(path)</b>
+
+  Replaces all platform dependent filename separators with a slash,
+  thus returning a platform independent filename.
+
+  Examples:
+
+    # on windows:
+    sys.regular_filename('foo\bar')             # "foo/bar"
+
+    # on all platforms:
+    sys.regular_filename('foo//bar')            # "foo/bar"
+
 * <b>glob(pattern1, pattern2, ...)</b>
 
   <b>[pattern1, pattern2, ...]</b>
 
   Returns a filelist including the given patterns. For a discussion of
-  filelists, read <em>Selecting files with filelists</em> in
-  doc/advanced.rdoc[link:files/doc/advanced_rdoc.html].
+  filelists, read
+  doc/sys_filelist.rdoc[link:files/doc/sys_filelist_rdoc.html].
 
   Examples:
 

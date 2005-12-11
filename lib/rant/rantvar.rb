@@ -43,11 +43,6 @@ module Rant
     module Generators
     end
 
-    @__rant_no_value__ = Object.new.freeze
-    def self.__rant_no_value__
-	@__rant_no_value__
-    end
-
     module RantVar
 
 	class Error < Rant::Error

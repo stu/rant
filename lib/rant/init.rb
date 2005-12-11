@@ -58,6 +58,11 @@ end
 module Rant
     VERSION = '0.5.1'
 
+    @__rant_no_value__ = Object.new.freeze
+    def self.__rant_no_value__
+	@__rant_no_value__
+    end
+
     module Env
         OS = ::Config::CONFIG['target']
         RUBY = ::Config::CONFIG['ruby_install_name']
@@ -90,13 +95,9 @@ module Rant
         def pathes
             # Windows doesn't care about case in environment variables,
             # but the ENV hash does!
-            path = on_windows? ? ENV["Path"] : ENV["PATH"]
+            path = ENV[on_windows? ? "Path" : "PATH"]
             return [] unless path
-            if on_windows?
-                path.split(";")
-            else
-                path.split(":")
-            end
+            path.split(on_windows? ? ";" : ":")
         end
         # Searches for bin_name on path and returns
         # an absolute path if successfull or nil
@@ -174,24 +175,26 @@ module Rant
 		sarg << "\\" if sarg[-1].chr == "\\"
                 "\"#{sarg}\""
             end
+            def regular_filename(fn)
+                fn.to_str.tr("\\", "/").gsub(%r{/{2,}}, "/")
+            end
         else
             def _escaped_path(path)
                 path.to_s.gsub(/(?=\s)/, "\\")
             end
             alias _escaped _escaped_path
+            def regular_filename(fn)
+                fn.to_str.gsub(%r{/{2,}}, "/")
+            end
         end
         private :_escaped_path
         private :_escaped
-
 	# Split a path in all elements.
 	def split_all(path)
-	    base, last = File.split(path)
-	    return [last] if base == "." || last == "/"
-	    return [base, last] if base == "/"
-	    split_all(base) + [last]
+            names = regular_filename(path).split(%r{/})
+            names[0] = "/" if names[0] && names[0].empty?
+            names
 	end
-
-
         extend self
     end # module Sys
 end # module Rant

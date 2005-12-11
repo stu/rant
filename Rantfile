@@ -8,10 +8,14 @@ ENV["RANT_DEV_LIB_DIR"] = sys.expand_path("lib")
 
 task :default => :test
 
-dist_files = sys["{bin,lib,test,doc,misc}/**/*"]
-dist_files.shun("html", "coverage")
-dist_files += sys["*"].no_dir.exclude("InstalledFiles", "Session.vim")
-dist_files.exclude("mk", "bench-*")
+dist_files = sys.filelist [
+    "NEWS", "README", "INSTALL", "COPYING",
+    "Rantfile", "install.rb", "setup.rb",
+    "run_rant", "run_import"
+    ]
+dist_files.glob_unix "{bin,lib,test,doc,misc}/**/*"
+dist_files.exclude_name "html", "coverage"
+
 hp_files = sys["doc/homepage/*"]
 rdoc_files = sys["README", "NEWS", "INSTALL", "doc/*.rdoc"]
 

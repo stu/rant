@@ -30,11 +30,12 @@ E.g. place the following line of code in your Rantfile:
 
     sys.ignore "CVS", /~$/
 
-In the Rant::FileList documentation there are four ways to create a
+In the Rant::FileList documentation there are five ways to create a
 filelist documented. In Rantfiles:
 
     instead of                          |   use
     -----------------------------------------------------------------
+    Rant::FileList.new                  |   sys.filelist
     Rant::FileList[*patterns]           |   sys[*patterns]
     Rant::FileList.glob(*patterns)      |   sys.glob(*patterns)
     Rant::FileList.glob_all(*patterns)  |   sys.glob_all(*patterns)

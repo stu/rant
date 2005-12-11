@@ -8,9 +8,9 @@ module Rant
         if arg.respond_to?(:to_rant_filelist)
             arg.to_rant_filelist
         elsif arg.respond_to?(:to_ary)
-            FileList.new.concat(arg.to_ary)
+            FileList.new(arg.to_ary)
             # or?
-            #FileList.new(arg.to_ary)
+            #FileList.new.concat(arg.to_ary)
         else
             raise TypeError,
                 "cannot convert #{arg.class} into Rant::FileList"
@@ -46,8 +46,10 @@ module Rant
             @keep = {}
             @actions = []
         end
+        alias _object_dup dup
+        private :_object_dup
         def dup
-            c = super
+            c = _object_dup
             c.files = @files.dup
             c.actions = @actions.dup
             c.ignore_rx = @ignore_rx.dup if @ignore_rx
@@ -55,7 +57,7 @@ module Rant
             c
         end
         def copy
-            c = super
+            c = _object_dup
             c.files = @files.map { |entry| entry.dup }
             c.actions = @actions.dup
             c.ignore_rx = @ignore_rx.dup if @ignore_rx
@@ -106,6 +108,7 @@ module Rant
         def each(&block)
             resolve if @pending
             @files.each(&block)
+            self
         end
         def to_ary
             resolve if @pending
@@ -159,11 +162,11 @@ module Rant
         # Append the entries of +ary+ (an array like object) to
         # this list.
         def concat(ary)
-            resolve if @pending
-            if ix = ignore_rx
-                @files.concat(ary.to_ary.reject { |f| f =~ ix })
+            if @pending
+                ary = ary.to_ary.dup
+                @actions << [:apply_ary_method_1, :concat, ary]
             else
-                # Array#concat(arg) calls arg.to_ary anyway
+                ix = ignore_rx and ary = ary.to_ary.reject { |f| f =~ ix }
                 @files.concat(ary)
             end
             self
@@ -188,7 +191,7 @@ module Rant
         end
         def push(entry)
             resolve if @pending
-            @files.push(entry) if entry !~ ix
+            @files.push(entry) if entry !~ ignore_rx
             self
         end
         def shift
@@ -197,8 +200,7 @@ module Rant
         end
         def unshift(entry)
             resolve if @pending
-            ix = ignore_rx
-            @files.unshift(entry) if entry !~ ix
+            @files.unshift(entry) if entry !~ ignore_rx
             self
         end
 if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 1.9 like __send__
@@ -226,13 +228,13 @@ else
 end
         # Include entries matching one of +patterns+ in this filelist.
         def include(*pats)
-            @def_glob_dotfiles ? glob_all(*pats) : glob_nix(*pats)
+            @def_glob_dotfiles ? glob_all(*pats) : glob_unix(*pats)
         end
         alias glob include
         # Unix style glob: hide files starting with a dot
-        def glob_nix(*patterns)
+        def glob_unix(*patterns)
             patterns.flatten.each { |pat|
-                @actions << [:apply_glob_nix, pat]
+                @actions << [:apply_glob_unix, pat]
             }
             @pending = true
             self
@@ -251,7 +253,7 @@ end
                 /(^|(#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+)\..*
                     ((#{ESC_SEPARATOR}|#{ESC_ALT_SEPARATOR})+|$)/x :
                 /(^|#{ESC_SEPARATOR}+)\..* (#{ESC_SEPARATOR}+|$)/x
-            def apply_glob_nix(pattern)
+            def apply_glob_unix(pattern)
                 inc_files = Dir.glob(pattern)
                 # it's not 100% correct, but it works for most use
                 # cases
@@ -261,11 +263,11 @@ end
                 @files.concat(inc_files)
             end
         else
-            def apply_glob_nix(pattern)
+            def apply_glob_unix(pattern)
                 @files.concat(Dir.glob(pattern))
             end
         end
-        private :apply_glob_nix
+        private :apply_glob_unix
         def apply_glob_all(pattern)
             @files.concat(Dir.glob(pattern, File::FNM_DOTMATCH))
         end
@@ -313,14 +315,14 @@ end
             }
         end
         private :apply_exclude_rx
-        def shun(*names)
+        def exclude_name(*names)
             names.each { |name|
                 @actions << [:apply_exclude_rx, mk_all_rx(name)]
             }
             @pending = true
             self
         end
-        alias exclude_all shun  # exclude_all: slightly deprecated
+        alias shun exclude_name
         if File::ALT_SEPARATOR
             # TODO: check for FS case sensitivity?
             def mk_all_rx(file)
@@ -334,6 +336,20 @@ end
             end
         end
         private :mk_all_rx
+        def exclude_path(*patterns)
+            patterns.each { |pat|
+                @actions << [:apply_exclude_path, pat]
+            }
+            @pending = true
+            self
+        end
+        def apply_exclude_path(pattern)
+            flags = File::FNM_DOTMATCH|File::FNM_PATHNAME
+            @files.reject! { |elem|
+                File.fnmatch?(pattern, elem, flags) && !@keep[elem]
+            }
+        end
+        private :apply_exclude
         def select(&block)
             d = dup
             d.actions << [:apply_select, block]
