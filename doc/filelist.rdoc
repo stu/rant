@@ -371,6 +371,41 @@ side effects like printing to standard output.
     # note that fl doesn't contain "dir/CVS"
     fl.entries                      # => ["README", "README.CVS", "sub/README", "sub/foo/bar", "dir"]
 
+* <b>files</b>  <em>-lazy-</em>
+
+  Get a new filelist containing only the existing files from +self+.
+
+  Examples:
+
+    fl = Rant::FileList["**/*"]
+    fl.concat ["does_not_exist"]
+    fl.entries                      # => ["README", "sub", "sub/README", "does_not_exist"]
+
+    files = fl.files
+    files.entries                    # => ["README", "sub/README"]
+
+  Rantfile Note::
+            In Rantfiles, this method is not loaded per default. You
+            have to <code>import "filelist/std"</code> first.
+
+* <b>dirs</b>  <em>-lazy-</em>
+
+  Get a new filelist containing only the existing directories from
+  +self+.
+
+  Examples:
+
+    fl = Rant::FileList["**/*"]
+    fl.concat ["does_not_exist"]
+    fl.entries                      # => ["README", "sub", "sub/README", "does_not_exist"]
+
+    dirs = fl.dirs
+    dirs.entries                    # => ["sub"]
+
+  Rantfile Note::
+            In Rantfiles, this method is not loaded per default. You
+            have to <code>import "filelist/std"</code> first.
+
 * <b>no_dir</b>  <em>-lazy-</em>
 
   Remove all existing directories.
@@ -391,6 +426,10 @@ side effects like printing to standard output.
     # now fl doesn't contain directory entries
     fl.entries                    => ["README", "bin/rant", "lib/rant.rb"]
 
+  Rantfile Note::
+            In Rantfiles, this method is not loaded per default. You
+            have to <code>import "filelist/std"</code> first.
+
 * <b>no_dir(dir)</b>  <em>-lazy-</em>
 
   Remove all entries with a parent directory with the name +dir+ and
@@ -408,6 +447,10 @@ side effects like printing to standard output.
     fl.no_dir("coverage")
     # assumin "bin/coverage" is not a directory
     fl.entries                      # => ["README", "bin/coverage", "test/test_foo.rb"]
+
+  Rantfile Note::
+            In Rantfiles, this method is not loaded per default. You
+            have to <code>import "filelist/std"</code> first.
 
 * <b>select { |fn| ... }</b>  <em>-lazy-</em>
 
@@ -738,8 +781,8 @@ side effects like printing to standard output.
 
   Returns a copy of +self+. Thus after calling this method, there are
   two equal filelist objects. It is guaranteed that modifications of
-  of one filelist do not affect the other filelist, as long as the
-  entry strings aren't modified.
+  one filelist do not affect the other filelist, as long as the entry
+  strings aren't modified.
 
   Examples:
 
@@ -766,7 +809,7 @@ side effects like printing to standard output.
     c.each { |entry| entry.capitalize! }
     c.entries                       # => ["Main.c", "Util.c", "Main.h", "Util.h"]
     # Now the state of a is unspecified: The individual entries may be
-    # capitalized of not!
+    # capitalized or not!
 
 * <b>copy</b>
 
@@ -803,6 +846,38 @@ side effects like printing to standard output.
   starting with a dot.
 
   Returns +self+.
+
+* <b>inspect</b>
+
+  Overrides <tt>Object#inspect</tt>. Defined mainly for use in +irb+.
+  The +inspect+ method as defined by the +Object+ class is still
+  available under the name +object_inspect+.
+
+  Examples:
+
+    # irb session
+    # Remember that irb uses the inspect method to show results (lines
+    # starting with `=>').
+
+    % irb
+    irb(main):001:0> require 'rant/filelist'
+    => true
+    irb(main):002:0> fl = Rant::FileList["*.rb"]
+    => #<Rant::FileList:0x402e46e0 glob:unix res:1 entries:0>
+    irb(main):003:0> fl.resolve
+    => #<Rant::FileList:0x402e46e0 glob:unix entries:2["install.rb", "setup.rb"]>
+    irb(main):004:0>
+
+  Note::
+    Don't rely on the exact format of the string produced by
+    +inspect+.
+  Rantfile Note::
+    To get this +inspect+ method in Rantfiles, you have to
+    <code>import "filelist/std"</code> first.
+
+* <b>object_inspect</b>
+
+  Ruby's default +inspect+ method.
 
 === Glob pattern syntax
 

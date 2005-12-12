@@ -41,7 +41,7 @@ module Rant
         def initialize(store = [])
             @pending = false
             @def_glob_dotfiles = true
-            @files = store
+            @items = store
             @ignore_rx = nil
             @keep = {}
             @actions = []
@@ -50,7 +50,7 @@ module Rant
         private :_object_dup
         def dup
             c = _object_dup
-            c.files = @files.dup
+            c.items = @items.dup
             c.actions = @actions.dup
             c.ignore_rx = @ignore_rx.dup if @ignore_rx
             c.instance_variable_set(:@keep, @keep.dup)
@@ -58,7 +58,7 @@ module Rant
         end
         def copy
             c = _object_dup
-            c.files = @files.map { |entry| entry.dup }
+            c.items = @items.map { |entry| entry.dup }
             c.actions = @actions.dup
             c.ignore_rx = @ignore_rx.dup if @ignore_rx
             # alternative approach: copy & freeze "keep" entries on
@@ -100,19 +100,19 @@ module Rant
         end
 
         protected
-        attr_accessor :actions, :files
+        attr_accessor :actions, :items
         attr_accessor :pending
         attr_accessor :ignore_rx
 
         public
         def each(&block)
             resolve if @pending
-            @files.each(&block)
+            @items.each(&block)
             self
         end
         def to_ary
             resolve if @pending
-            @files
+            @items
         end
         alias to_a to_ary
         alias entries to_ary    # entries: defined in Enumerable
@@ -123,7 +123,7 @@ module Rant
             if other.respond_to? :to_rant_filelist
                 c = other.to_rant_filelist.dup
                 c.actions.concat(@actions)
-                c.files.concat(@files)
+                c.items.concat(@items)
                 c.pending = !c.actions.empty?
                 c
             elsif other.respond_to? :to_ary
@@ -156,7 +156,7 @@ module Rant
         # Returns self.
         def keep(entry)
             @keep[entry] = true
-            @files << entry
+            @items << entry
             self
         end
         # Append the entries of +ary+ (an array like object) to
@@ -167,40 +167,40 @@ module Rant
                 @actions << [:apply_ary_method_1, :concat, ary]
             else
                 ix = ignore_rx and ary = ary.to_ary.reject { |f| f =~ ix }
-                @files.concat(ary)
+                @items.concat(ary)
             end
             self
         end
         # Number of entries in this filelist.
         def size
             resolve if @pending
-            @files.size
+            @items.size
         end
         alias length size
         def empty?
             resolve if @pending
-            @files.empty?
+            @items.empty?
         end
         def join(sep = ' ')
             resolve if @pending
-            @files.join(sep)
+            @items.join(sep)
         end
         def pop
             resolve if @pending
-            @files.pop
+            @items.pop
         end
         def push(entry)
             resolve if @pending
-            @files.push(entry) if entry !~ ignore_rx
+            @items.push(entry) if entry !~ ignore_rx
             self
         end
         def shift
             resolve if @pending
-            @files.shift
+            @items.shift
         end
         def unshift(entry)
             resolve if @pending
-            @files.unshift(entry) if entry !~ ignore_rx
+            @items.unshift(entry) if entry !~ ignore_rx
             self
         end
 if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 1.9 like __send__
@@ -210,7 +210,7 @@ if Object.method_defined?(:fcall) || Object.method_defined?(:funcall) # in Ruby 
             @actions.each{ |action| self.__send__(@@__send_private__, *action) }.clear
             ix = ignore_rx
             if ix
-                @files.reject! { |f| f =~ ix && !@keep[f] }
+                @items.reject! { |f| f =~ ix && !@keep[f] }
             end
             self
         end
@@ -221,7 +221,7 @@ else
             @actions.each{ |action| self.__send__(*action) }.clear
             ix = ignore_rx
             if ix
-                @files.reject! { |f| f =~ ix && !@keep[f] }
+                @items.reject! { |f| f =~ ix && !@keep[f] }
             end
             self
         end
@@ -260,16 +260,16 @@ end
                 unless pattern =~ /(^|\/)\./
                     inc_files.reject! { |fn| fn =~ FN_DOTFILE_RX_ }
                 end
-                @files.concat(inc_files)
+                @items.concat(inc_files)
             end
         else
             def apply_glob_unix(pattern)
-                @files.concat(Dir.glob(pattern))
+                @items.concat(Dir.glob(pattern))
             end
         end
         private :apply_glob_unix
         def apply_glob_all(pattern)
-            @files.concat(Dir.glob(pattern, File::FNM_DOTMATCH))
+            @items.concat(Dir.glob(pattern, File::FNM_DOTMATCH))
         end
         private :apply_glob_all
         # Exclude all entries matching one of +patterns+ from this
@@ -304,13 +304,13 @@ end
         end
         private :add_ignore_rx
         def apply_exclude(pattern)
-            @files.reject! { |elem|
+            @items.reject! { |elem|
                 File.fnmatch?(pattern, elem, File::FNM_DOTMATCH) && !@keep[elem]
             }
         end
         private :apply_exclude
         def apply_exclude_rx(rx)
-            @files.reject! { |elem|
+            @items.reject! { |elem|
                 elem =~ rx && !@keep[elem]
             }
         end
@@ -345,7 +345,7 @@ end
         end
         def apply_exclude_path(pattern)
             flags = File::FNM_DOTMATCH|File::FNM_PATHNAME
-            @files.reject! { |elem|
+            @items.reject! { |elem|
                 File.fnmatch?(pattern, elem, flags) && !@keep[elem]
             }
         end
@@ -358,7 +358,7 @@ end
         end
         alias find_all select
         def apply_select blk
-            @files = @files.select(&blk)
+            @items = @items.select(&blk)
         end
         private :apply_select
         def map(&block)
@@ -374,43 +374,6 @@ end
         def ext(ext_str)
             sub_ext(ext_str)
         end
-        # Remove all entries which contain a directory with the
-        # given name.
-        # If no argument or +nil+ given, remove all directories.
-        #
-        # Example:
-        #       file_list.no_dir "CVS"
-        # would remove the following entries from file_list:
-        #       CVS/
-        #       src/CVS/lib.c
-        #       CVS/foo/bar/
-        def no_dir(name = nil)
-            @actions << [:apply_no_dir, name]
-            @pending = true
-            self
-        end
-        def apply_no_dir(name)
-            entry = nil
-            unless name
-                @files.reject! { |entry|
-                    test(?d, entry) && !@keep[entry]
-                }
-                return
-            end
-            elems = nil
-            @files.reject! { |entry|
-                next if @keep[entry]
-                elems = Sys.split_all(entry)
-                i = elems.index(name)
-                if i
-                    path = File.join(*elems[0..i])
-                    test(?d, path)
-                else
-                    false
-                end
-            }
-        end
-        private :apply_no_dir
         # Get a string with all entries. This is very usefull
         # if you invoke a shell:
         #       files # => ["foo/bar", "with space"]
@@ -423,6 +386,7 @@ end
             Rant::Sys.sp to_ary
         end
         alias to_s arglist
+        alias object_inspect inspect
         # Same as #uniq! but evaluation is delayed until the next read
         # access (e.g. by calling #each). Always returns self.
         def uniq!
@@ -451,14 +415,14 @@ end
         end
         private
         def apply_ary_method(meth, block=nil)
-            @files.send meth, &block
+            @items.send meth, &block
         end
         def apply_ary_method_1(meth, arg1, block=nil)
-            @files.send meth, arg1, &block
+            @items.send meth, arg1, &block
         end
 =begin
         def apply_lazy_operation(meth, args, block)
-            @files.send(meth, *args, &block)
+            @items.send(meth, *args, &block)
         end
 =end
     end # class FileList

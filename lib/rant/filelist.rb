@@ -5,3 +5,4 @@
 
 require 'rant/init'
 require 'rant/import/filelist/core'
+require 'rant/import/filelist/std'

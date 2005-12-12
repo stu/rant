@@ -73,7 +73,7 @@ module Rant
 	    old_pwd = Dir.pwd
 	    Sys.cd(@basedir)
 	    filelist_resolve if @pending
-	    @files.each(&block)
+	    @items.each(&block)
 	ensure
 	    Sys.cd(old_pwd)
 	end

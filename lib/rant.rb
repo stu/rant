@@ -13,7 +13,7 @@ module Rant
         def inspect
             # what's the right encoding for object_id ?
             s = "#<#{self.class}:0x#{"%x" % object_id} "
-            s << "#{@actions.size} actions, #{@files.size} files"
+            s << "#{@actions.size} actions, #{@items.size} entries"
             if @ignore_rx
                 is = @ignore_rx.inspect.gsub(/\n|\t/, ' ')
                 s << ", ignore#{is.squeeze ' '}"

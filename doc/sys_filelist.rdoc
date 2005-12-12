@@ -17,7 +17,9 @@ you can type:
 
     c_files = FileList["*.c"]
 
-Again, you don't need to <tt>require "rant/filelist"</tt>.
+Again, you don't need to <tt>require "rant/filelist"</tt>. But if you
+want to use one of the methods +no_dir+, +files+ or +dirs+ <tt>import
+"filelist/std"</tt> is required.
 
 Often there are files/directories you want to always ignore when using
 filelists. This could be the "CVS" directories if you are using the
@@ -99,7 +101,8 @@ following is a list of use cases where filelists are handy.
   substituting a variable in text files. Example:
 
     # Do something with all files in the project
-    sys["**/*"].no_dir.each { |filename|
+    import "filelist/std"
+    sys["**/*"].files.each { |filename|
         # do something with the file "filename"
     }
 

@@ -56,19 +56,18 @@ module Test
 			false
 		    end
 		}
-                if newproc
-                    if capture
-                        # TODO: stderr
-                        `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
-                    else
-                        system("#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} " +
-                            "#{Rant::Sys.sp(RANT_BIN)} " +
-                            "#{args.flatten.join(' ')}")
-                    end
-                    assert_equal(res, $?.exitstatus)
-                end
                 action = lambda {
-                    if capture
+                    if newproc
+                        if capture
+                            # TODO: stderr
+                            out = `#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} #{Rant::Sys.sp(RANT_BIN)} #{args.flatten.join(' ')}`
+                        else
+                            system("#{Rant::Sys.sp(Rant::Env::RUBY_EXE)} " +
+                                "#{Rant::Sys.sp(RANT_BIN)} " +
+                                "#{args.flatten.join(' ')}")
+                        end
+                        assert_equal(res, $?.exitstatus)
+                    elsif capture
                         out, err = capture_std do
                             assert_equal(res, ::Rant::RantApp.new.run(*args))
                         end

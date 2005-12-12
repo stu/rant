@@ -1,6 +1,8 @@
 
 require 'test/unit'
 require 'tutil'
+require 'rant/import/filelist/std'
+require 'rant/import/sys/more'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
@@ -564,6 +566,44 @@ end
                 files.include?(fn)
             }
             assert_equal 2, files.size
+        end
+    end
+    def test_rantfile_std
+        in_local_temp_dir do
+            Rant::Sys.mkdir ["d1", "d2"]
+            Rant::Sys.touch ["a.1", "d1/a.2", "d2/b.2"]
+            Rant::Sys.write_to_file "Rantfile", <<-EOF
+                import "filelist/std"
+                task :default do
+                    fl = sys["**/*"]
+                    puts fl.dirs.join
+                    puts fl.files.join
+                    fl.no_dir
+                    puts fl.join
+                end
+            EOF
+            # Run in subprocess to check if #dirs, #files and #no_dir
+            # is defined by import "filelist/std".
+            out, err = assert_rant(:x)
+            lines = out.split(/\n/)
+            assert_entries ["d1", "d2"], lines[0].split
+            assert_entries ["a.1", "d1/a.2", "d2/b.2", "Rantfile"], lines[1].split
+            assert_entries ["a.1", "d1/a.2", "d2/b.2", "Rantfile"], lines[2].split
+        end
+    end
+    def test_rantfile_object_inspect
+        in_local_temp_dir do
+            Rant::Sys.write_to_file "Rantfile", <<-EOF
+                task :default do |t|
+                    fl = sys["**/*"]
+                    fl.object_inspect.kind_of?(String) or t.fail
+                    puts fl.object_inspect
+                end
+            EOF
+            # Run in subprocess to check if #dirs, #files and #no_dir
+            # is defined by import "filelist/std".
+            out, err = assert_rant(:x)
+            assert !out.strip.empty?
         end
     end
 end

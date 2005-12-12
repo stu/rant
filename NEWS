@@ -9,13 +9,27 @@ Incompatible changes:
   are removed with this release. Use <tt>sys.sp(ary)</tt>
   in Rantfiles instead.
 * The method +rac+ which is deprecated since release 0.4.6 is gone.
-* Filelists no longer respond to all Array methods.
+* Filelists no longer respond to all Array methods. To use the
+  filelist method +no_dir+, <tt>import "filelist/std"</tt> is required
+  now. See below for documentation links.
 
 Fixes and minor improvements:
 * A bug in the YAML library of Ruby 1.8.3/1.8.4-preview1 prevented
   created gems to work with other ruby versions. Since this Rant
   release gems created with a RubyPackage task and Ruby 1.8.3 will
   work with all Ruby versions (with gem support, of course).
+* Fixed bug where the method <tt>Rant::Sys.split_all</tt> would drop
+  a leading dot directory (e.g. as in "./foo/bar").
+* New method <tt>Rant::Sys.regular_filename</tt> for filename
+  conversion.
+
+New features:
+* Major rework of filelist support. The Rant::FileList class is
+  available as "normal" Ruby library now. Read 
+  doc/filelist.rdoc[link:files/doc/filelist_rdoc.html] for
+  Rant::FileList documentation and
+  doc/sys_filelist.rdoc[link:files/doc/sys_filelist_rdoc.html] for
+  instructions on how to use filelists in Rantfiles.
 
 == Rant 0.5.0
 

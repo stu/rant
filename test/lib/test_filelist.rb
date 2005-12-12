@@ -410,6 +410,16 @@ class TestRantFileList < Test::Unit::TestCase
         fl.concat ["foo", "bar", "bar/foo", "baz"]
         assert_entries ["bar", "baz"], fl
     end
+    def test_inspect
+        assert_nothing_raised do
+            assert Rant::FileList.new.inspect.kind_of?(String)
+        end
+    end
+    def test_object_inspect
+        assert_nothing_raised do
+            assert Rant::FileList.new.object_inspect.kind_of?(String)
+        end
+    end
     def test_to_s
         out = ext_rb_test <<-'EOF', :touch => ["a.c", "b.c"], :return => :stdout
             require 'rant/filelist'
@@ -425,6 +435,33 @@ class TestRantFileList < Test::Unit::TestCase
         EOF
         lines = out.split(/\n/)
         assert_equal ["a.t", "xy/f.t"], lines.sort
+    end
+    def test_files
+        files = ["a/bc/d.t", "xy/f.t", "a.t"]
+        out = ext_rb_test <<-'EOF', :touch => files, :return => :stdout
+            require 'rant/filelist'
+            puts Rant::FileList["**/*"].exclude("*.rb").files
+        EOF
+        lines = out.split(/\n/)
+        assert_entries ["a/bc/d.t", "a.t", "xy/f.t"], lines
+    end
+    def test_dirs
+        files = ["a/bc/d.t", "xy/f.t", "a.t"]
+        out = ext_rb_test <<-'EOF', :touch => files, :return => :stdout
+            require 'rant/filelist'
+            puts Rant::FileList["**/*"].exclude("*.rb").dirs
+        EOF
+        lines = out.split(/\n/)
+        assert_entries ["a", "a/bc", "xy"], lines
+    end
+    def test_rant_version
+        ext_rb_test <<-'EOF'
+            require 'rant/filelist'
+            if defined?(Rant::VERSION) && Rant::VERSION =~ /\d+\.\d+\.\d+/
+                exit 0
+            end
+            exit 1
+        EOF
     end
     def test_rant_sys_regular_filename
         out = nil
