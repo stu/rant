@@ -195,15 +195,16 @@ module Rant
                         test(?e, name)
                 end
                 def create_nodes(rel_project_dir, target, deps)
+                    @rant.goto_project_dir rel_project_dir
                     case nodes = @block[target, deps]
                     when Array: nodes
                     when Node: [nodes]
                     else
                         @rant.abort_at(@ch, "Block has to " +
                             "return Node or array of Nodes.")
-                    end.each { |node|
-                        node.project_subdir = @rant.current_subdir
-                    }
+                    end#.each { |node|
+                        #node.project_subdir = @rant.current_subdir
+                    #}
                 end
             end
             class FileHook < Hook
@@ -216,6 +217,7 @@ module Rant
                 def create_nodes(rel_project_dir, target, deps)
                     t = @rant.file(:__caller__ => @ch,
                             target => deps, &@block)
+                    # or rel_project_dir ?!
                     t.project_subdir = @rant.current_subdir
                     [t]
                 end

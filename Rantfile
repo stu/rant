@@ -41,6 +41,10 @@ gen RubyPackage, "rant#{var :pkg_ext}" do |t|
     t.package_task
 end
 
+task "dev-pkg" do
+    make Package::Tgz, "pkg/rant-dev", :files => dist_files
+end
+
 task "dist-files" do
     puts dist_files
 end
