@@ -295,4 +295,17 @@ def count_rb_lines(fn)
     [lines, code_lines]
 end
 
+@prefix = var[:prefix] || "/usr/local"
+
+task "uninstall" do
+    print <<-EOF
+    Run task _uninstall_ to uninstall Rant from prefix[#@prefix].
+    EOF
+end
+
+task "_uninstall_" do
+    sys.rm_rf FileList["#@prefix/lib/ruby/site_ruby/1.8/rant*"]
+    sys.rm_f FileList["#@prefix/bin/rant*"]
+end
+
 # vim:ft=ruby

@@ -1,4 +1,6 @@
 
+import "var/numbers"
+
 var "v1" => "default_1.t"
 var["v2"] = "default_2.t"
 var.restrict :count, :Integer, 1..10

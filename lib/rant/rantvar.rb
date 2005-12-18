@@ -110,7 +110,6 @@ module Rant
 		# holds constraints for values in @store
 		@constraints = {}
 		# set by default query
-		@current_var = nil # this line will go in 0.5.4
 	    end
 
 	    def query(*args, &block)
@@ -123,7 +122,6 @@ module Rant
 		    if Hash === arg
 			if arg.size == 1
 			    arg.each { |k,v|
-				@current_var = k # this line will go in 0.5.4
 				self[k] = v if self[k].nil?
 			    }
 			    self
@@ -135,22 +133,12 @@ module Rant
 		    end
 		when 2, 3
 		    vid, cf, val = *args
-                    @current_var = vid # this line will go in 0.5.4
                     constrain vid,
                         get_factory(cf).rant_constraint
 		    self[vid] = val if val
 		else
 		    raise QueryError, "too many arguments"
 		end
-	    end
-
-	    def is ct, *ct_args
-                warn caller[0]
-                warn "method `var.is' is deprecated and will not be " +
-                    "in Rant 0.5.4 and later"
-		constrain @current_var,
-		    get_factory(ct).rant_constraint(*ct_args)
-		self
 	    end
 
 	    def restrict vid, ct, *ct_args
@@ -165,54 +153,10 @@ module Rant
 
 	    def get_factory id
 		if String === id || Symbol === id
-		    begin
-                        ### temporary solution ###
-                        raise unless Constraints.const_defined? id
-                        ##########################
-			id = Constraints.const_get(id)
-		    rescue
-                        ### temporary solution ###
-                        id_sym = id.to_sym
-                        rl =
-                        if [:Integer, :IntegerInRange, :Float,
-                            :FloatInRange].include? id_sym
-                            'rant/import/var/numbers'
-                        elsif [:Bool, :BoolTrue].include? id_sym
-                            'rant/import/var/booleans'
-                        elsif :List == id_sym
-                            'rant/import/var/lists'
-                        elsif [:String, :ToString].include? id_sym
-                            'rant/import/var/strings'
-                        else
-                        ##########################
-                            raise NotAConstraintFactoryError.new(id), caller
-                        end
-                        warn "Explicitely <code>import " +
-                            "'#{rl.sub(/^rant\/import\//, '')}'" +
-                            "</code> to use the #{id_sym.inspect} " +
-                            "constraint."
-                        require rl #rant-import:remove
-                        retry
-		    end
+                    id = Constraints.const_get(id) rescue nil
 		end
 		unless id.respond_to? :rant_constraint
-                    ### temporary solution ###
-                    rl =
-                    if id == true || id == false
-                        'rant/import/var/booleans'
-                    elsif id == String
-                        'rant/import/var/strings'
-                    elsif id.kind_of? Range
-                        'rant/import/var/numbers'
-                    else
-                    ##########################
-                        raise NotAConstraintFactoryError.new(id), caller
-                    end
-                    warn "Explicitely <code>import " +
-                        "'#{rl.sub(/^rant\/import\//, '')}'" +
-                        "</code> to use the #{id.inspect} " +
-                        "constraint."
-                    require rl #rant-import:remove
+                    raise NotAConstraintFactoryError.new(id), caller
 		end
 		id
 	    end
@@ -372,10 +316,3 @@ module Rant
         end # module Constraints
     end # module RantVar
 end # module Rant
-
-### temporary solution ###
-#require 'rant/import/var/numbers' #rant-import:uncomment
-#require 'rant/import/var/booleans' #rant-import:uncomment
-#require 'rant/import/var/lists' #rant-import:uncomment
-#require 'rant/import/var/strings' #rant-import:uncomment
-##########################

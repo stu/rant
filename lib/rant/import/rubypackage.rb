@@ -246,8 +246,13 @@ class Rant::Generators::RubyPackage
 	    end
 
             # fix for YAML bug in Ruby 1.8.3 and 1.8.4 previews
-            if RUBY_VERSION == "1.8.3" or
-                RUBY_VERSION == "1.8.4" && RUBY_RELEASE_DATE < "2005-12-24"
+            # 
+            # Update: That's not a bug in YAML 1.8.3 and later, it's a
+            # non-backwards compatible change, because YAML 1.8.2 and
+            # later is buggy. (My current understanding of this
+            # issue.) Adding the "---" at the start ensures that it
+            # can be read with all Ruby YAML versions.
+            if RUBY_VERSION > "1.8.2"
                 def spec.to_yaml(*args, &block)
                     yaml = super
                     yaml =~ /^---/ ? yaml : "--- #{yaml}"
