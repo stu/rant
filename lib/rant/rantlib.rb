@@ -451,6 +451,12 @@ class Rant::RantApp
 	sub = expand_path(@current_subdir, path)
 	sub.empty? ? @rootdir : File.join(@rootdir, sub)
     end
+    def abs_path(subdir, fn)
+        path = File.join(@rootdir, subdir, fn)
+        path.gsub!(%r{/+}, "/")
+        path.sub!(%r{/$}, "") if path.length > 1
+        path
+    end
     def goto(dir)
         goto_project_dir(expand_path(@current_subdir, dir))
     end

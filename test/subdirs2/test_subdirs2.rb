@@ -1,6 +1,7 @@
 
 require 'test/unit'
 require 'tutil'
+require 'rant/import/sys/more'
 
 $test_subdirs2_dir ||= File.expand_path(File.dirname(__FILE__))
 
@@ -254,5 +255,14 @@ EOF
         out, err = assert_rant "c2.t"
         assert err.empty?
         assert out.split(/\n/).size < 2
+    end
+    def test_custom_rule_task
+        Rant::Sys.write_to_file "sub1/a.s.t", "foo\n"
+        out, err = assert_rant "sub1/c3.t"
+        assert err.empty?
+        assert_match(/\.s\.t action/, out)
+        assert_file_content "sub1/c3.t", "foo\n"
+    ensure
+        Rant::Sys.rm_f ["sub1/a.s.t"]
     end
 end

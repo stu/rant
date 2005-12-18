@@ -179,9 +179,11 @@ module Rant
                         have_src = true
                         src = @src_proc[target]
                         if src.respond_to? :to_ary
-                            have_src = src.to_ary.all? { |s| have_src?(s) }
+                            have_src = src.to_ary.all? { |s|
+                                have_src?(rel_project_dir, s)
+                            }
                         else
-                            have_src = have_src?(src)
+                            have_src = have_src?(rel_project_dir, src)
                         end
                         if have_src
                             create_nodes(rel_project_dir, target, src)
@@ -190,9 +192,10 @@ module Rant
                 end
                 alias [] call
                 private
-                def have_src?(name)
-                    !@rant.rec_save_resolve(name, self).empty? or
-                        test(?e, name)
+                def have_src?(rel_project_dir, name)
+                    return true unless
+                        @rant.rec_save_resolve(name, self, rel_project_dir).empty?
+                    test(?e, @rant.abs_path(rel_project_dir, name))
                 end
                 def create_nodes(rel_project_dir, target, deps)
                     @rant.goto_project_dir rel_project_dir
@@ -202,23 +205,20 @@ module Rant
                     else
                         @rant.abort_at(@ch, "Block has to " +
                             "return Node or array of Nodes.")
-                    end#.each { |node|
-                        #node.project_subdir = @rant.current_subdir
-                    #}
+                    end
                 end
             end
             class FileHook < Hook
                 private
-                def have_src?(name)
-                    test(?e, name) or
-                        @rant.rec_save_resolve(name, self
+                def have_src?(rel_project_dir, name)
+                    test(?e, @rant.abs_path(rel_project_dir, name)) or
+                        @rant.rec_save_resolve(name, self, rel_project_dir
                             ).any? { |t| t.file_target? }
                 end
                 def create_nodes(rel_project_dir, target, deps)
+                    @rant.goto_project_dir rel_project_dir
                     t = @rant.file(:__caller__ => @ch,
                             target => deps, &@block)
-                    # or rel_project_dir ?!
-                    t.project_subdir = @rant.current_subdir
                     [t]
                 end
             end

@@ -13,4 +13,6 @@ end
 gen Command, "c1.t", "@config.t", "$[sh_cat] ${<} > $(>)"
 gen Command, "c2.t", "@config.t", "$[sh_cat] ${prerequisites} > $(name)"
 
+gen Command, "c3.t", "a.r.t", "$[sh_cat] ${<} > $(>)"
+
 gen Directory, "dir.t"

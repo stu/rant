@@ -30,6 +30,14 @@ end
 
 gen Command, "c1.t", ["sub1/c1.t"], "$[sh_puts] ${<} > $(>)"
 
+gen Rule, ".r.t" => ".s.t" do |target, sources|
+    gen Command, target, sources, "$[sh_cat] $(<) > $(>)"
+end
+
+gen Action, /\.s\.t$/ do
+    puts ".s.t action"
+end
+
 gen SubFile, "t/t", "a.t" => "b.t" do |t|
     write(t.name, "abc")
 end
