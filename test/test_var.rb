@@ -288,7 +288,7 @@ class TestVar < Test::Unit::TestCase
     end
     def test_rant_import
 	@rac.args.replace %w(-fvar.rf show_num)
-        run_import "-q", "ant.t"
+        run_import "-q", "-ivar/numbers", "ant.t"
         assert_exit
         out = run_ruby("ant.t", "-fvar.rf", "show_num")
         assert_exit
