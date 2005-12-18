@@ -12,6 +12,13 @@ module Rant
                 f.write content
             end
         end
+        def write_to_binfile(fn, content)
+            content = content.to_str
+            fu_output_message "writing #{content.size} bytes to file `#{fn}'"
+            File.open fn, "wb" do |f|
+                f.write content
+            end
+        end
         def clean(entry)
             if test ?f, entry
                 rm_f entry

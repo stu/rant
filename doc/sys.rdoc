@@ -400,6 +400,22 @@ The following methods print messages to standard output:
 
     sys.write_to_file "version", "1.2.0\n"  # => prints "writing 6 bytes to file `version'"
 
+* <b>write_to_binfile(fn, data)</b>
+
+  Requires <tt>import "sys/more"</tt>
+
+  Like <tt>write_to_file(fn, data)</tt> but opens the file in binary
+  mode.
+
+  Example:
+
+    import "sys/more"
+
+    require "digest/md5"
+    data = Digest::MD5.digest("some_string")
+
+    sys.write_to_binfile "hash", data  # => prints "writing 16 bytes to file `hash'"
+
 * <b>unpack_tgz(fn, options = {})</b>
 
   Requires <tt>import "sys/tgz"</tt>

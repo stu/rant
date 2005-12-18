@@ -1,6 +1,22 @@
 
 = Rant NEWS
 
+== Rant 0.5.4
+
+Incompatible changes:
+* The undocumented method <tt>var.is</tt> which is deprecated since
+  release 0.5.2 is not defined anymore.
+
+Fixes and minor improvements:
+* Fix a rule bug where a custom rule task wouldn't find it's
+  prerequisites in subdirectories.
+* An non-backwards compatible change in the YAML library of Ruby 1.8.3
+  and newer causes gems to be non-backwards compatible. The fix for
+  backwards compatibility of gems created with RubyPackage is enabled
+  for all newer Ruby versions now. (See changes of last Rant release.)
+* The new method <tt>sys.write_to_binfile</tt>. (Kevin Burge's idea.)
+  Read doc/sys.rdoc[link:files/doc/sys_rdoc.html] for documentation.
+
 == Rant 0.5.2
 
 Incompatible changes:

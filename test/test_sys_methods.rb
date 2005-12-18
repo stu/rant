@@ -2,6 +2,7 @@
 require 'test/unit'
 require 'tutil'
 require 'rant/import/sys/more'
+require 'rant/import/filelist/std'
 
 $testDir ||= File.expand_path(File.dirname(__FILE__))
 
@@ -554,6 +555,23 @@ class TestSysMethods < Test::Unit::TestCase
             @sys.write_to_file "a.t", "hello\n"
         end
         assert_file_content "a.t", "hello\n"
+    end
+    def test_write_to_binfile
+        @cx.import "sys/more"
+        capture_std do
+            # TODO: specialize exception class
+            assert_raise_kind_of(StandardError) do
+                @sys.write_to_binfile "a.t", Object.new
+            end
+        end
+        assert !test(?e, "a.t")
+        out, err = capture_std do
+            @sys.write_to_binfile "a.t", "hello\nsepp"
+        end
+        assert test(?f, "a.t")
+        File.open("a.t", "rb") do |f|
+            assert_equal "hello\nsepp", f.read
+        end
     end
     def test_regular_filename
         if Rant::Env.on_windows?
