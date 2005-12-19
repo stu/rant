@@ -170,7 +170,8 @@ module Rant::Generators::Archive
                 #
                 # Normally, the Rantfile writer should care himself,
                 # but since I tapped into this trap frequently now...
-                @res_files.exclude(/^#{Regexp.escape @dist_path}/)
+                @res_files.exclude(/^#{Regexp.escape @dist_path}(\/.*)?$/)
+                # exclude the final archive file as well?
             end
             @res_files.uniq!.sort!
 	end

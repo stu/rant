@@ -48,7 +48,7 @@ class TestImportPackage < Test::Unit::TestCase
 	count = files.size + dirs.size
 	# + 1 because of the archive file
 	count += 1 unless @pkg_dir
-	assert_equal(count, Dir["**/*"].size)
+	assert_equal(count, Rant::FileList.glob_all("**/*").size)
 	if manifest_file
 	    check_manifest(manifest_file, files)
 	end
@@ -569,7 +569,7 @@ class TestImportPackage < Test::Unit::TestCase
         in_local_temp_dir do
             write_to_file "root.rant", <<-EOF
             import "md5", "package/tgz", "autoclean"
-            gen Package::Tgz, "a-b", :manifest, :files => sys["*"].exclude("u")
+            gen Package::Tgz, "a-b", :manifest, :files => sys["*"].exclude("u", "*.tgz")
             gen AutoClean
             EOF
             write_to_file "a", "a\n"
@@ -594,6 +594,34 @@ class TestImportPackage < Test::Unit::TestCase
             assert_rant "autoclean"
             assert !test(?e, "a-b.tgz")
             assert !test(?e, "a-b")
+            assert !test(?e, ".rant.meta")
+        end
+    end
+    def test_package_zip_exclude_package_dir
+        in_local_temp_dir do
+            write_to_file "root.rant", <<-EOF
+            import "md5", "package/zip", "autoclean"
+            gen Package::Zip, "pkg", :files => sys["**/*.t"]
+            gen AutoClean
+            EOF
+            write_to_file "a.t", "a\n"
+            Rant::Sys.mkdir "dir"
+            write_to_file "dir/a.t", "dir_a\n"
+            write_to_file "pkg.t", "pkg\n"
+            out, err = assert_rant "pkg.zip"
+            assert err.empty?
+            assert !out.empty?
+            mf = %w(a.t dir/a.t pkg.t)
+            dirs = %w(dir)
+            @pkg_dir = "pkg"
+            check_contents(:zip, "pkg.zip", mf, dirs)
+            out, err = assert_rant "pkg.zip"
+            check_contents(:zip, "pkg.zip", mf, dirs)
+            assert err.empty?
+            assert out.empty?
+
+            assert_rant "autoclean"
+            assert Rant::FileList["**/*.zip"].empty?
             assert !test(?e, ".rant.meta")
         end
     end

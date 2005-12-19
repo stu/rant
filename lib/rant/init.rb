@@ -56,7 +56,7 @@ class String
 end
 
 module Rant
-    VERSION = '0.5.4'
+    VERSION = '0.5.5'
 
     @__rant_no_value__ = Object.new.freeze
     def self.__rant_no_value__

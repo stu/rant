@@ -1,6 +1,13 @@
 
 = Rant NEWS
 
+== Rant 0.5.5 (development version)
+
+Fixes and minor improvements:
+* <tt>Package::Zip</tt>,<tt>Package::Tgz</tt>: Fix bug where a file
+  that starts with the package name wouldn't be included in the
+  package. (Reported and fixed by Kevin Burge.)
+
 == Rant 0.5.4
 
 Incompatible changes:
