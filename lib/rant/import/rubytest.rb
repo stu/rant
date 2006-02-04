@@ -24,6 +24,11 @@ module Rant
 	attr_accessor :test_files
 	# Directory where to run unit tests.
 	attr_accessor :test_dir
+        # How to load tests. Possible values:
+        # [:rant]       Use Rant's loading mechanism. This is default.
+        # [:testrb]     Use the testrb script which comes with Ruby
+        #               1.8.1 and newer installations.
+        attr_accessor :loader
 
 	def initialize(app, cinf, name = :test, prerequisites = [], &block)
 	    @rac = app
@@ -41,6 +46,7 @@ module Rant
 	    @pattern = nil
 	    @test_files = nil
 	    @test_dir = nil
+            @loader = :rant
 	    yield self if block_given?
 	    @pattern = "test*.rb" if @pattern.nil? && @test_files.nil?
 
@@ -51,8 +57,13 @@ module Rant
                 if @libs && !@libs.empty?
                     args << "-I#{@libs.join File::PATH_SEPARATOR}"
                 end
-                # TODO: don't use testrb
-                args << "-S" << "testrb"
+                case @loader
+                when :rant: args << "-rtest/unit"
+                when :testrb: args << "-S" << "testrb"
+                else
+                    @rac.abort_at(cinf,
+                        "RubyTest: No such test loader -- #@loader")
+                end
                 args.concat optlist
 		if @test_dir
 		    app.sys.cd(@test_dir) {

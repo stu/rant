@@ -1,4 +1,10 @@
 
+WARNING::
+    The current plugin interface will vanish as soon as there are
+    replacements for the two existing plugins ("Csharp" and
+    "Configure") distributed with Rant. <b>Don't write new
+    plugins!</b>.
+
 = Rant plugins
 
 An Rant plugin provides additional functionality for the Rant program.
