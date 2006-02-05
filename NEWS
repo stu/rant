@@ -7,6 +7,14 @@ Fixes and minor improvements:
 * <tt>Package::Zip</tt>,<tt>Package::Tgz</tt>: Fix bug where a file
   that starts with the package name wouldn't be included in the
   package. (Reported and fixed by Kevin Burge.)
+* +RubyTest+ no longer uses +testrb+ as test runner per default. Thus
+  it works on systems without +testrb+ now (like Ruby installations
+  older than 1.8.1, Debian based systems).
+  The old behaviour can be enabled by setting the +loader+ attribute
+  to <tt>:testrb</tt>. A patch was provided by Max Nickel.
+
+New features:
+* The method <tt>Rant::Sys.root_dir?</tt>.
 
 == Rant 0.5.4
 

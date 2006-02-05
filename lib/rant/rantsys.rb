@@ -250,6 +250,19 @@ module Rant
             str.split(Env.on_windows? ? ";" : ":")
         end
 
+        if Env.on_windows?
+            def root_dir?(path)
+                path == "/" || path == "\\" ||
+                    path =~ %r{\A[a-zA-Z]+:(\\|/)\Z}
+                # how many drive letters are really allowed on
+                # windows?
+            end
+        else
+            def root_dir?(path)
+                path == "/"
+            end
+        end
+
         extend self
 
         if RUBY_VERSION >= "1.8.4"  # needed by 1.9.0, too

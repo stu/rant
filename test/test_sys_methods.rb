@@ -582,4 +582,16 @@ class TestSysMethods < Test::Unit::TestCase
             assert_equal "a/b", @sys.regular_filename("a//b")
         end
     end
+    def test_root_dir?
+        assert Rant::Sys.root_dir?("/")
+        assert !Rant::Sys.root_dir?("foo")
+        assert !Rant::Sys.root_dir?("/foo")
+        if Rant::Env.on_windows?
+            assert Rant::Sys.root_dir?("C:/")
+            assert Rant::Sys.root_dir?("C:\\")
+            assert Rant::Sys.root_dir?("XY:\\")
+            assert !Rant::Sys.root_dir?("C:\\foo")
+            assert !Rant::Sys.root_dir?("C:/foo/bar")
+        end
+    end
 end
