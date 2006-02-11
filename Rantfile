@@ -236,6 +236,7 @@ task "check-168" do
     puts "#{ok.size} of #{rbfiles.size} are OK"
 end
 
+desc "Create local backup of svn repos on berlios."
 task "fetch-svn-dump" do
     require 'net/http'
     require 'uri'

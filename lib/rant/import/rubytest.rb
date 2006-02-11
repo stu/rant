@@ -46,7 +46,7 @@ module Rant
 	    @pattern = nil
 	    @test_files = nil
 	    @test_dir = nil
-            @loader = :rant
+            @loader = RUBY_VERSION < "1.8.4" ? :testrb : :rant
 	    yield self if block_given?
 	    @pattern = "test*.rb" if @pattern.nil? && @test_files.nil?
 
