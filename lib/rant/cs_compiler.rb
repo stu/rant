@@ -308,8 +308,8 @@ module Rant
 
 	def mcs_cmd_args
 	    cc_args = ""
-	    cc_args << " -o #{Env.shell_path(out)}" if out
-	    cc_args << " -g -d:DEBUG" if debug
+	    cc_args << " -out:#{Env.shell_path(out)}" if out
+	    cc_args << " -debug -d:DEBUG" if debug
 	    defines.each { |p|
 		cc_args << " -d:#{p}"
 	    }

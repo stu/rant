@@ -250,6 +250,22 @@ task "fetch-svn-dump" do
     sys.write_to_file "../rant-repos_#{ds}.gz", res.body
 end
 
+task "stats" do
+    require 'scriptlines'
+    files = sys["lib/**/*.rb"]
+    puts ScriptLines.headline
+    sum = ScriptLines.new("TOTAL (#{files.size} scripts)")
+    files.each { |fn|
+        File.open(fn) do |file|
+            script_lines = ScriptLines.new(fn)
+            script_lines.read(file)
+            sum += script_lines
+            puts script_lines
+        end
+    }
+    puts sum
+end
+
 task "rb-stats" do
     files = sys["lib/**/*.rb"]
     lines = 0

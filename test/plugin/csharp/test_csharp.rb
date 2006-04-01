@@ -28,7 +28,7 @@ if $have_csc
     # or mcs to be on your PATH.
     def test_hello
 	capture_std do
-	    assert_equal(Rant.run([]), 0,
+	    assert_equal(0, Rant.run([]),
 		"first target, `hello.exe', should be compiled")
 	end
 	assert(File.exist?("hello.exe"),
