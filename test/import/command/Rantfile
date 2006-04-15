@@ -14,6 +14,9 @@ gen Command, "f_a.t" do |t|
     sys "#@sh_echo #{sys.escape "I will fail."} > #{t.name}"
 end
 
+gen Command, "a2.t", ["b.t", "c.t"],
+    "$[sh_puts] $(<) > $(>)"
+
 var :btxt => "b"
 var :be, :Bool
 

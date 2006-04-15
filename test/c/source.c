@@ -21,3 +21,6 @@
     "custom2.h"
 
 #include <std>
+
+/* one line block comment */
+#include "_foo.h"

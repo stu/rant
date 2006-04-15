@@ -24,6 +24,16 @@ module Rant::C
 	    prev_line = nil
 	    src.each { |line|
 		line.chomp!
+                if block_start_i = line.index("/*")
+                    c_start_i = line.index("//")
+                    if !c_start_i || block_start_i < c_start_i
+                        if block_end_i = line.index("*/")
+                            if block_end_i > block_start_i
+                                line[block_start_i..block_end_i] = ""
+                            end
+                        end
+                    end
+                end
 		if prev_line
 		    line = prev_line << line
 		    prev_line = nil

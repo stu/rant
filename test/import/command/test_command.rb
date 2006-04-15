@@ -100,6 +100,14 @@ class TestImportCommand < Test::Unit::TestCase
     ensure
         Rant::Sys.rm_f "d   .t"
     end
+    def test_prerequisites_array
+        out, err = assert_rant "a2.t"
+        assert err.empty?
+        assert_file_content "a2.t", "b.t\nc.t\n"
+        out, err = assert_rant "a2.t"
+        assert err.empty?
+        assert out.empty?
+    end
     def test_enhance
         Rant::Sys.write_to_file "d.t", "d\n"
         out, err = assert_rant "b.t", "be=on"

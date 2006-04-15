@@ -14,7 +14,7 @@ class TestCParseIncludes < Test::Unit::TestCase
 	sc, lc = C::Include.parse_includes(src)
 	assert_equal(%w(stdio.h file.h std), sc)
 	assert_equal(
-	    %w(util.h mylib.h custom custom2.h), lc)
+	    %w(util.h mylib.h custom custom2.h _foo.h), lc)
     end
     def test_parse_empty
 	sc, lc = C::Include.parse_includes("")
