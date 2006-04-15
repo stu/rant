@@ -29,7 +29,7 @@ module Rant::C
                     if !c_start_i || block_start_i < c_start_i
                         if block_end_i = line.index("*/")
                             if block_end_i > block_start_i
-                                line[block_start_i..block_end_i] = ""
+                                line[block_start_i..block_end_i+1] = ""
                             end
                         end
                     end
