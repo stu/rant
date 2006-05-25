@@ -9,6 +9,8 @@ Fixes and minor improvements:
   package. (Reported and fixed by Kevin Burge.)
 * Fixed: The C source file scanner used by the C::Dependencies task
   was confused by C-style single-line comments.
+* Fix a typo in the C::Dependencies task which affected the ":search"
+  option. (Reported by Kevin Burge.)
 * +RubyTest+ no longer uses +testrb+ as test runner per default. Thus
   it works on systems without +testrb+ now (e.g. Debian based
   systems).  The old behaviour can be enabled by setting the +loader+

@@ -67,7 +67,7 @@ class Rant::Generators::C::Dependencies
 	end
 	unless ::Rant::FileList === include_pathes
 	    if include_pathes.respond_to? :to_ary
-		include_patehs = include_pathes.to_ary
+		include_pathes = include_pathes.to_ary
 	    else
 		rac.abort_at(ch,
 		    "search has to be a list of directories")
