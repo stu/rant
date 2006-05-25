@@ -104,8 +104,8 @@ There a five ways to obtain a +FileList+ object:
     fl.entries                      # => [".svn", ".README.txt.swp"]
 
     # compare the last example with the result of using
-    # Rant::FileList.new:
-    fl = Rant::FileList.new(".*")
+    # Rant::FileList[]:
+    fl = Rant::FileList[".*"]
     fl.entries                      # => [".", "..", ".svn", ".README.txt.swp"]
 
   Implementation Note:: Before the given block is called, the filelist
