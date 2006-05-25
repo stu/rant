@@ -47,7 +47,7 @@ module Rant
 	    @test_files = nil
 	    @test_dir = nil
             #@loader = RUBY_VERSION < "1.8.4" ? :testrb : :rant
-            @loader = :testrb
+            @loader = :rant
 	    yield self if block_given?
 	    @pattern = "test*.rb" if @pattern.nil? && @test_files.nil?
 
@@ -59,7 +59,15 @@ module Rant
                     args << "-I#{@libs.join File::PATH_SEPARATOR}"
                 end
                 case @loader
-                when :rant: args << "-rtest/unit"
+                when :rant:
+                    script = rb_testloader_path
+                    if script
+                        args << script
+                    else
+                        args << "-S" << "testrb"
+                        app.warn_msg("Rant's test loader not found. " +
+                            "Using `testrb'.")
+                    end
                 when :testrb: args << "-S" << "testrb"
                 else
                     @rac.abort_at(cinf,
@@ -107,5 +115,12 @@ module Rant
 	    end
 	    filelist
 	end
+        def rb_testloader_path
+            $LOAD_PATH.each { |libdir|
+                path = File.join(libdir, "rant/script/rb_testloader.rb")
+                return path if File.exist?(path)
+            }
+            nil
+        end
     end	# class Generators::RubyTest
 end	# module Rant

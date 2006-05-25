@@ -587,6 +587,26 @@ standard output:
   Like <tt>glob(pattern1, pattern2, ...)</tt>, but the created filelist
   doesn't ignore entries starting with a dot.
 
+* <b>root_dir?(path)</b>
+
+  Returns true if the given path specifies the root directory on
+  Linux/Unix, a drive followed by a slash or backslash on Windows.
+
+  Examples:
+
+    # on Linux/Unix:
+    sys.root_dir?("/")              # true
+    sys.root_dir?("/bin")           # false
+    sys.root_dir?("bin")            # false
+
+    # on Windows:
+    sys.root_dir?("C:\\")           # true
+    # (a reminder: a double backslash in a literal string is treated
+    # as an escape sequence and converted to a single backslash by
+    # ruby)
+    sys.root_dir?("C:/")            # true
+    sys.root_dir?("bin")            # false
+
 == See also
 
 Rantfile basics::
