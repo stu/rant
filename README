@@ -19,11 +19,7 @@ Rant currently features:
 * Optional recognition of file changes based on MD5 checksums instead
   of file modification times.
 * Tasks with command change recognition.
-* Primitive support for compiling C# sources portably with csc, cscc
-  and mcs.
 * Dependency checking for C/C++ source files.
-* A _configure_ plugin for easy environment and build-parameter
-  checking (but not like autoconf!) which saves data in a yaml file.
 
 As programmers usually want to see code, here is a short and very
 basic example of rant usage:
@@ -87,9 +83,9 @@ Buildfiles in subdirectories::
 Tasks with command change recognition::
     read doc/command.rdoc[link:files/doc/command_rdoc.html]
 Using the Configure plugin::
-    read doc/configure.rdoc[link:files/doc/configure_rdoc.html]
+    read doc/configure.rdoc[link:files/doc/configure_rdoc.html] *deprecated*
 Compiling C#::
-    read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html]
+    read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html] *deprecated*
 Common file system operations::
     read doc/sys.rdoc[link:files/doc/sys_rdoc.html]
 Upgrading::

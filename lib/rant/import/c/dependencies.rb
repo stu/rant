@@ -26,6 +26,7 @@ class Rant::Generators::C::Dependencies
 	    rac.abort_at(ch,
 		"C::Dependencies takes one or two arguments.")
 	end
+        correct_case = false
 	if opts
 	    if opts.respond_to? :to_hash
 		opts = opts.to_hash
@@ -44,6 +45,8 @@ class Rant::Generators::C::Dependencies
 		    else
 			v
 		    end
+                when :correct_case
+                    correct_case = !!v
 		else
 		    rac.abort_at(ch,
 			"C::Dependencies: no such option -- #{k}")
@@ -96,7 +99,8 @@ class Rant::Generators::C::Dependencies
 			::Rant::C::Include.parse_includes(File.read(cf))
 		    deps = []
 		    (std_includes + local_includes).each { |fn|
-			path = existing_file(include_pathes, fn)
+			path = existing_file(
+                            include_pathes, fn, correct_case)
 			deps << path if path
 		    }
 		end
@@ -113,10 +117,17 @@ class Rant::Generators::C::Dependencies
 	    }
 	end
     end
-    def self.existing_file(dirs, fn)
+    def self.existing_file(dirs, fn, correct_case)
 	dirs.each { |dir|
 	    path = dir == "." ? fn : File.join(dir, fn)
-	    return path if test ?f, path
+	    if test ?f, path
+                return path unless correct_case
+                found_file = File.basename(fn)
+                found_in_dir = File.dirname(File.join(dir, fn))
+                Dir.entries(found_in_dir).each { |dentry|
+                    return File.join(found_in_dir, dentry) if dentry.downcase == found_file.downcase
+                }
+            end
 	}
 	nil
     end

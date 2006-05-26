@@ -4,20 +4,26 @@
 == Rant 0.5.5 (development version)
 
 Fixes and minor improvements:
-* <tt>Package::Zip</tt>,<tt>Package::Tgz</tt>: Fix bug where a file
+* <tt>Package::Zip</tt>, <tt>Package::Tgz</tt>: Fix bug where a file
   that starts with the package name wouldn't be included in the
   package. (Reported and fixed by Kevin Burge.)
-* Fixed: The C source file scanner used by the C::Dependencies task
-  was confused by C-style single-line comments.
-* Fix a typo in the C::Dependencies task which affected the ":search"
-  option. (Reported by Kevin Burge.)
+* Fixed: The C source file scanner used by the
+  <tt>C::Dependencies</tt> task was confused by C-style single-line
+  comments.
+* Fix a typo in the <tt>C::Dependencies</tt> task which affected the
+  <tt>:search</tt> option. (Reported by Kevin Burge.)
 * +RubyTest+ no longer uses +testrb+ as test runner per default. Thus
   it works on systems without +testrb+ now (e.g. Debian based
   systems).  The old behaviour can be enabled by setting the +loader+
   attribute to <tt>:testrb</tt>. A patch was provided by Max Nickel.
 
 New features:
+* The <tt>C::Dependencies</tt> task accepts the new option
+  <tt>:correct_case</tt>, which is useful on case-insenstive
+  file systems. (Patch provided by Peter Allin.)
+  Read doc/c.rdoc[link:files/doc/c_rdoc.html] for documentation.
 * The method <tt>Rant::Sys.root_dir?</tt>.
+  Read doc/sys.rdoc[link:files/doc/sys_rdoc.html] for documentation.
 
 == Rant 0.5.4
 

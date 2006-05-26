@@ -62,6 +62,36 @@ For a little example project using the C::Dependency generator look
 into the doc/examples/c_dependencies[link:../examples/c_dependencies]
 directory of the Rant distribution.
 
+=== Issues on case-insensitive file systems
+
+If you are building on a case insensitive file system, your Compiler
+will usually ignore the case of filenames in <tt>#include</tt>
+statements. Thus if you have a header file called <tt>myutils.h</tt>
+and the following preprocessor statement <tt>main.c</tt>:
+
+    #include "MyUtils.h"
+
+The preprocessor will include the contents of <tt>myutils.h</tt>.
+The problem is that Rant's node names are case sensitive. In the above
+example Rant wouldn't track changes in files included by
+<tt>myutils.h</tt> when compiling <tt>main.c</tt>.
+
+To overcome this problem, set the <tt>:correct_case</tt> option to
+true, e.g.:
+
+    gen C::Dependencies, :correct_case => true
+
+Note that this option makes only sense on case-insensitive file
+systems. It can also significantly slow down dependency checking.
+
+Currently, the implementation of this option has one limit. In the
+following statement
+
+    #include "someDir/MyUtils.h"
+
+the case of <tt>someDir</tt> must be identical to the actual directory
+name on disk!
+
 == See also
 
 Rantfile basics::

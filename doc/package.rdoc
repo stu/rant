@@ -148,7 +148,7 @@ for tgz packages. Just <tt>import "package/zip"</tt> and use the
 This has the same effect as our first example, with the only
 difference that a <tt>foo.zip</tt> archive will be created. As already
 mentioned, you can give the same options and flags as to the
-<tt>Package::Tgz</tt> generator and or course you can use both in the
+<tt>Package::Tgz</tt> generator and of course you can use both in the
 same Rantfile:
 
     import "package/zip", "package/tgz"
