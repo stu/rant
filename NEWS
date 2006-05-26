@@ -1,7 +1,7 @@
 
 = Rant NEWS
 
-== Rant 0.5.5 (development version)
+== Rant 0.5.6
 
 Fixes and minor improvements:
 * <tt>Package::Zip</tt>, <tt>Package::Tgz</tt>: Fix bug where a file

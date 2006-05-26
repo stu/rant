@@ -546,7 +546,7 @@ class TestSysMethods < Test::Unit::TestCase
         @cx.import "sys/more"
         capture_std do
             # TODO: specialize exception class
-            assert_raise_kind_of(StandardError) do
+            assert_raise_kind_of(NoMethodError) do
                 @sys.write_to_file "a.t", Object.new
             end
         end
@@ -560,7 +560,7 @@ class TestSysMethods < Test::Unit::TestCase
         @cx.import "sys/more"
         capture_std do
             # TODO: specialize exception class
-            assert_raise_kind_of(StandardError) do
+            assert_raise_kind_of(NoMethodError) do
                 @sys.write_to_binfile "a.t", Object.new
             end
         end
