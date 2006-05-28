@@ -594,4 +594,26 @@ class TestSysMethods < Test::Unit::TestCase
             assert !Rant::Sys.root_dir?("C:/foo/bar")
         end
     end
+    def test_absolute_path?
+        assert Rant::Sys.absolute_path?("/foo")
+        assert Rant::Sys.absolute_path?("/foo/bar/baz.txt")
+        assert Rant::Sys.absolute_path?("/")
+        assert Rant::Sys.absolute_path?("//foo")
+        assert !Rant::Sys.absolute_path?("foo/")
+        assert !Rant::Sys.absolute_path?("")
+        assert !Rant::Sys.absolute_path?("foo\\bar")
+        if Rant::Env.on_windows?
+            assert Rant::Sys.absolute_path?("\\foo")
+            assert Rant::Sys.absolute_path?("\\")
+            assert Rant::Sys.absolute_path?("C:\\foo")
+            assert Rant::Sys.absolute_path?("C:/foo")
+            assert Rant::Sys.absolute_path?("C:\\")
+            assert Rant::Sys.absolute_path?("C:/")
+        else
+            assert !Rant::Sys.absolute_path?("C:/")
+            assert !Rant::Sys.absolute_path?("C:/foo")
+            assert !Rant::Sys.absolute_path?("\\")
+            assert !Rant::Sys.absolute_path?("C:\\")
+        end
+    end
 end

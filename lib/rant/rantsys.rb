@@ -257,9 +257,15 @@ module Rant
                 # how many drive letters are really allowed on
                 # windows?
             end
+            def absolute_path?(path)
+                path =~ %r{\A([a-zA-Z]+:)?(/|\\)}
+            end
         else
             def root_dir?(path)
                 path == "/"
+            end
+            def absolute_path?(path)
+                path =~ %r{\A/}
             end
         end
 

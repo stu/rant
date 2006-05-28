@@ -607,6 +607,20 @@ standard output:
     sys.root_dir?("C:/")            # true
     sys.root_dir?("bin")            # false
 
+* <b>absolute_path?(path)</b>
+
+  Returns true if the given path is an absolute path, false otherwise.
+
+  Examples:
+
+    # on all systems:
+    sys.absolute_path?("/home/me/main.c")   # true
+    sys.absolute_path?("main.c")            # false
+
+    # on windows:
+    sys.absolute_path?("C:\\Programs")      # true
+    sys.absolute_path?("C:/Programs")      # true
+
 == See also
 
 Rantfile basics::

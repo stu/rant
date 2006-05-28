@@ -185,4 +185,14 @@ if Rant::Env.find_bin("cc") && Rant::Env.find_bin("gcc")
 else
     $stderr.puts "*** cc/gcc not available, less rule tests ***"
 end
+    def test_abs_path_source
+        FileUtils.touch "abs_rule_test.et"
+        abs_target_path = File.expand_path "abs_rule_test.ett"
+        out, err = assert_rant("-frule.rf", abs_target_path)
+        assert test(?f, abs_target_path)
+        out, err = assert_rant("-frule.rf", abs_target_path)
+        assert out.empty?
+    ensure
+        Rant::Sys.rm_f ["abs_rule_test.et", "abs_rule_test.ett"]
+    end
 end

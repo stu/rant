@@ -452,6 +452,7 @@ class Rant::RantApp
 	sub.empty? ? @rootdir : File.join(@rootdir, sub)
     end
     def abs_path(subdir, fn)
+        return fn if Rant::Sys.absolute_path?(fn)
         path = File.join(@rootdir, subdir, fn)
         path.gsub!(%r{/+}, "/")
         path.sub!(%r{/$}, "") if path.length > 1

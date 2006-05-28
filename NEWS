@@ -1,6 +1,16 @@
 
 = Rant NEWS
 
+== Rant 0.5.7 (development version)
+
+Fixes and minor improvements:
+* Fixed: Rules wouldn't work if the target file was specified by an
+  absolute path. (Reported by Brendan Boesen.)
+
+New features:
+* The method <tt>Rant::Sys.absolute_path?</tt>.
+  Read doc/sys.rdoc[link:files/doc/sys_rdoc.html] for documentation.
+
 == Rant 0.5.6
 
 Fixes and minor improvements:

@@ -38,7 +38,7 @@ Running rant in the directory of this file:
 will ensure that the "data" file in the "backup" directory is up to
 date.
 
-This document was written for version 0.5.4 of Rant. Most things
+This document was written for version 0.5.6 of Rant. Most things
 described here will work for older/newer versions of Rant, but look at
 the README file in the Rant distribution you've installed for exact
 documentation of your Rant version.
@@ -179,6 +179,7 @@ Rant was tested on:
 			1.9
     MacOS X		1.8.2
     Windows XP		1.8.2 (OneClick Installer)
+    Windows XP		1.8.4 (OneClick Installer)
     Windows 2000	1.8.2 (OneClick Installer)
 
 It *should* run on most platforms where Ruby runs, but you never
@@ -208,4 +209,3 @@ basic concept and syntax of Rake and of course I could have written
 code for Rake (e.g. with a so called _Tasklib_) to support portable C#
 compilation. But it was a bit quirky and because I like to work with
 Ruby, I decided to write my own build tool.
-

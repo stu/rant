@@ -26,6 +26,10 @@ gen Rule, :rt => src do |t|
     sys.touch t.name
 end
 
+gen Rule, :ett => :et do |t|
+    sys.touch t.name
+end
+
 if var[:enhance_t]
     enhance "eh.t" do
 	puts "eh.t created"
