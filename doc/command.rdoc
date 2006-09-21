@@ -74,7 +74,7 @@ There is also a more concise syntax:
 
     gen Rule, ".o" => ".c" do |target, sources|
         gen Command, target, sources,
-            'cc -c -o $(<) $[CFLAGS] $(-)'
+            'cc -c -o $(>) $[CFLAGS] $(-)'
     end
 
 For the last syntax:
