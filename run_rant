@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby
+#!/usr/bin/env ruby
 # Run rant in current development directory.
 
 $:.unshift File.expand_path(File.join(File.dirname(__FILE__), "lib"))
