@@ -85,7 +85,7 @@ end
 desc "Run basic tests."
 gen RubyTest do |g|
     g.libs << "test"
-    g.pattern = 'test_*.rb'
+    g.test_files = sys["test/test_*.rb", "test/units/**/test_*.rb"]
 end
 
 desc "Run first test-project."
