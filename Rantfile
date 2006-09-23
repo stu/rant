@@ -88,6 +88,12 @@ gen RubyTest do |g|
     g.test_files = sys["test/test_*.rb", "test/units/**/test_*.rb"]
 end
 
+desc "Run just unit tests."
+gen RubyTest, "test:units".to_sym do |g|
+    g.libs << "test"
+    g.test_files = sys["test/units/**/test_*.rb"]
+end
+
 desc "Run first test-project."
 gen RubyTest, :testp1 do |g|
     g.libs << "test"
