@@ -83,4 +83,6 @@ begin
   # Mocks
   class Rant::Generators::Rule
   end
+rescue LoadError
+  print "**** Could not test Resgen, requires mocha libary ****\n"
 end
