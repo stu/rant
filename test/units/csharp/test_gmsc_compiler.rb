@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/csharp_test_helper')
+require File.expand_path(File.dirname(__FILE__) + '/../csharp_test_helper')
 require File.expand_path(File.dirname(__FILE__) + 
     '/../../../lib/rant/csharp/gmcs_compiler')
 

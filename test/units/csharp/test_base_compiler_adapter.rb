@@ -1,4 +1,4 @@
-require File.expand_path(File.dirname(__FILE__) + '/csharp_test_helper')
+require File.expand_path(File.dirname(__FILE__) + '/../csharp_test_helper')
 require File.expand_path(File.dirname(__FILE__) + 
     '/../../../lib/rant/csharp/base_compiler_adapter')
 
@@ -34,8 +34,7 @@ class TestBaseCompilerAdapter < Test::Unit::TestCase
     assert_regex " target:exe "           , cmd 
     assert_regex " checked- "             , cmd
     assert_regex " libs:c libs:d "        , cmd
-    assert_regex "a b$"                   , cmd
-                 
+    assert_regex "a b$"                   , cmd         
   end
   
   def test_should_provide_default_map_target
