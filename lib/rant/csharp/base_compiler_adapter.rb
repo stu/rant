@@ -8,14 +8,33 @@ def add_to_cmd_array klass, &block
 end
 
 # Methods to convert types into arguments for the compiler
-add_to_cs_arg_method(Object)     {|key, compiler| compiler.string_argument(key, self.to_s) }
-add_to_cs_arg_method(TrueClass)  {|key, compiler| compiler.boolean_argument(key, true) }
-add_to_cs_arg_method(FalseClass) {|key, compiler| compiler.boolean_argument(key, false) }
-add_to_cs_arg_method(Array)      {|key, compiler| self.collect {|x| x.to_cs_arg(key, compiler) } }
+add_to_cs_arg_method(Object) do |key, compiler|
+  compiler.string_argument(key, self.to_s)
+end
 
-add_to_cmd_array(Object)         { |context| [context.sys.sp(self.to_s)] }
-add_to_cmd_array(Array)          { |context| self.collect {|x| context.sys.sp(x) }}
-add_to_cmd_array(Rant::FileList) { |context| [self.arglist] }
+add_to_cs_arg_method(TrueClass) do |key, compiler| 
+  compiler.boolean_argument(key, true)
+end
+
+add_to_cs_arg_method(FalseClass) do |key, compiler|
+  compiler.boolean_argument(key, false)
+end
+
+add_to_cs_arg_method(Array) do |key, compiler| 
+  self.collect {|x| x.to_cs_arg(key, compiler) }
+end
+
+add_to_cmd_array(Object) do |context|
+  [context.sys.sp(self.to_s)]
+end
+
+add_to_cmd_array(Array) do |context| 
+  self.collect {|x| context.sys.sp(x) }
+end
+
+add_to_cmd_array(Rant::FileList) do |context| 
+  [self.arglist]
+end
 
 module Rant::CSharp
   class BaseCompilerAdapter
@@ -25,7 +44,8 @@ module Rant::CSharp
     def initialize bin = ""
       @bin = bin
       @switch_map = {}
-      raise Exception.new("Must specify an executable") if !@bin || @bin.length == 0
+      raise Exception.new("Must specify an executable") if !@bin || 
+                                                            @bin.length == 0
     end
     
     def cmd target, cs_args, context

@@ -80,7 +80,8 @@ begin
       compiler = mock()
       compiler.expects(:cmd).returns("command")
       
-      @csharp.rant_gen(rant, nil, ["target", {:sources => ["a"], :compiler => compiler}])  
+      @csharp.rant_gen(rant, nil, ["target", {:sources => ["a"], 
+                                              :compiler => compiler}])
     end
 
     def test_get_compiler_should_use_given_compiler
@@ -95,7 +96,7 @@ begin
       klass = Class.new(Object)
       ret = @csharp.get_compiler(nil, {:compiler => klass})
       assert ret.kind_of?(klass), 
-             "Created compiler was of class #{ret.class}, should have been #{klass}"
+         "Created compiler was of class #{ret.class}, should have been #{klass}"
     end
 
     def test_get_compiler_should_remove_compiler_from attributes

@@ -14,7 +14,8 @@ class Rant::Generators::Resgen
     }
     
     rant.context.gen Rant::Generators::Rule, regex => src do |t|
-      rant.context.sys.sh "resgen /useSourcePath /compile #{t.source},#{t.name}"  
+      rant.context.sys.sh "resgen /useSourcePath /compile " + 
+                          rant.context.sys.sp("#{t.source},#{t.name}")
     end
   end
 end

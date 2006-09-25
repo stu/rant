@@ -3,6 +3,13 @@ require File.expand_path(File.dirname(__FILE__) +
     '/../../../lib/rant/csharp/base_compiler_adapter')
 
 class TestBaseCompilerAdapter < Test::Unit::TestCase
+  begin
+    require 'mocha'
+    @@mocha_required = true
+  rescue LoadError
+    @@mocha_required = false
+  end
+
   def setup
     @c = Rant::CSharp::BaseCompilerAdapter.new("testbin")
   end
@@ -21,7 +28,7 @@ class TestBaseCompilerAdapter < Test::Unit::TestCase
     assert_equal "testbin out:outfile target:library ", 
                   @c.cmd("outfile", {}, mock_context)
   end
-
+  
   def test_cmd_should_create_complex_compile_line
     args = {:sources => ["a", "b"], 
             :libs => ["c", "d"], 
@@ -55,6 +62,33 @@ class TestBaseCompilerAdapter < Test::Unit::TestCase
     assert_equal "library", @c.guess_target("outfile")
   end
 
+  if @@mocha_required
+    def test_should_escape_sources_as_string
+      sys = mock()
+      sys.expects(:sp).with("outfile").returns("outfile")
+      sys.expects(:sp).with("a").returns("a")
+      
+      context = mock()
+      context.expects(:sys).at_least_once.returns(sys)
+      
+      @c.cmd("outfile", {:sources => "a"}, context)
+    end
+
+    def test_should_escape_sources_as_array
+      sys = mock()
+      sys.expects(:sp).with("outfile").returns("outfile")
+      sys.expects(:sp).with("a").returns("a").times(2)
+      
+      context = mock()
+      context.expects(:sys).at_least_once.returns(sys)
+      
+      @c.cmd("outfile", {:sources => ["a", "a"]}, context)
+    end
+  else
+    print "**** Could not run all tests for BaseCompilerAdapter, " +
+          "requires mocha libary ****\n"
+  end
+    
   # Helpers
   def mock_context
     Struct.new(:sys).new(MockSys.new)

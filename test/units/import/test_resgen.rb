@@ -52,11 +52,30 @@ begin
       task = Struct.new(:source, :name).new("source", "name")
 
       sys = mock()
+      sys.expects(:sp).returns("source,name")
       sys.expects(:sh).with("resgen /useSourcePath /compile source,name")
       
       context = mock()
       context.expects(:gen).yields(task)
-      context.expects(:sys).returns(sys)
+      context.expects(:sys).returns(sys).at_least_once
+    
+      rant = mock()
+      rant.expects(:context).at_least_once.returns(context)
+
+      @resgen.rant_gen(rant, nil, [{}])
+    end
+
+    def test_should_escape_source_and_name
+      task = Struct.new(:source, :name).new("sou rce", "nam e")
+
+      sys = mock()
+      sys.expects(:sp).with("sou rce,nam e").returns("")
+      sys.expects(:sh)
+      
+      
+      context = mock()
+      context.expects(:gen).yields(task)
+      context.expects(:sys).returns(sys).at_least_once
     
       rant = mock()
       rant.expects(:context).at_least_once.returns(context)
