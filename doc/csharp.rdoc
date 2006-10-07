@@ -35,3 +35,16 @@ A generator is provided to create a rule for compiling resource files with resge
     
     # properties/resource.resx => build/Example.Properties.Resource.resources
     # MyRes.resx               => build/Example.MyRes.resources
+    
+== Running NUnit
+
+You can easily run an NUnit test suite using the +NUnitTest+ generator
+
+    import "nunittest"
+    gen NUnitTest, "test", :dlls => ["mytest1.dll", "mytest2.dll"]
+    
+By default, nunit-console is used, and it must exist in your path. You can specify a different test runner using the :bin key. Any other arguments are passed through to the test runner
+
+    gen NUnitTest, "test", :dlls => sys["test/*.dll"],
+                           :bin  => "my-test-runner",
+                           :xml  => "results.xml"
