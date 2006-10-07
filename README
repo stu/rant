@@ -85,7 +85,7 @@ Tasks with command change recognition::
 Using the Configure plugin::
     read doc/configure.rdoc[link:files/doc/configure_rdoc.html] *deprecated*
 Compiling C#::
-    read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html] *deprecated*
+    read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html]
 Common file system operations::
     read doc/sys.rdoc[link:files/doc/sys_rdoc.html]
 Upgrading::

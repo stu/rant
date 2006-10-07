@@ -6,10 +6,12 @@
 Fixes and minor improvements:
 * Fixed: Rules wouldn't work if the target file was specified by an
   absolute path. (Reported by Brendan Boesen.)
+* Fixed: Script files use env ruby (Russel Windir)
 
 New features:
 * The method <tt>Rant::Sys.absolute_path?</tt>.
   Read doc/sys.rdoc[link:files/doc/sys_rdoc.html] for documentation.
+* Added non-deprecated support for C#. Read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html] for documentation.
 
 == Rant 0.5.6
 
