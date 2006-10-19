@@ -1,7 +1,7 @@
 
 = Rant NEWS
 
-== Rant 0.5.7 (development version)
+== Rant 0.5.7
 
 Fixes and minor improvements:
 * Fixed: Rules wouldn't work if the target file was specified by an

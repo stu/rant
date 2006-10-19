@@ -75,11 +75,11 @@ end
 desc "Publish html docs on make.rubyfore.org.",
      "Note: scp will prompt for rubyforge password."
 task "publish-docs" => :doc do
-    sys "scp -r doc/html/* langi@rubyforge.org:/var/www/gforge-projects/make/"
+    sys "scp -r doc/html/* meink@rubyforge.org:/var/www/gforge-projects/rant/"
 end
 
 task "publish-hp" do
-    sys "scp -r doc/homepage/* langi@rubyforge.org:/var/www/gforge-projects/make/"
+    sys "scp -r doc/homepage/* meink@rubyforge.org:/var/www/gforge-projects/rant/"
 end
 
 desc "Run basic tests."

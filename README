@@ -46,15 +46,12 @@ documentation of your Rant version.
 == Support
 
 The newest version of this document can be found at
-http://make.rubyforge.org.
+http://rant.rubyforge.org.
 
 For further information, feature requests, bugreports or comments join
 the mailing list
-{make-cafe}[http://rubyforge.org/mailman/listinfo/make-cafe] or visit
-the {RubyForge site for Rant}[http://rubyforge.org/projects/make/].
-
-Also feel free to contact the author directly by sending an email to
-mailto:langstefan@gmx.at.
+{rant-cafe}[http://rubyforge.org/mailman/listinfo/rant-cafe] or visit
+the {RubyForge site for Rant}[http://rubyforge.org/projects/rant/].
 
 == Roadmap
 
@@ -132,8 +129,7 @@ http://www.ruby-lang.org/en/LICENSE.txt.
 
 == Other info
 
-Rant was started in February 2005. It has been written and is
-maintained by Stefan Lang (mailto:langstefan@gmx.at).
+Rant was started in February 2005. It was originally written by Stefan Lang (langstefan AT gmx DOT at) and is now being maintained by Xavier Shay (contact AT rhnh DOT net)
 
 === Credits
 
@@ -176,6 +172,7 @@ Rant was tested on:
                         1.8.2
 			1.8.3
 			1.8.4
+      1.8.5
 			1.9
     MacOS X		1.8.2
     Windows XP		1.8.2 (OneClick Installer)
