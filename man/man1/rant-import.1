@@ -1,0 +1,47 @@
+.\"  Name: Rant
+.\"  Program Author: Stefan Lang
+.\"  Author: Ralph Amissah
+.\"  Description: Flexible, Ruby based make 
+.\"  License: GNU Lesser General Public License (LGPL)
+.\"  Notes: Process this file with
+.\"    groff -man -Tascii rant.1
+.\"    nroff -man rant.1 | most 
+.TH rant\-import 1  "July 26, 2006" "version 0.5.7" "rant\-import"
+.SH NAME
+.B Rant \- Flexible, Ruby based make
+.PP
+.SH SYNOPSIS
+The rant\-import command creates a monolithic rant script tailored to the needs of your project and thus removes the dependency on an Rant installation (but of course one person needs an Rant installation to run rant\-import).
+.PP
+Run the command with the \-\-help option to get a brief help message:
+.PP
+    % rant-import \-\-help
+.PP
+Probably the easiest way to create your monolithic rant script is with the \-\-auto option:
+.PP
+    % rant-import \-\-auto ant
+.PP
+This will write a monolithic rant script to the file ant in the current directory. To determine which plugins and imports your project is using, it performs step 2 of the rant command as described in doc/rant.rdoc, which means that it loads the Rantfile in the current directory.
+.PP
+That one command should be enough:
+.PP
+    % ruby ant
+.PP
+This script has the same behaviour as the rant command. Distribute it with your project and nobody else but you needs an Rant installation.
+.PP
+.\"%% Further Information
+.SH FURTHER INFORMATION
+.PP
+For more information on 
+.I Rant
+see:
+.I <http://rant.rubyforge.org/>
+.PP
+.I <http://rant.rubyforge.org/files/doc/rant-import_rdoc.html>
+.PP
+.SH AUTHOR
+Rant is by Stefan Lang, maintained by Xavier Shay and others
+.PP
+This package is maintained by Ralph Amissah
+.SH SEE
+.BR rant(1)
