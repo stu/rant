@@ -25,7 +25,7 @@ is done, you have successfully installed Rant. Congratulations!
 === Conventional installation
 
 First download the latest version of Rant from
-http://rubyforge.org/frs/?group_id=615. Choose the .zip or .tar.gz
+http://rubyforge.org/frs/?group_id=207. Choose the .zip or .tar.gz
 file, whatever you like, with the highest version number. Then unpack
 the archive, cd to the new directory and run the install.rb script.
 This could look like:
