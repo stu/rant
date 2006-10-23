@@ -1,35 +1,84 @@
 .\"  Name: Rant
 .\"  Program Author: Stefan Lang
-.\"  Author: Ralph Amissah
-.\"  Description: Flexible, Ruby based make 
+.\"  Author: Russel Winder from a work by Ralph Amissah
+.\"  Description: Flexible, Ruby-based make 
 .\"  License: GNU Lesser General Public License (LGPL)
 .\"  Notes: Process this file with
 .\"    groff -man -Tascii rant.1
 .\"    nroff -man rant.1 | most 
-.TH rant\-import 1  "July 26, 2006" "version 0.5.7" "rant\-import"
+.TH rant\-import 1  "2006-10-22" "version 0.5.8" "rant\-import"
 .SH NAME
-.B Rant \- Flexible, Ruby based make
+rant-import \- creates a Rant-independent Rantfile for distribution of a project that uses
+.B Rant 
 .PP
 .SH SYNOPSIS
-The rant\-import command creates a monolithic rant script tailored to the needs of your project and thus removes the dependency on an Rant installation (but of course one person needs an Rant installation to run rant\-import).
-.PP
-Run the command with the \-\-help option to get a brief help message:
-.PP
-    % rant-import \-\-help
-.PP
-Probably the easiest way to create your monolithic rant script is with the \-\-auto option:
+rant-import
+.RI [ options ]
+MONO_RANTFILE
+.SH DESCRIPTION
+The rant\-import command creates a monolithic
+.B Rant
+script tailored to the needs of a given project so that that project may be distributed and then build
+without a dependency on a
+.B Rant
+installation.
+.SH OPTIONS
+.TP
+.B -h, --help
+Print this help and exit.
+.TP
+.B -V,  --version
+Print version of rant-import and exit.
+.TP
+.B -q, --quiet
+Operate quietly.
+.TP
+.B -p PLUGINS,  --plugins PLUGINS
+Include PLUGINS (comma separated list).
+.TP
+.B -i IMPORTS,  --imports IMPORTS
+Include IMPORTS (comma separated list).
+.TP
+.B   --force
+Force overwriting of output file.
+.TP
+.B   --with-comments
+Include comments from
+.B Rant
+sources.
+.TP
+.B  -r, --reduce-whitespace
+Remove as much whitespace from Rant sources as possible.
+.TP
+.B -z,  --zip
+      Compress created script.
+.TP
+.B  -a, --auto
+      Automatically try to determine imports and plugins.
+      Warning: loads Rantfile!
+.TP
+.B -f RANTFILE,  --rantfile RANTFILE
+Load RANTFILE. This also sets --auto!  May be given multiple times.
+.SH INVOCATION
+Probably the easiest way to create your monolithic
+.B Rant
+script is with the \-\-auto option:
 .PP
     % rant-import \-\-auto ant
 .PP
-This will write a monolithic rant script to the file ant in the current directory. To determine which plugins and imports your project is using, it performs step 2 of the rant command as described in doc/rant.rdoc, which means that it loads the Rantfile in the current directory.
+This will write a monolithic
+.B Rant script to the file
+.I ant
+in the current directory. To determine which plugins and imports your project is using, it performs step 2
+of the rant command as described in doc/rant.rdoc, which means that it loads the Rantfile in the current
+directory.
 .PP
 That one command should be enough:
 .PP
     % ruby ant
 .PP
-This script has the same behaviour as the rant command. Distribute it with your project and nobody else but you needs an Rant installation.
-.PP
-.\"%% Further Information
+This script has the same behaviour as the rant command. Distribute it with your project and nobody else
+but you needs an Rant installation.
 .SH FURTHER INFORMATION
 .PP
 For more information on 
@@ -40,8 +89,13 @@ see:
 .I <http://rant.rubyforge.org/files/doc/rant-import_rdoc.html>
 .PP
 .SH AUTHOR
-Rant is by Stefan Lang, maintained by Xavier Shay and others
+.B Rant
+was originally authored by Stefan Lang.  It is now maintained by Xavier Shay, Russel Winder and others.
 .PP
-This package is maintained by Ralph Amissah
-.SH SEE
-.BR rant(1)
+This manual page by Russel Winder from a work by Ralph Amissah.
+.PP
+The Debian package of
+.B Rant
+is maintained by Ralph Amissah
+.SH SEE ALSO
+.BR rant (1)
