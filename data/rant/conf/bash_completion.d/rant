@@ -1,0 +1,62 @@
+# -*- mode:shell-script -*-
+
+# Programmable completion for the rant command under bash.
+
+# This file draws heavily on the rake and subversion files that come as standard with Bash 3.
+
+#  Author :  Russel Winder
+#  Version :  2006-09-21T13:34
+#  Licence : LGPL
+
+_rant()
+{
+    local cur prev rantf i
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+    rantf="Rantfile"
+
+    if [[ "$prev" == "-f" || "$prev" == "--rantfile" ]]; then
+        _filedir
+        return 0
+    fi
+
+    if [[ "$cur" == *=* ]]; then
+        prev=${cur/=*/}
+        cur=${cur/*=/}
+        if [[ "$prev" == "--rantfile=" || "$prev" == "--directory=" ]]; then
+            _filedir -o nospace
+            return 0
+        fi
+    fi
+
+    if [[ "$cur" == -* ]]; then
+        COMPREPLY=( $( compgen -W '-h --help -v --verbose -V --version -q --quiet\
+            --err-commands -C '--directory=' -c --cd-parent -u --lookup\
+            -f '--rantfile=' -a '--force-run=' -n --dry-run -T --tasks'\
+            -- $cur ))
+    else
+
+        for (( i=0; i < ${#COMP_WORDS[@]}; i++)); do
+            case "${COMP_WORDS[i]}" in
+            -f)
+                eval rantf=${COMP_WORDS[i+1]}
+                break
+                ;;
+            --rantfile=*|--rantfile\=*)
+                eval rantf=${COMP_WORDS[i]/*=/}
+                break
+                ;;
+            esac
+        done
+
+        [ ! -f $rantf ] && return 0
+
+        COMPREPLY=( $( rant -q -f "$rantf" -T | \
+            awk -F ' ' '/^rant / { if ( $2 != "#" ) print $2 }' | \
+            command grep "^$cur" ))
+
+    fi
+}
+complete -F _rant $filenames rant
