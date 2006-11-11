@@ -5,7 +5,8 @@
 # This file draws heavily on the rake and subversion files that come as standard with Bash 3.
 
 #  Author :  Russel Winder
-#  Version :  2006-09-21T13:34
+#  $Revision$
+#  $Date$
 #  Licence : LGPL
 
 _rant()
