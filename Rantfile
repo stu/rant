@@ -30,10 +30,10 @@ gen RubyPackage, "rant#{var :pkg_ext}" do |t|
     t.files = dist_files
     t.bindir = "bin"
     t.executable %w(rant rant-import)
-    t.author = "Stefan Lang"
-    t.email = "langstefan@gmx.at"
-    t.rubyforge_project = "make"
-    t.homepage = "http://make.rubyforge.org"
+    t.author = "Stefan Lang (maintained by Xavier Shay)"
+    t.email = "contact@rhnh.net"
+    t.rubyforge_project = "rant"
+    t.homepage = "http://rant.rubyforge.org"
     t.has_rdoc = false
     t.gem_extra_rdoc_files = rdoc_files
     t.gem_rdoc_options = rdoc_opts
