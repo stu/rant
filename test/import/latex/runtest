@@ -1,0 +1,5 @@
+#! /bin/sh
+
+export RUBYLIB="$HOME/lib/Ruby:$HOME/Checkouts/Rant/trunk/test"
+
+ruby test_latex.rb

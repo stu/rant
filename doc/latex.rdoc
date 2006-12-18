@@ -1,0 +1,125 @@
+== LaTeX Processing Support
+
+The +LaTeX+ module provides various constants, functions and a generator useful for using Rant to manage
+LaTeX builds.
+
+=== General Usage
+
+In general, the generator will be the most useful feature of this module.  The generator must be provided
+with the name of the source file and can be given a map of parameter.  So the simplest use would be
+something like:
+
+    gen LaTeX , 'document.ltx'
+
+this handles all issues to do with generating +document.pdf+ using the +pdflatex+ command -- which is
+assumed to be in the path.  This is equivalent to:
+
+    gen LaTeX , 'document.ltx' , { 'generate' => 'PDF' }
+
+If it is necessary to create PostScript then:
+
+    gen LaTeX , 'document.ltx' , { 'generate' => 'PostScript' }
+
+will use the +latex+ command followed by +dvips+ to generate PostScript.
+
+There are some other parameters that can be give.  Arguably the only actually useful one is +parts+ which
+gives a list of all the files that +document.ltx' depends on.
+
+Currently there is no automated checking of dependencies. As LaTeX is a macro language, and so it is not
+deterministic what macros are actually performing includes, calculating dependencies is a non-trivial
+problem.  In the future it may be possible to construct a LaTeX file parser to automatically handle all the
+inclusion dependencies but fort now it must be done manually.
+
+=== An Example
+
+The following is an example Rantfile for managing a directory of LaTeX source files where each source file
+is completely independent.
+
+    import 'autoclean'
+    import 'latex'
+
+    desc 'Cleanup generated files.'
+    gen AutoClean , :clean
+
+    desc 'Clean up everything.'
+    task :clobber => :clean do
+      toGo = Dir[ '*~' ]
+      if toGo.size > 0 then sys.rm( toGo ) end
+    end
+
+    Dir.glob( '*.ltx' ).each { | file |
+      gen LaTeX , file , { 'generate' => 'PDF' }
+      gen LaTeX , file , { 'generate' => 'PostScript' }
+      var[:clean].include file + '~'
+    }
+
+=== Specialized Usage
+
+==== The Functions
+
+There are some situations where the generator is not the most useful tool for the job.  In this situation,
+the actions provided by the functions in the module can be used.  The three functions provided by this
+module are:
+
+    Rant::LaTeX.runLaTeX( root , use_pdfLaTeX = false )
+    Rant::LaTeX.createPsFromDvi( root )
+    Rant::LaTeX.createPdfFromDvi( root )
+
+where +root+ is the base name with no extension of the file being processed.  So if +document+.+ltx+ is being
+processed, +root+ should be +document+.  LaTeX generates a large number of files with different extensions
+based on the root, so it is the root rather that the source file name that is required.   The source
+document is assumed to have a .+ltx+ or .+tex+ extension.
+
+The Boolean parameter +use_pdfLaTeX+ states whether +pdflatex+ or +latex+ is the command to be used for
+processing.  When +true+, +runLaTeX+ generates a PDF, when false, +runLaTeX+ generates a DVI file.
+
+==== The Constants
+
+This module provides a large number of constants for the plethora of file extensions used by LaTeX.  Most of
+these are probably not that useful in normal usage but a list containing them all, +CleanListExtensions+, can
+be very useful for generating clean targets.  For example, when using Rant's +AutoClean+:
+
+    gen AutoClean , :clean
+    Rant::LaTeX::CleanListExtensions.each { | extension | var[:clean].include Root + extension }
+
+causes all the extra files generated during a run of LaTeX to be put onto the clean list.
+
+==== An Example
+
+Here is an example Rantfile used for managing the build of a file +document+.+ltx+ which is in the current
+directory and has all the .+bib+ files in directory +bibliographies+ and included LaTeX files in directory
++sections+:
+
+    import 'autoclean'
+    
+    import 'latex'
+    
+    Root = 'document'
+    Source = Root + Rant::LaTeX::LtxExtension
+    
+    Bits = sys[ 'bibliographies/*.bib' , 'sections/*.ltx' ]
+    
+    desc 'Create a PDF version.'
+    file Root +  Rant::LaTeX::PdfExtension  => [ Source ] + Bits do
+       Rant::LaTeX.runLaTeX( Root , true )
+    end
+    
+    desc 'Create a PostScript version.'
+    file Root +  Rant::LaTeX::PsExtension => [ Source ] + Bits do
+       Rant::LaTeX.runLaTeX( Root , false )
+       Rant::LaTeX.createPsFromDvi( Root )
+    end
+    
+    desc 'Cleanup generated files.'
+    gen AutoClean , :clean
+    Rant::LaTeX::CleanListExtensions.each { | extension | var[:clean].include Root + extension }
+    var[:clean].include '**/*~'
+
+The LaTeX file dependencies are being managed explicitly here.  In the future it may be possible to
+construct a LaTeX file parser to automatically handle all the inclusion dependencies.  However, as LaTeX is
+a macro language, and so it is not deterministic what macros are actually performing includes, this is a
+non-trivial problem.
+
+=== Author
+
+Russel Winder <russel@russel.org.uk>
