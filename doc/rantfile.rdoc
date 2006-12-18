@@ -445,6 +445,8 @@ Advanced Rantfiles::
     doc/advanced.rdoc[link:files/doc/advanced_rdoc.html]
 Support for C/C++::
     doc/c.rdoc[link:files/doc/c_rdoc.html]
+Support for LaTeX::
+    doc/latex.rdoc[link:files/doc/latex_rdoc.html]
 Packaging::
     doc/package.rdoc[link:files/doc/package_rdoc.html]
 Ruby project howto::

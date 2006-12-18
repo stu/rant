@@ -86,6 +86,8 @@ Compiling C#::
     read doc/csharp.rdoc[link:files/doc/csharp_rdoc.html]
 Common file system operations::
     read doc/sys.rdoc[link:files/doc/sys_rdoc.html]
+Support for LaTeX::
+    read doc/latex.rdoc[link:files/doc/latex_rdoc.html]
 Upgrading::
     read the NEWS[link:files/NEWS.html] for new features, not
     backwards compatible changes and other issues.
