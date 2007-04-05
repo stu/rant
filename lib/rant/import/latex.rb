@@ -73,7 +73,7 @@ module Rant
       else raise Exception.new( "Neither #{root}.ltx or #{root}.tex exist." ) end
       doLaTeX = proc { system( ( use_pdfLaTeX ? 'pdflatex' : 'latex' ) + ' ' + source ) }
       conditionallyDoLaTeX = proc {
-        rerun = File.open( root + LogExtension ) { | file | file.read.index( /(Warning:.*Rerun|Warning:.*undefined citations)/ ) != nil }
+        rerun = File.open( root + LogExtension ) { | file | file.read.index( /(Warning:.*Rerun|Warning:.*undefined)/ ) != nil }
         if rerun then doLaTeX.call end
         rerun
       }
@@ -84,10 +84,7 @@ module Rant
         system( "bibtex #{$bibtexOptions} #{root}#{AuxExtension}" )
         bibTeXRun = true
       end
-      if bibTeXRun
-        doLaTeX.call
-        if conditionallyDoLaTeX.call then conditionallyDoLaTeX.call end
-      end
+      if bibTeXRun then doLaTeX.call end
       makeindexRun = false
       Dir.glob( root + '*.idx' ).each { | file | system( "makeindex #{$makeindexOptions} #{file}" ) ; makeindexRun = true }
       if makeindexRun then doLaTeX.call end
