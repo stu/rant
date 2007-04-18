@@ -23,8 +23,8 @@ gen C::Dependencies, "deps3.t", :search => [".", "include", "src"]
 
 gen Action do
     source case var[:deps]
-    when 2: "deps2.t"
-    when 3: "deps3.t"
+    when 2 then "deps2.t"
+    when 3 then "deps3.t"
     else    "c_dependencies"
     end
 end

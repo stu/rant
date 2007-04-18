@@ -154,8 +154,8 @@ module Rant
                                 }
                             }
                         end
-                    when Proc: src_arg
-                    when nil: lambda { |name| [] }
+                    when Proc then src_arg
+                    when nil then lambda { |name| [] }
                     else
                         rac.abort_at(ch, "rule source has to be a " +
                             "String, Array or Proc")
@@ -200,8 +200,8 @@ module Rant
                 def create_nodes(rel_project_dir, target, deps)
                     @rant.goto_project_dir rel_project_dir
                     case nodes = @block[target, deps]
-                    when Array: nodes
-                    when Node: [nodes]
+                    when Array then nodes
+                    when Node then [nodes]
                     else
                         @rant.abort_at(@ch, "Block has to " +
                             "return Node or array of Nodes.")
@@ -226,11 +226,11 @@ module Rant
 	class Action
 	    def self.rant_gen(rac, ch, args, &block)
                 case args.size
-                when 0:
+                when 0
                     unless (rac[:tasks] || rac[:stop_after_load])
                         yield
                     end
-                when 1:
+                when 1
                     rx = args.first
                     unless rx.kind_of? Regexp
                         rac.abort_at(ch, "Action: argument has " +

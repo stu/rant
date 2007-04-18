@@ -89,8 +89,8 @@ module Rant::Console
     def ask_yes_no text
         $stderr.print msg_prefix + text + " [y|n] "
         case $stdin.readline
-        when /y|yes/i: true
-        when /n|no/i: false
+        when /y|yes/i then true
+        when /n|no/i then false
         else
             $stderr.puts(' ' * msg_prefix.length +
                 "Please answer with `yes' or `no'")
@@ -427,9 +427,9 @@ class Rant::RantApp
     ### support for subdirectories ###################################
     def expand_path(subdir, path)
 	case path
-	when nil:	subdir.dup
-	when "":	subdir.dup
-	when /^@/:	path.sub(/^@/, '')
+	when nil then	subdir.dup
+	when ""	then subdir.dup
+	when /^@/ then 	path.sub(/^@/, '')
 	else
             path = path.sub(/^\\(?=@)/, '')
 	    if subdir.empty?
@@ -1010,7 +1010,7 @@ class Rant::RantApp
 		return s if s
 	    }
 	    []
-	when Rant::Node: [s]
+	when Rant::Node then [s]
 	else # assuming list of tasks
 	    s
 	end
@@ -1027,7 +1027,7 @@ class Rant::RantApp
 		return s if s
 	    }
 	    []
-	when Rant::Node: [s]
+	when Rant::Node then [s]
 	else
 	    s
 	end
@@ -1173,7 +1173,7 @@ class Rant::RantApp
 	cmd_opts.quiet = true
 	cmd_opts.each { |opt, value|
 	    case opt
-	    when "--verbose": @opts[:verbose] += 1
+	    when "--verbose" then @opts[:verbose] += 1
 	    when "--version"
 		puts "rant #{Rant::VERSION}"
 		raise Rant::RantDoneException

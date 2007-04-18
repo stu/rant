@@ -21,14 +21,14 @@ module Rant
 			false
 		    elsif val.respond_to? :to_str
 			case val.to_str
-			when /^\s*true\s*$/i:	true
-			when /^\s*false\s*$/i:	false
-			when /^\s*y(es)?\s*$/i:	true
-			when /^\s*n(o)?\s*$/:	false
-			when /^\s*on\s*$/i:	true
-			when /^\s*off\s*$/i:	false
-			when /^\s*1\s*$/:	true
-			when /^\s*0\s*$/:	false
+			when /^\s*true\s*$/i then 	true
+			when /^\s*false\s*$/i then 	false
+			when /^\s*y(es)?\s*$/i then	true
+			when /^\s*n(o)?\s*$/ then	false
+			when /^\s*on\s*$/i then	true
+			when /^\s*off\s*$/i then	false
+			when /^\s*1\s*$/ then	true
+			when /^\s*0\s*$/ then	false
 			else
 			    raise ConstraintError.new(self, val)
 			end

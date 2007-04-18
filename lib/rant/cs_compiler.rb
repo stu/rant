@@ -148,9 +148,9 @@ module Rant
 	    end
 	    @csc_name = new_name
 	    @long_name = case @csc_name
-	    when "cscc":	"DotGNU C# compiler"
-	    when "csc":	"MS Visual.NET C# compiler"
-	    when "mcs":	"Mono C# compiler"
+	    when "cscc"	then "DotGNU C# compiler"
+	    when "csc" then "MS Visual.NET C# compiler"
+	    when "mcs" then "Mono C# compiler"
 	    end
 	end
 

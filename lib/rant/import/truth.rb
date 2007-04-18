@@ -8,8 +8,8 @@ module Rant
     module Node
 	def %(desc)
 	    @description = case @description
-	    when nil: desc
-	    when /\n$/: @description + desc
+	    when nil then desc
+	    when /\n$/ then @description + desc
 	    else "#@description\n#{desc}"
 	    end
 	    self

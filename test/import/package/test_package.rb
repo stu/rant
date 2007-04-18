@@ -26,8 +26,8 @@ class TestImportPackage < Test::Unit::TestCase
 	FileUtils.cd "u.t"
 	archive = File.basename archive
         case atype
-        when :tgz: Rant::Sys.unpack_tgz(archive)
-        when :zip: Rant::Sys.unpack_zip(archive)
+        when :tgz then Rant::Sys.unpack_tgz(archive)
+        when :zip then Rant::Sys.unpack_zip(archive)
         else
             raise "unknown archive type -- #{atype}"
         end

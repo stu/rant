@@ -214,7 +214,7 @@ task :install do
         prefix = Config::CONFIG["prefix"]
         dirs = sys.split_path man_path
         man_dir = dirs.find{|d| d == "#{prefix}/man" } || dirs.first
-        sys.install "doc/rant.1", "#{man_dir}/man1", :mode => 0644 if man_dir
+        sys.install "doc/rant.1", "#{man_dir}/man1", :mode => 0644 if man_dir and test(?d, man_dir)
     end
 end
 
@@ -306,10 +306,10 @@ def count_rb_lines(fn)
     File.readlines(fn).each { |line|
         lines += 1
         case line
-        when /=end(\s|$)/:
+        when /=end(\s|$)/
             in_multiline_comment = false
             next
-        when /^\s*$/, /^\s*#/: next
+        when /^\s*$/, /^\s*#/ then next
         when /^=begin(\s|$)/
             in_multiline_comment = true
         end

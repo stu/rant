@@ -218,20 +218,20 @@ EOF
 	    cmd_opts.quiet = true
 	    cmd_opts.each { |opt, value|
 		case opt
-		when "--version":
+		when "--version"
 		    puts "rant-import #{Rant::VERSION}"
 		    done
-                when "-v":
+                when "-v"
                     warn_msg "Option `-v' is deprecated and won't be in",
                         "release 0.6.0. Use `-V' or `--version' instead!."
 		    puts "rant-import #{Rant::VERSION}"
 		    done
-		when "--help": help
-		when "--quiet": @quiet = true
-		when "--force": @force = true
-		when "--with-comments": @skip_comments = false
-		when "--reduce-whitespace": @reduce_whitespace = true
-                when "--zip": @zip = true
+		when "--help" then help
+		when "--quiet" then @quiet = true
+		when "--force" then @force = true
+		when "--with-comments" then @skip_comments = false
+		when "--reduce-whitespace" then @reduce_whitespace = true
+                when "--zip" then @zip = true
 		when "--imports"
 		    @imports.concat(value.split(/\s*,\s*/))
 		when "--plugins"
@@ -343,7 +343,7 @@ EOF
 	def resolve_requires script
 	    rs = ""
 	    in_ml_comment = false
-	    script.each { |line|
+	    script.each_line { |line|
 		if in_ml_comment
 		    if line =~ /^=end/
 			in_ml_comment = false

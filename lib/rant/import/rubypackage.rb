@@ -9,8 +9,8 @@ class Rant::Generators::RubyPackage
 		self.new(:app => app, :__caller__ => ch, &block)
 	    elsif args.size == 1
 		pkg_name = case args.first
-		when String: args.first
-		when Symbol: args.first.to_s
+		when String then  args.first
+		when Symbol then args.first.to_s
 		else
 		    app.abort("RubyPackage takes only one additional " +
 			"argument, which should be a string or symbol.")

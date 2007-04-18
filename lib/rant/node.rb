@@ -83,8 +83,8 @@ module Rant
         def reference_name
             sd = rac.current_subdir
             case sd
-            when "": full_name
-            when project_subdir: name
+            when "" then full_name
+            when project_subdir then name
             else "@#{full_name}".sub(/^@#{Regexp.escape sd}\//, '')
             end
         end

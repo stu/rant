@@ -265,8 +265,8 @@ module Rant
 	# A +vid+ has to be a String to be valid.
 	def valid_vid(obj)
 	    case obj
-	    when String: obj
-	    when Symbol: obj.to_s
+	    when String then obj
+	    when Symbol then obj.to_s
 	    else
 		if obj.respond_to? :to_str
 		    obj.to_str

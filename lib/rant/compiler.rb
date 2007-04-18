@@ -57,8 +57,8 @@ module Rant
             rant_flag :warn
             def optimize(level=__rant_no_value__)
                 @optimize = case level
-                    when __rant_no_value__: true
-                    when Integer: level
+                    when __rant_no_value__ then true
+                    when Integer then level
                     else
                         raise ArgumentError, "optimize: " +
                             "no argument or integer argument required"

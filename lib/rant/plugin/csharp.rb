@@ -131,9 +131,9 @@ module Rant
 	    # set target type
 	    unless @target
 		@target = case @out
-		when /\.exe$/i: "exe"
-		when /\.dll$/i: "dll"
-		when /\.obj$/i: "object"
+		when /\.exe$/i then "exe"
+		when /\.dll$/i then "dll"
+		when /\.obj$/i then "object"
 		else "exe"
 		end
 	    end

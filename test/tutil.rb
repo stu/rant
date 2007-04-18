@@ -43,11 +43,11 @@ module Test
 		args.reject! { |arg|
 		    if Symbol === arg
 			case arg
-			when :fail: res = 1
-			when :v: capture = false
-			when :verbose: capture = false
-                        when :x: newproc = true
-                        when :tmax_1: tmax_1 = true
+			when :fail then res = 1
+			when :v then capture = false
+			when :verbose then capture = false
+                        when :x then newproc = true
+                        when :tmax_1 then tmax_1 = true
 			else
 			    raise "No such option -- #{arg}"
 			end

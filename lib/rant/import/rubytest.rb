@@ -59,7 +59,7 @@ module Rant
                     args << "-I#{@libs.join File::PATH_SEPARATOR}"
                 end
                 case @loader
-                when :rant:
+                when :rant
                     script = rb_testloader_path
                     if script
                         args << script
@@ -68,7 +68,7 @@ module Rant
                         app.warn_msg("Rant's test loader not found. " +
                             "Using `testrb'.")
                     end
-                when :testrb: args << "-S" << "testrb"
+                when :testrb then args << "-S" << "testrb"
                 else
                     @rac.abort_at(cinf,
                         "RubyTest: No such test loader -- #@loader")

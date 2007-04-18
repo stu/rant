@@ -191,9 +191,9 @@ explain it a little bit. It can be used in three ways:
             sys "diff -u a/util.c b/util.c > util.diff" do |ps|
                 # ps is an instance of Process::Status
                 case ps.exitstatus
-                when 0:
+                when 0
                     puts "a/util.c and b/util.c are equal"
-                when 1:
+                when 1
                     puts "a/util.c and b/util.c are not equal"
                 else
                     t.fail "diff error"
