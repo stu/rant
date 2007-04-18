@@ -207,10 +207,10 @@ desc "Install Rant."
 task :install do
     sys.ruby "setup.rb"
     # try to install man page
-    man_path = ENV["MANPATH"]
+    require 'rbconfig'
+    man_path = Config::CONFIG['mandir'] || ENV["MANPATH"]
     if man_path
         puts "trying to install rant(1) manpage..."
-        require 'rbconfig'
         prefix = Config::CONFIG["prefix"]
         dirs = sys.split_path man_path
         man_dir = dirs.find{|d| d == "#{prefix}/man" } || dirs.first
