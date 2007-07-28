@@ -17,7 +17,7 @@
 require 'test/unit'
 require 'tutil'
 
-$testImportCommandDir ||= File.expand_path(File.dirname(__FILE__))
+$testImportLatexDir ||= File.expand_path(File.dirname(__FILE__))
 
 class TestLaTeX < Test::Unit::TestCase
 
@@ -41,11 +41,11 @@ class TestLaTeX < Test::Unit::TestCase
   def cantMakeErrorMessage( target ) ; "Don't know how to make `#{target}'" end
 
   def setup
-    Dir.chdir( $testImportCommandDir )
+    Dir.chdir( $testImportLatexDir )
   end
 
   def teardown
-    Dir.chdir( $testImportCommandDir )
+    Dir.chdir( $testImportLatexDir )
     Rant::Sys.rm_f( RantfileName )
     Rant::Sys.rm_f( Rant::LaTeX::CleanListExtensions.map { | extension | SourceFileName.sub( '.ltx' , extension ) } + [ PdfTarget , PsTarget ] )
   end
