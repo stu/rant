@@ -30,13 +30,13 @@ class TestImportCDependencies < Test::Unit::TestCase
 	out, err = assert_rant("hello.t")
 	assert(out.strip.empty?)
 	assert(err.strip.empty?)
-	timeout
+	_sleep
 	FileUtils.touch "foo.h"
 	old_mtime = File.mtime "hello.t"
 	assert_rant("hello.t")
 	assert(File.mtime("hello.t") > old_mtime)
 	old_mtime = File.mtime("hello.t")
-	timeout
+	_sleep
 	out, err = assert_rant("hello.t")
 	assert(out.strip.empty?)
 	assert(err.strip.empty?)
@@ -56,11 +56,11 @@ class TestImportCDependencies < Test::Unit::TestCase
 	assert(test(?f, "bar.t"))
 	assert_equal(cdeps_mtime, File.mtime("deps2.t"))
 	old_mtime = File.mtime "bar.t"
-	timeout
+	_sleep
 	FileUtils.touch "src/abc.c"
 	assert_rant("deps=2", "bar.t")
 	assert_equal(old_mtime, File.mtime("bar.t"))
-	timeout
+	_sleep
 	FileUtils.touch "include/with space.h"
 	assert_rant("deps=2", "bar.t")
 	assert(File.mtime("bar.t") > old_mtime)
@@ -70,17 +70,17 @@ class TestImportCDependencies < Test::Unit::TestCase
 	assert(test(?f, "bar.t"))
 	assert(test(?f, "deps3.t"))
 	old_mtime = File.mtime("bar.t")
-	timeout
+	_sleep
 	FileUtils.touch "src/abc"
 	assert_rant("deps=3", "bar.t")
 	assert(File.mtime("bar.t") > old_mtime)
 	old_mtime = File.mtime "bar.t"
-	timeout
+	_sleep
 	FileUtils.touch "src/abc.c"
 	assert_rant("deps=3", "bar.t")
 	assert(File.mtime("bar.t") > old_mtime)
 	old_mtime = File.mtime "bar.t"
-	timeout
+	_sleep
 	FileUtils.touch "foo.h"
 	assert_rant("deps=3", "bar.t")
 	assert(File.mtime("bar.t") > old_mtime)

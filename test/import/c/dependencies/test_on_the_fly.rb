@@ -32,11 +32,11 @@ class TestImportCDependenciesOnTheFly < Test::Unit::TestCase
 	assert(out.strip.empty?)
 	assert(err.strip.empty?)
 	old_mtime = File.mtime "bar.t"
-	timeout
+	_sleep
 	FileUtils.touch "src/abc"
 	assert_rant("-frf.t")
 	assert_equal(old_mtime, File.mtime("bar.t"))
-	timeout
+	_sleep
 	FileUtils.touch "include/with space.h"
 	assert_rant("-frf.t")
 	assert(File.mtime("bar.t") > old_mtime)

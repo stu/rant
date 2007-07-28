@@ -478,12 +478,12 @@ class TestSysMethods < Test::Unit::TestCase
         assert !@sys.uptodate?("a.t", [])
         Rant::Sys.touch "a.t"
         assert @sys.uptodate?("a.t", [])
-        timeout
+        _sleep
         Rant::Sys.touch "b.t"
         assert !@sys.uptodate?("a.t", @sys.glob("*.t").exclude("a.t"))
         Rant::Sys.touch ["a.t", "b.t"]
         assert !@sys.uptodate?("a.t", ["b.t"])
-        timeout
+        _sleep
         Rant::Sys.touch "a.t"
         assert @sys.uptodate?("a.t", ["b.t"])
         Rant::Sys.touch "c.t"

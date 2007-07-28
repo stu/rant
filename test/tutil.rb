@@ -141,7 +141,7 @@ if ENV["TO"]
     end
 end
 
-def timeout
+def _sleep
     sleep $rant_test_to
 end
 

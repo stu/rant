@@ -26,19 +26,19 @@ class TestProject1 < Test::Unit::TestCase
     def test_timedep
         assert_rant("create_target")
 	assert(File.exist?("target"))
-	timeout
+	_sleep
         assert_rant("create_dep")
 	assert(File.exist?("dep"))
 	assert(Rant::Sys.uptodate?("dep", "target"),
 	    "`create_target' was run before `create_dep'")
-	timeout
+	_sleep
         assert_rant("target")
 	assert(File.exist?("target"))
 	assert(File.exist?("dep"))
 	assert(Rant::Sys.uptodate?("target", "dep"),
 	    "`target' should be newer than `dep'")
 	t1 = File.mtime "target"
-	timeout
+	_sleep
         assert_rant("target")
 	assert_equal(t1, File.mtime("target"),
 	    "`target' was already up to date")
@@ -112,7 +112,7 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?e, "dir/sub3/postprocess"))
 	old_mtime = File.mtime "dir/sub3"
 	assert_equal(old_mtime, File.mtime("dep1"))
-	timeout
+	_sleep
 	capture_std do
 	    assert_equal(0, Rant.run("dir/sub3"))
 	end
@@ -122,7 +122,7 @@ class TestProject1 < Test::Unit::TestCase
 	capture_std do
 	    assert_equal(0, Rant.run(%w(-a dep1)))
 	    assert(File.mtime("dep1") > old_mtime)
-	    timeout
+	    _sleep
 	    assert_equal(0, Rant.run("dir/sub3"))
 	    assert(File.mtime("dir/sub3") > old_mtime)
 	    assert(File.mtime("dir/sub3/postprocess") > old_mtime)
@@ -163,7 +163,7 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?f, "inc"))
 	assert(test(?f, "incdep"))
 	old_mtime = test(?M, "incdep")
-	timeout
+	_sleep
 	capture_std do
 	    assert_equal(Rant.run(%w(--force-run incdep)), 0,
 		"--force-run should unconditionally run `incdep'")
@@ -192,7 +192,7 @@ class TestProject1 < Test::Unit::TestCase
 	assert(test(?e, "one_target"),
 	    "one_target should get `touched' by task_one")
 	old_mtime = test(?M, "one_target")
-	timeout
+	_sleep
 	capture_std do
 	    assert_equal(Rant.run("task_one"), 0)
 	end

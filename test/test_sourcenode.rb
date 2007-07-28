@@ -95,12 +95,12 @@ class TestSourceNode < Test::Unit::TestCase
 	    assert(out.strip.empty?,
 		"no source changed, no update required")
 	    old_mtime = File.mtime "a.t"
-	    timeout
+	    _sleep
 	    FileUtils.touch "b.t"
 	    assert_rant("-frf.t")
 	    assert(File.mtime("a.t") > old_mtime)
 	    old_mtime = File.mtime "a.t"
-	    timeout
+	    _sleep
 	    FileUtils.touch "c.t"
 	    assert_rant("-frf.t")
 	    assert(File.mtime("a.t") > old_mtime)
@@ -142,7 +142,7 @@ class TestSourceNode < Test::Unit::TestCase
 	tmp_rf do
 	    assert_rant("-frf.t")
 	    assert(test(?f, "a.t"))
-	    timeout
+	    _sleep
 	    FileUtils.touch "e.t"
 	    old_mtime = File.mtime "a.t"
 	    assert_rant("-frf.t")

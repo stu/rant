@@ -85,7 +85,7 @@ class TestImportPackage < Test::Unit::TestCase
 	out, err = assert_rant("t2.tgz")
 	assert_match(/writing m2\.tgz\.t.*\n.*tar/m, out)
 	check_contents(:tgz, "t2.tgz", mf + %w(sub/f5), dirs, "m2.tgz.t")
-	timeout
+	_sleep
 	FileUtils.rm "sub/f5"
 	out, err = assert_rant("t2.tgz")
 	assert_match(/writing m2\.tgz\.t.*\n.*tar/m, out)

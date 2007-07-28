@@ -113,7 +113,7 @@ class TestSignedFile < Test::Unit::TestCase
         out, err = assert_rant("f5.t")
         assert(err.empty?)
         assert(out.empty?)
-        timeout
+        _sleep
         FileUtils.touch "f2.t"
         out, err = assert_rant("f5.t")
         assert(err.empty?)
@@ -137,7 +137,7 @@ class TestSignedFile < Test::Unit::TestCase
         assert(out.empty?)
 =begin
         # could be optimized to work
-        timeout
+        _sleep
         FileUtils.touch "f2.t"
         out, err = assert_rant("f6.t")
         assert(err.empty?)
@@ -169,7 +169,7 @@ class TestSignedFile < Test::Unit::TestCase
         lines = out.split(/\n/)
         assert_equal(1, lines.size)
         assert_equal("writing f7.t", lines.first)
-        timeout
+        _sleep
         FileUtils.touch "b.t"
         out, err = assert_rant("f7.t")
         assert(err.empty?)

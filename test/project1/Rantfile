@@ -70,12 +70,12 @@ end
 
 file "tbe" => :dep1 do |t|
     sys.touch t.name
-    timeout
+    _sleep
 end
 
 enhance :tbe => "dep2" do |t|
     sys.touch "tbe2"
-    timeout
+    _sleep
 end
 
 # should generate warning because there is no existing task called
@@ -84,12 +84,12 @@ enhance :nothing
 
 task :order do |t|
     sys.touch t.name + "1"
-    timeout
+    _sleep
 end
 
 task :order do |t|
     sys.touch t.name + "2"
-    timeout
+    _sleep
 end
 
 file "incdep" do |t|

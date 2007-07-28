@@ -38,7 +38,7 @@ class TestRantfileAPI < Test::Unit::TestCase
 	end
 	assert(test(?f, "version.t"))
 	old_mtime = File.mtime "version.t"
-	timeout
+	_sleep
 	capture_std do
 	    assert_equal(0, Rant::RantApp.new.run)
 	end
@@ -192,3 +192,4 @@ class TestRantfileAPI < Test::Unit::TestCase
         assert_equal "print_name.t\ncall-make\n", out
     end
 end
+

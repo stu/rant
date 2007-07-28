@@ -174,7 +174,7 @@ class TestImportCommand < Test::Unit::TestCase
         out, err = assert_rant "a.out", "rargs=$(source) > $(name)"
         assert err.empty?
         assert out.empty?
-        timeout
+        _sleep
         Rant::Sys.touch "a.in2"
         out, err = assert_rant "a.out", "rargs=  $(source) > $(>)"
         assert err.empty?
