@@ -29,7 +29,7 @@
 
 require 'delegate'
 require 'singleton'
-require 'ftools'
+require 'fileutils'
 require 'zlib'
 require 'rant/archive/rubyzip/stdrubyext'
 require 'rant/archive/rubyzip/ioextras'
@@ -1260,7 +1260,7 @@ module Rant::Archive::Rubyzip
       tmpFilename = tmpfile.path
       tmpfile.close
       if yield tmpFilename
-	File.move(tmpFilename, name)
+	FileUtils.mv(tmpFilename, name)
       end
     end
     
