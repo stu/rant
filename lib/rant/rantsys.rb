@@ -195,6 +195,18 @@ module Rant
 	    end
 	end
 
+        def uptodate?(new, old, *rest)
+          # FileUtils in 1.8 allowed old to be a string,
+          # in 1.9 it must be an array. We override it here
+          # to preserve backwards-compatibility.
+          if old.respond_to?(:to_ary)
+            old = old.to_ary
+          else
+            old = [old]
+          end
+          super(new, old, *rest)
+        end
+
 	# Run a new Ruby interpreter with the given arguments:
 	#     sys.ruby "install.rb"
 	def ruby(*args, &block)
