@@ -43,7 +43,6 @@ class Rant::Generators::RubyPackage
     # These attributes may be set to a single value, which will be
     # converted to an array with a single element.
     PACKAGE_TO_LIST_ATTRS = [
-	"author",
 	"bindir",
 	"executable",
 	"extension",
@@ -88,17 +87,19 @@ class Rant::Generators::RubyPackage
 		end
 	    end
 	    def #{a}=(val)
-		unless val.nil? || Array === val
-		    if val.respond_to? :to_ary
-			val = val.to_ary
-		    else
-			val = [val]
-		    end
-		end
-		@data["#{a}"] = val
+                if val.respond_to? :to_ary
+                    val = val.to_ary
+                else
+                    val = [val]
+                end
+                @data["#{a}"] = val
 	    end
 	EOM
     }
+
+    def author=(author)
+        @data["authors"] = author
+    end
 
     # A hash containing all package information.
     attr_reader :data
@@ -228,7 +229,6 @@ class Rant::Generators::RubyPackage
 		t.fail "Couldn't load `rubygems'. " +
 		    "Probably RubyGems isn't installed on your system."
 	    end
-	    Gem.manage_gems
 	    # map rdoc options from application vars
 	    @data["rdoc_options"] ||= @app.var[:rubydoc_opts]
 	    if @data["rdoc_options"]
