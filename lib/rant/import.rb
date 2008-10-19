@@ -342,6 +342,10 @@ EOF
 	# code by directly inserting the code.
 	def resolve_requires script
 	    rs = ""
+            if script.respond_to?(:force_encoding)
+                script = script.dup.force_encoding(Encoding::ASCII_8BIT)
+                rs.force_encoding(Encoding::ASCII_8BIT)
+            end
 	    in_ml_comment = false
 	    script.each_line { |line|
 		if in_ml_comment
