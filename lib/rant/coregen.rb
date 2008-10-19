@@ -78,8 +78,8 @@ module Rant
 		    end
 		    path = path.nil? ? dir : File.join(path, dir)
 		    last_task = rac.prepare_task({:__caller__ => ch,
-			    path => pre}, task_block) { |name,pre,blk|
-			rac.node_factory.new_dir(rac, name, pre, blk)
+			    path => pre}, task_block) { |_name,_pre,blk|
+			rac.node_factory.new_dir(rac, _name, _pre, blk)
 		    }
 		}
 		last_task
@@ -116,7 +116,7 @@ module Rant
 		elsif Regexp === arg
 		    target = arg
 		elsif Hash === arg && arg.size == 1
-		    arg.each_pair { |target, src_arg| }
+		    arg.each_pair { |k, v| target = k; src_arg = v }
 		    src_arg = src_arg.to_str if src_arg.respond_to? :to_str
 		    target = target.to_str if target.respond_to? :to_str
 		    src_arg = ".#{src_arg}" if Symbol === src_arg

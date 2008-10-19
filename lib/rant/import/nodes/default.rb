@@ -117,7 +117,6 @@ module Rant
 	def internal_invoke(opt, ud_init = true)
 	    goto_task_home
 	    update = ud_init || opt[:force]
-	    dep = nil
 	    uf = false
 	    each_dep { |dep|
 		if dep.respond_to? :timestamp
@@ -188,7 +187,6 @@ module Rant
 	# will replace the original prerequisite (of course only if
 	# @pre_resolved is false).
 	def each_dep
-	    t = nil
 	    if @pre_resolved
 		return @pre.each { |t| yield(t) }
 	    end

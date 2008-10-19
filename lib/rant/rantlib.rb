@@ -997,9 +997,9 @@ class Rant::RantApp
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
 	when nil
-	    @resolve_hooks.each { |s|
+	    @resolve_hooks.each { |hook|
 		# Note: will probably change to get more params
-		s = s[task_name, rel_project_dir]
+		tasks = hook[task_name, rel_project_dir]
                 #if s
                 #    puts s.size
                 #    t = s.first
@@ -1007,7 +1007,7 @@ class Rant::RantApp
                 #    puts t.name
                 #    puts t.deps
                 #end
-		return s if s
+		return tasks if tasks
 	    }
 	    []
 	when Rant::Node then [s]
@@ -1021,10 +1021,10 @@ class Rant::RantApp
 	s = @tasks[expand_path(rel_project_dir, task_name)]
 	case s
 	when nil
-	    @resolve_hooks.each { |s|
-                next if s == excl_hook
-		s = s[task_name, rel_project_dir]
-		return s if s
+	    @resolve_hooks.each { |hook|
+                next if hook == excl_hook
+		tasks = hook[task_name, rel_project_dir]
+		return tasks if tasks
 	    }
 	    []
 	when Rant::Node then [s]
