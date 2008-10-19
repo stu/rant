@@ -40,6 +40,10 @@ class TestLaTeX < Test::Unit::TestCase
 
   def cantMakeErrorMessage( target ) ; "Don't know how to make `#{target}'" end
 
+  required_binaries = ["latex", "pdflatex", "bibtex", "makeindex", "dvips", "ps2pdf"]
+
+if required_binaries.all? { |bin| Rant::Env.find_bin(bin) }
+
   def setup
     Dir.chdir( $testImportLatexDir )
   end
@@ -169,5 +173,21 @@ class TestLaTeX < Test::Unit::TestCase
     out , err = assert_rant( :fail , ErrorTarget )
     assert( err.include?( "Don't know how to make `#{ErrorTarget}'" ) )
   end
+
+else
+   
+  def test_dummy
+    assert(true)
+  end
+
+    print <<-EOF
+************************************************************
+* Skipping latex support tests because not all of the      *
+* following commands were found in PATH:                   *
+* #{required_binaries.join(', ')}
+************************************************************
+    EOF
+
+end
 
 end
