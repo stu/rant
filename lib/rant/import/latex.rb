@@ -71,7 +71,7 @@ module Rant
       if File.exists?( root + LtxExtension ) then source = root + LtxExtension
       elsif File.exists?( root + TexExtension ) then source = root + LtxExtension
       else raise Exception.new( "Neither #{root}.ltx or #{root}.tex exist." ) end
-      doLaTeX = proc { system( ( use_pdfLaTeX ? 'pdflatex' : 'latex' ) + ' ' + source ) }
+      doLaTeX = proc { Rant::Sys.sh( ( use_pdfLaTeX ? 'pdflatex' : 'latex' ) + ' ' + source ) }
       conditionallyDoLaTeX = proc {
         rerun = File.open( root + LogExtension ) { | file | file.read.index( /(Warning:.*Rerun|Warning:.*undefined)/ ) != nil }
         if rerun then doLaTeX.call end
@@ -79,14 +79,14 @@ module Rant
       }
       doLaTeX.call
       bibTeXRun = false
-      Dir.glob( root + '.*.aux' ).each { | file | system( "bibtex #{$bibtexOptions} #{file}" ) ; bibTeXRun = true }
+      Dir.glob( root + '.*.aux' ).each { | file | Rant::Sys.sh( "bibtex #{$bibtexOptions} #{file}" ) ; bibTeXRun = true }
       if File.open( root + AuxExtension ) { | file | file.read.index( 'bibdata' ) != nil }
-        system( "bibtex #{$bibtexOptions} #{root}#{AuxExtension}" )
+        Rant::Sys.sh( "bibtex #{$bibtexOptions} #{root}#{AuxExtension}" )
         bibTeXRun = true
       end
       if bibTeXRun then doLaTeX.call end
       makeindexRun = false
-      Dir.glob( root + '*.idx' ).each { | file | system( "makeindex #{$makeindexOptions} #{file}" ) ; makeindexRun = true }
+      Dir.glob( root + '*.idx' ).each { | file | Rant::Sys.sh( "makeindex #{$makeindexOptions} #{file}" ) ; makeindexRun = true }
       if makeindexRun then doLaTeX.call end
       doLaTeX.call
       if conditionallyDoLaTeX.call
@@ -101,7 +101,7 @@ module Rant
     #  file.
 
     def LaTeX.createPsFromDvi( root )
-      system( "dvips #{$dvipsOptions} -o #{root}#{PsExtension} #{root}#{DviExtension}" )
+      Rant::Sys.sh( "dvips #{$dvipsOptions} -o #{root}#{PsExtension} #{root}#{DviExtension}" )
     end
 
     #  As the method name says, create a PDF file from a DVI file.  This currently uses dvips and then
@@ -109,8 +109,8 @@ module Rant
     #  create the DVI file.
 
     def LaTeX.createPdfFromDvi( root )
-      system( "dvips #{$dvipsOptions} -Ppdf -G0 -o #{root}#{PsExtension} #{root}#{DviExtension}" )
-      system( "ps2pdf #{ps2pdfOptions} #{root}#{PsExtension}" )
+      Rant::Sys.sh( "dvips #{$dvipsOptions} -Ppdf -G0 -o #{root}#{PsExtension} #{root}#{DviExtension}" )
+      Rant::Sys.sh( "ps2pdf #{ps2pdfOptions} #{root}#{PsExtension}" )
     end
 
   end # module LaTeX
