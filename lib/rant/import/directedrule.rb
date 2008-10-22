@@ -26,9 +26,9 @@ class Rant::Generators::DirectedRule
 		"Source directory argument has to be a list.")
 	end
 	target, source = nil, nil
-	ts_h.each { |target, source| }
+	ts_h.each { |k, v| target = k; source = v }
 	target_dir, source_dirs = nil, nil
-	dir_h.each { |target_dir, source_dirs| }
+	dir_h.each { |k, v| target_dir = k; source_dirs = v }
 	if target_dir.respond_to? :to_str
 	    target_dir = target_dir.to_str
 	else
