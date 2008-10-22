@@ -200,7 +200,7 @@ module Rant
         end
 
         def action_block_desc
-            @block.inspect =~ /^#<Proc:[\da-z]+@(.+):(\d+)>$/i
+            @block.inspect =~ /^#<Proc:[\da-z]+@(.+):(\d+)[^\d]*>$/i
             fn, ln = $1, $2
             "Ruby Proc at #{fn.sub(/^#{Regexp.escape @rac.rootdir}\//, '')}:#{ln}"
         end
