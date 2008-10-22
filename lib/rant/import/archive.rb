@@ -222,7 +222,7 @@ module Rant::Generators::Archive
 	def read_manifest
 	    fl = []
 	    open @manifest do |f|
-		f.each { |line|
+		f.each_line { |line|
 		    line.chomp!
 		    fl << line unless line.strip.empty?
 		}

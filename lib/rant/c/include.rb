@@ -22,7 +22,7 @@ module Rant::C
 	    l_includes = []
 	    in_block_comment = false
 	    prev_line = nil
-	    src.each { |line|
+	    src.each_line { |line|
 		line.chomp!
                 if block_start_i = line.index("/*")
                     c_start_i = line.index("//")
