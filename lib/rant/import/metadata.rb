@@ -160,7 +160,6 @@ module Rant
             # assumes to be called from the projects root directory
             def write_dstore(dstore, dir)
                 fn = dir.empty? ? META_FN : File.join(dir, META_FN)
-                target = sigs = key = value = lines = nil
                 open fn, "w" do |f|
                     f.puts "Rant"
                     dstore.each { |target, sigs|

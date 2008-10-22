@@ -341,12 +341,12 @@ module Rant::Generators::Archive
                     @rac.cmd_print \
                         "#{progress.total} files to #@dist_path: ".ljust(msg_len - 8)
                     progress.inc if ln_supported
-                    fl.each { |f|
-                       dest = File.join(@dist_path, f)
+                    fl.each { |fn|
+                       dest = File.join(@dist_path, fn)
                        if ln_supported
-                           FileUtils.ln(f, dest)
+                           FileUtils.ln(fn, dest)
                        else
-                           FileUtils.cp(f, dest)
+                           FileUtils.cp(fn, dest)
                        end
                        progress.inc
                     }
