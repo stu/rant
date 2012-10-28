@@ -64,10 +64,10 @@ module Rant
     end
 
     module Env
-        OS = ::Config::CONFIG['target']
-        RUBY = ::Config::CONFIG['ruby_install_name']
-        RUBY_BINDIR = ::Config::CONFIG['bindir']
-        RUBY_EXE = File.join(RUBY_BINDIR, RUBY + ::Config::CONFIG["EXEEXT"])
+        OS = ::RbConfig::CONFIG['target']
+        RUBY = ::RbConfig::CONFIG['ruby_install_name']
+        RUBY_BINDIR = ::RbConfig::CONFIG['bindir']
+        RUBY_EXE = File.join(RUBY_BINDIR, RUBY + ::RbConfig::CONFIG["EXEEXT"])
 
         @@zip_bin = false
         @@tar_bin = false
