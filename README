@@ -1,4 +1,16 @@
 
+= Note
+
+This is a fork of the original Subversion repository from 
+http://rubygems.org/gems/rant
+
+This fork contains some fixes for ruby 1.9.3 to keep things working
+on my legacy projects.
+
+    -Stu
+
+
+
 = Rant -- Ruby's ant
 
 Rant is a flexible build tool written entirely in Ruby.
