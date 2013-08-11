@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'rant/rantlib'
+require 'rant/version'
 
 module RantContext
     # Needed for irb, which defines its own +source+ method.
