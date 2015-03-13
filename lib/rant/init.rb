@@ -4,6 +4,7 @@
 # Copyright (C) 2005 Stefan Lang <langstefan@gmx.at>
 
 require 'rbconfig'
+require 'rant/version'
 
 unless Process::Status.method_defined?(:success?) # new in 1.8.2
     class Process::Status
@@ -56,8 +57,6 @@ class String
 end
 
 module Rant
-    VERSION = '0.5.9.1'
-
     @__rant_no_value__ = Object.new.freeze
     def self.__rant_no_value__
 	@__rant_no_value__
