@@ -225,6 +225,7 @@ class Rant::Generators::RubyPackage
 	    # execution cycles if possible ;)
 	    begin
 		require 'rubygems'
+		require 'rubygems/package'
 	    rescue LoadError => e
 		t.fail "Couldn't load `rubygems'. " +
 		    "Probably RubyGems isn't installed on your system."
@@ -246,7 +247,7 @@ class Rant::Generators::RubyPackage
 	    end
 
             # fix for YAML bug in Ruby 1.8.3 and 1.8.4 previews
-            # 
+            #
             # Update: That's not a bug in YAML 1.8.3 and later, it's a
             # non-backwards compatible change, because YAML 1.8.2 and
             # later is buggy. (My current understanding of this
@@ -258,10 +259,10 @@ class Rant::Generators::RubyPackage
                     yaml =~ /^---/ ? yaml : "--- #{yaml}"
                 end
             end
-            
+
 	    fn = nil
 	    begin
-		fn = Gem::Builder.new(spec).build
+		fn = Gem::Package.build(spec)
 	    rescue Gem::InvalidSpecificationException => e
 		t.fail "Invalid Gem specification: " + e.message
 	    rescue Gem::Exception => e
