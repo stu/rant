@@ -11,6 +11,9 @@
 ### stefan ###
 #
 
+require'rbconfig'
+Config = RbConfig
+
 unless Enumerable.method_defined?(:map)   # Ruby 1.4.6
   module Enumerable
     alias map collect
@@ -357,7 +360,6 @@ class ConfigTable_class   # open again
     'std-ruby'         => 'stdruby',
     'site-ruby-common' => 'siteruby',     # For backward compatibility
     'site-ruby'        => 'siterubyver',  # For backward compatibility
-    'bin-dir'          => 'bindir',
     'bin-dir'          => 'bindir',
     'rb-dir'           => 'rbdir',
     'so-dir'           => 'sodir',
