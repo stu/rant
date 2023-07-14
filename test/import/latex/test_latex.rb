@@ -111,7 +111,7 @@ if required_binaries.all? { |bin| Rant::Env.find_bin(bin) }
   def test_noOptionsPdfTarget
     Rant::TestUtil.write_to_file( RantfileName , NoOptionsSourceRantfile )
     out , err = assert_rant( PdfTarget )
-    assert( File.exists?( PdfTarget ) )
+    assert( File.exist?( PdfTarget ) )
   end
 
   def test_noOptionsPsTarget
@@ -135,7 +135,7 @@ if required_binaries.all? { |bin| Rant::Env.find_bin(bin) }
   def test_pdfOptionPdfTarget
     Rant::TestUtil.write_to_file( RantfileName , PdfOptionSourceRantfile )
     out , err = assert_rant( PdfTarget )
-    assert( File.exists?( PdfTarget ) )
+    assert( File.exist?( PdfTarget ) )
   end
 
   def test_pdfOptionPsTarget
@@ -165,7 +165,7 @@ if required_binaries.all? { |bin| Rant::Env.find_bin(bin) }
   def test_psOptionPsTarget
     Rant::TestUtil.write_to_file( RantfileName , PsOptionSourceRantfile )
     out , err = assert_rant( PsTarget )
-    assert( File.exists?( PsTarget ) )
+    assert( File.exist?( PsTarget ) )
   end
 
   def test_psOptionErrorTarget

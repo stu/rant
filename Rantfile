@@ -1,5 +1,7 @@
 
 # Rantfile for Rant :)
+require 'rbconfig'
+Config = RbConfig
 
 import "md5"
 import %w(rubytest rubydoc rubypackage autoclean win32/rubycmdwrapper sys/more)

@@ -1,6 +1,12 @@
 
 = Rant NEWS
 
+== Rant 0.5.9.3
+* Fix File.exists? to File.exist?
+
+== Rant 0.5.9.2
+* Fix for ruby 2.2+ 
+
 == Rant 0.5.9.1
 * Fix RbConfig stuff for ruby 1.9.3
 

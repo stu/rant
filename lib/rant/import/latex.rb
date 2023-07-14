@@ -68,8 +68,8 @@ module Rant
     #  then run makeindex appropriately.
 
     def LaTeX.runLaTeX( root , use_pdfLaTeX = false )
-      if File.exists?( root + LtxExtension ) then source = root + LtxExtension
-      elsif File.exists?( root + TexExtension ) then source = root + LtxExtension
+      if File.exist?( root + LtxExtension ) then source = root + LtxExtension
+      elsif File.exist?( root + TexExtension ) then source = root + LtxExtension
       else raise Exception.new( "Neither #{root}.ltx or #{root}.tex exist." ) end
       doLaTeX = proc { Rant::Sys.sh( ( use_pdfLaTeX ? 'pdflatex' : 'latex' ) + ' ' + source ) }
       conditionallyDoLaTeX = proc {

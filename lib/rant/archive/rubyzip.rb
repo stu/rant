@@ -1026,7 +1026,7 @@ module Rant::Archive::Rubyzip
       super()
       @name = fileName
       @comment = ""
-      if (File.exists?(fileName))
+      if (File.exist?(fileName))
 	File.open(name, "rb") { |f| read_from_stream(f) }
       elsif (create)
 	@entrySet = ZipEntrySet.new
@@ -1202,7 +1202,7 @@ module Rant::Archive::Rubyzip
     def create_directory(entry, destPath)
       if File.directory? destPath
 	return
-      elsif File.exists? destPath
+      elsif File.exist? destPath
 	if block_given? && yield(entry, destPath)
 	  File.rm_f destPath
 	else
@@ -1239,7 +1239,7 @@ module Rant::Archive::Rubyzip
     end
 
     def write_file(entry, destPath, continueOnExistsProc = proc { false })
-      if File.exists?(destPath) && ! yield(entry, destPath)
+      if File.exist?(destPath) && ! yield(entry, destPath)
 	raise ZipDestinationFileExistsError,
 	  "Destination '#{destPath}' already exists"
       end
